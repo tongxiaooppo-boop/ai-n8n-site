@@ -3,11 +3,11 @@
 沒有先修模組。已經會啟動本機 n8n 的人可以從主線的版本核對與教材檢查流程開始。
 準備一台電腦，主線費用 0 元。不用新帳號連接外部服務，首次啟動需建立 n8n 本機擁有者帳號。</p>
 <h3 id="sec-2">白話觀念</h3>
-<p>開工前先花五分鐘讀這段導讀：自動化是什麼、n8n 跟 28 天課程學過的排程差在哪，以及整門課會一直出現的幾個名詞。沒上過 28 天課程也看得懂。</p>
+<p>開工前先花五分鐘讀這段導讀：自動化是什麼、n8n 跟 <a href="https://tongxiaooppo-boop.github.io/ai-tutorial-site/" target="_blank" rel="noopener noreferrer">28 天 AI 入門</a><span class="dom">tongxiaooppo-boop.github.io</span> 學過的排程差在哪，以及整門課會一直出現的幾個名詞。沒上過 28 天課程也看得懂。</p>
 <p><strong>自動化就是「設定一次，之後照規則自己跑」。</strong>每天早上打開三個網站查股價、匯率、天氣，再整理成一段話傳給家人，這是手動。把這些步驟交給電腦，每天 7 點自己做完、把結果送到手機，這就是自動化。</p>
 <p><strong>大多數自動化可以先拆成三段：觸發 → 處理 → 送出。</strong>觸發是「什麼時候開始」，例如每天 7 點、收到一則訊息。處理是「拿到資料後做什麼」，例如只挑自選股、把民國年換成西元年、漲跌太大才標記。送出是「結果去哪裡」，例如傳到 Telegram、記進 Excel。實際流程也可能分岔、合併，或同時送到好幾個地方。這門課的「生活早報小幫手」就是：每天 7 點觸發 → 抓股價、匯率、警特報、新聞並整理 → 傳到手機、記進 Excel。</p>
 <p><strong>n8n 用拖拉方塊把多個服務串起來，大多不用寫程式。</strong>畫布上的每個方塊叫節點，一個節點只做一件事；連線把資料交給下一個節點。你寫的是「流程」，不是程式碼。每次執行後，可以到執行紀錄（<strong>Executions</strong>）看每個節點收到什麼、交出什麼，出錯時找得到是哪一步。本課的 n8n 裝在你自己的電腦，免費。</p>
-<p><strong>跟 28 天課程學過的兩種排程比一比。</strong>第 25 天在聊天 AI 裡設排程，第 26 天用 GitHub Actions 每天抓匯率，n8n 是第三種做法：</p>
+<p><strong>跟 28 天課程學過的兩種排程比一比。</strong><a href="https://tongxiaooppo-boop.github.io/ai-tutorial-site/day25.html" target="_blank" rel="noopener noreferrer">第 25 天</a><span class="dom">tongxiaooppo-boop.github.io</span>在聊天 AI 裡設排程，<a href="https://tongxiaooppo-boop.github.io/ai-tutorial-site/day26.html" target="_blank" rel="noopener noreferrer">第 26 天</a><span class="dom">tongxiaooppo-boop.github.io</span>用 GitHub Actions 每天抓匯率，n8n 是第三種做法：</p>
 <table>
 <thead>
 <tr>
