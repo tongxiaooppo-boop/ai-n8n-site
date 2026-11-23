@@ -1,0 +1,93 @@
+{
+  "name": "M4 主線 警",
+  "nodes": [
+    {
+      "name": "排程",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "抓警特報",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "url": "https://www.cwa.gov.tw/rss/Data/cwa_warning.xml",
+        "options": {}
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "name": "整理",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "status",
+              "value": "={{ $json.title ? 'warning' : 'none' }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "title",
+              "value": "={{ $json.title ?? '目前沒有警特報' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "排程": {
+      "main": [
+        [
+          {
+            "node": "抓警特報",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "抓警特報": {
+      "main": [
+        [
+          {
+            "node": "整理",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1,0 +1,167 @@
+{
+  "name": "M7 主線 HTTP 入口",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "m7-quote",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "收到查詢",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "webhookId": "m7-quote",
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c0",
+              "leftValue": "={{ /^查\\s?\\d{4,6}$/.test(String($json.body.command).trim()) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "指令對嗎",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "code": "={{ String($json.body.command).replace(/\\D/g, '') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "code",
+              "displayName": "code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "name": "呼叫查價",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, text: $json.text } }}",
+        "options": {}
+      },
+      "name": "回覆價格",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: false, text: '請傳「查 代號」，例如：查 2330' } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "name": "回覆格式錯",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        660,
+        200
+      ]
+    }
+  ],
+  "connections": {
+    "收到查詢": {
+      "main": [
+        [
+          {
+            "node": "指令對嗎",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "指令對嗎": {
+      "main": [
+        [
+          {
+            "node": "呼叫查價",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "回覆格式錯",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "呼叫查價": {
+      "main": [
+        [
+          {
+            "node": "回覆價格",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1,0 +1,522 @@
+<!doctype html><html lang="zh-Hant" data-pal="teal"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>M1 第一個流程｜n8n 生活自動化</title><link rel="stylesheet" href="assets/style.css"><script src="assets/app.js" defer></script></head><body><a class="skip" href="#main">跳到正文</a><header class="topbar"><button type="button" aria-label="打開課表" aria-controls="schedule" aria-expanded="false">☰</button><span>M1 第一個流程</span></header><nav class="nav" id="schedule" aria-label="課表"><a class="brand" href="index.html">n8n 生活自動化</a><div class="stage">主線（M0–M5 照順序，之後照需要挑）</div><a class="mod" href="m0.html"><b>M0</b><span>準備環境</span></a><a class="mod cur" href="m1.html" aria-current="page"><b>M1</b><span>第一個流程</span></a><a class="mod" href="m2.html"><b>M2</b><span>資料與 Expression</span></a><a class="mod" href="m3.html"><b>M3</b><span>判斷、多筆與合併</span></a><a class="mod" href="m4.html"><b>M4</b><span>API、RSS 與排程</span></a><a class="mod" href="m5.html"><b>M5</b><span>通知、憑證與檔案</span></a><a class="mod" href="m6.html"><b>M6</b><span>錯誤處理與可靠性</span></a><a class="mod" href="m7.html"><b>M7</b><span>Webhook 與子流程</span></a><a class="mod" href="m8.html"><b>M8</b><span>加入 AI（受限用法）</span></a><a class="mod" href="m9.html"><b>M9</b><span>上線與維護</span></a><div class="stage">結業</div><a class="mod" href="final.html"><b>結業專題</b><span>生活題庫</span></a><div class="stage">選修</div><a class="mod" href="opt-a.html"><b>選修 A</b><span>AI Agent</span></a><a class="mod" href="opt-b.html"><b>選修 B</b><span>請 Claude 幫你寫流程</span></a><a class="mod" href="opt-c.html"><b>選修 C</b><span>更多資料來源與工具</span></a><div class="stage">附錄</div><a class="mod" href="version.html"><b>附錄</b><span>版本附頁</span></a></nav><button class="scrim" type="button" aria-label="關閉課表" tabindex="-1" hidden></button><main id="main"><article class="art"><div class="eyebrow">主線（M0–M5 照順序，之後照需要挑）</div><h1>M1｜第一個流程</h1><div class="meta"><span class="tag">按一下就產生一則假的早報</span><span class="tag">約 1 小時</span><span class="tag">先修：<a href="m0.html">M0</a></span><span class="tag">實測 n8n 2.48.4（2026-11-18）・你的畫面可能略有不同</span></div><h3 id="sec-1">成果與先修</h3>
+<p>按一下手動執行，產生一則假的早報。
+先完成 M0。已經會設定欄位與查看執行結果的人可以從驗收開始。
+不用新帳號，主線費用 0 元。準備能開啟的本機 n8n 與本頁素材。</p>
+<h3 id="sec-2">白話觀念</h3>
+<p><strong>Trigger</strong> 是讓流程開始的觸發條件，本課用 <strong>Manual Trigger</strong> 手動啟動。<strong>Node</strong> 是做一件事的節點。<strong>Item</strong> 是一筆資料，裡面可有好幾個欄位。<strong>Execution</strong> 是流程執行一次的紀錄。<strong>Edit Fields (Set)</strong> 可以填入或整理欄位。<strong>Expression</strong> 是執行時取資料的寫法，<code>{{ $json.欄位 }}</code> 在本課用來拿上一個節點交來的欄位。數字欄位選 <strong>Number</strong>，文字欄位選 <strong>String</strong>。</p>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">手動 → 假資料（1 個 Item）→ 早報文字（1 個 Item）</code></pre></div>
+<h3 id="sec-3">素材包</h3>
+<ul>
+<li><a href="files/m1/main-start.json" download>main-start.json</a> 已放好手動與假資料，供主線接著做。</li>
+<li><a href="files/m1/main-done.json" download>main-done.json</a> 是假早報完成版。</li>
+<li><a href="files/m1/ex1-done.json" download>ex1-done.json</a> 是午餐記帳完成版。</li>
+<li><a href="files/m1/ex2-done.json" download>ex2-done.json</a> 是學習提醒完成版。</li>
+</ul>
+<p>使用 <strong>Import from File</strong> 讀入流程檔。位置見版本附頁。</p>
+<h3 id="sec-4">主線：假早報</h3>
+<p>把假股價與假匯率組成一則標示測試的早報，金額只作紀錄與提醒。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>手動（<strong>Manual Trigger</strong>）</td>
+<td>手動啟動</td>
+<td>執行整條流程</td>
+</tr>
+<tr>
+<td>假資料（<strong>Edit Fields (Set)</strong>）</td>
+<td>提供測試欄位</td>
+<td><code>stockName</code> 假想甲（<strong>String</strong>）、<code>stockClose</code> 100（<strong>Number</strong>）、<code>usd</code> 32.85（<strong>Number</strong>）</td>
+</tr>
+<tr>
+<td>早報文字（<strong>Edit Fields (Set)</strong>）</td>
+<td>組合句子</td>
+<td><code>report</code>（<strong>String</strong>），值切換 <strong>Expression</strong></td>
+</tr>
+</tbody></table>
+<details class="wf"><summary>起始版（m1/main-start.json）</summary><a href="files/m1/main-start.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M1 主線 起始版&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;name&quot;: &quot;手動&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.manualTrigger&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        0,
+        0
+      ],
+      &quot;parameters&quot;: {}
+    },
+    {
+      &quot;name&quot;: &quot;假資料&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        220,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;a1&quot;,
+              &quot;name&quot;: &quot;stockName&quot;,
+              &quot;value&quot;: &quot;假想甲&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a2&quot;,
+              &quot;name&quot;: &quot;stockClose&quot;,
+              &quot;value&quot;: 100,
+              &quot;type&quot;: &quot;number&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a3&quot;,
+              &quot;name&quot;: &quot;usd&quot;,
+              &quot;value&quot;: 32.85,
+              &quot;type&quot;: &quot;number&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      }
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;手動&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;假資料&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}
+</code></pre></div>
+</details><ol>
+<li><p>匯入起始版，打開「假資料」，核對上表的值與型別，再執行流程。
+你應該看到：「假資料」輸出 1 筆，三個欄位與上表一致。</p>
+</li>
+<li><p>接上 <strong>Edit Fields (Set)</strong>，命名為「早報文字」，用 <strong>Add Field</strong> 新增 <code>report</code>，型別選 <strong>String</strong>，值切換 <strong>Expression</strong> 後貼入下方句子。位置見版本附頁。</p>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">【測試早報】{{ $json.stockName }}收盤 {{ $json.stockClose }} 元｜美元 {{ $json.usd ?? &#39;未提供&#39; }}</code></pre></div>
+<p>你應該看到：預覽把欄位換成假想甲、100 與 32.85。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？預覽仍顯示大括號文字時先確認值已切換 <strong>Expression</strong>，並檢查欄位名稱大小寫。</p>
+</blockquote>
+<ol start="3">
+<li><p>按 <strong>Execute workflow</strong> 執行整條流程，打開「早報文字」查看輸出。位置見版本附頁。
+你應該看到：<code>report</code> 為 <code>【測試早報】假想甲收盤 100 元｜美元 32.85</code>，共 1 筆。</p>
+</li>
+<li><p>刪除「假資料」中的 <code>usd</code> 欄位並重跑，再恢復 <code>usd</code> 為 32.85 重跑。
+你應該看到：刪除時顯示 <code>美元 未提供</code>，恢復後顯示 <code>美元 32.85</code>。</p>
+</li>
+</ol>
+<p><code>?? &#39;未提供&#39;</code> 會在該值缺少或為 <code>null</code> 時顯示提示。這樣可以保留「沒有匯率」的資訊。</p>
+<details class="wf"><summary>完成版（m1/main-done.json）</summary><a href="files/m1/main-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M1 主線 假早報&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;name&quot;: &quot;手動&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.manualTrigger&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        0,
+        0
+      ],
+      &quot;parameters&quot;: {}
+    },
+    {
+      &quot;name&quot;: &quot;假資料&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        220,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;a1&quot;,
+              &quot;name&quot;: &quot;stockName&quot;,
+              &quot;value&quot;: &quot;假想甲&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a2&quot;,
+              &quot;name&quot;: &quot;stockClose&quot;,
+              &quot;value&quot;: 100,
+              &quot;type&quot;: &quot;number&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a3&quot;,
+              &quot;name&quot;: &quot;usd&quot;,
+              &quot;value&quot;: 32.85,
+              &quot;type&quot;: &quot;number&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      }
+    },
+    {
+      &quot;name&quot;: &quot;早報文字&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        440,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;a1&quot;,
+              &quot;name&quot;: &quot;report&quot;,
+              &quot;value&quot;: &quot;=【測試早報】{{ $json.stockName }}收盤 {{ $json.stockClose }} 元｜美元 {{ $json.usd ?? &#39;未提供&#39; }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      }
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;手動&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;假資料&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;假資料&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;早報文字&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}
+</code></pre></div>
+</details><h3 id="sec-5">小練習①：午餐記帳</h3>
+<p>自行建立三個節點，把午餐品項與金額寫成支出草稿。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>手動（<strong>Manual Trigger</strong>）</td>
+<td>啟動流程</td>
+<td>手動執行</td>
+</tr>
+<tr>
+<td>午餐（<strong>Edit Fields (Set)</strong>）</td>
+<td>記錄午餐</td>
+<td><code>item</code> 便當（<strong>String</strong>）、<code>amount</code> 95（<strong>Number</strong>）</td>
+</tr>
+<tr>
+<td>支出草稿（<strong>Edit Fields (Set)</strong>）</td>
+<td>組合文字</td>
+<td><code>draft</code>（<strong>String</strong>）</td>
+</tr>
+</tbody></table>
+<ol>
+<li><p>建立新流程，依表加入並連接節點，填好「午餐」的兩個欄位，執行一次。
+你應該看到：「午餐」輸出 1 筆，<code>item</code> 為便當，<code>amount</code> 為數字 95。</p>
+</li>
+<li><p>將「支出草稿」的 <code>draft</code> 值切換 <strong>Expression</strong>，輸入下方內容，再執行整條流程。</p>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">午餐：{{ $json.item }} {{ $json.amount }} 元</code></pre></div>
+<p>你應該看到：<code>draft</code> 為 <code>午餐：便當 95 元</code>，共 1 筆。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？品項空白時先核對來源欄位是否叫 <code>item</code>，並檢查連線是否從「午餐」接入「支出草稿」。</p>
+</blockquote>
+<details class="wf"><summary>完成版（m1/ex1-done.json）</summary><a href="files/m1/ex1-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M1 小練習① 午餐記帳&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;name&quot;: &quot;手動&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.manualTrigger&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        0,
+        0
+      ],
+      &quot;parameters&quot;: {}
+    },
+    {
+      &quot;name&quot;: &quot;午餐&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        220,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;a1&quot;,
+              &quot;name&quot;: &quot;item&quot;,
+              &quot;value&quot;: &quot;便當&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a2&quot;,
+              &quot;name&quot;: &quot;amount&quot;,
+              &quot;value&quot;: 95,
+              &quot;type&quot;: &quot;number&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      }
+    },
+    {
+      &quot;name&quot;: &quot;支出草稿&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        440,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;a1&quot;,
+              &quot;name&quot;: &quot;draft&quot;,
+              &quot;value&quot;: &quot;=午餐：{{ $json.item }} {{ $json.amount }} 元&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      }
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;手動&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;午餐&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;午餐&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;支出草稿&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}
+</code></pre></div>
+</details><h3 id="sec-6">小練習②：學習提醒</h3>
+<p>自行建立一則含姓名與讀書分鐘數的提醒。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>手動（<strong>Manual Trigger</strong>）</td>
+<td>啟動提醒</td>
+<td>手動執行</td>
+</tr>
+<tr>
+<td>學習（<strong>Edit Fields (Set)</strong>）</td>
+<td>提供提醒資料</td>
+<td><code>who</code> 阿禾（<strong>String</strong>）、<code>minutes</code> 20（<strong>Number</strong>）</td>
+</tr>
+<tr>
+<td>提醒文字（<strong>Edit Fields (Set)</strong>）</td>
+<td>組成提醒</td>
+<td><code>text</code>（<strong>String</strong>）</td>
+</tr>
+</tbody></table>
+<ol>
+<li><p>建立新流程，依表加入三個節點並連線，執行後檢查「學習」。
+你應該看到：1 筆資料含 <code>who</code> 阿禾與數字 <code>minutes</code> 20。</p>
+</li>
+<li><p>將「提醒文字」的 <code>text</code> 值切換 <strong>Expression</strong>，輸入下方內容，再執行整條流程。
+你應該看到：<code>text</code> 為 <code>阿禾，今天讀書 20 分鐘</code>。</p>
+</li>
+</ol>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">{{ $json.who }}，今天讀書 {{ $json.minutes }} 分鐘</code></pre></div>
+<blockquote>
+<p>卡住了？分鐘數沒出現時先比對 <code>minutes</code> 的拼字與上游輸出，再重跑整條流程。</p>
+</blockquote>
+<details class="wf"><summary>完成版（m1/ex2-done.json）</summary><a href="files/m1/ex2-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M1 小練習② 學習提醒&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;name&quot;: &quot;手動&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.manualTrigger&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        0,
+        0
+      ],
+      &quot;parameters&quot;: {}
+    },
+    {
+      &quot;name&quot;: &quot;學習&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        220,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;a1&quot;,
+              &quot;name&quot;: &quot;who&quot;,
+              &quot;value&quot;: &quot;阿禾&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a2&quot;,
+              &quot;name&quot;: &quot;minutes&quot;,
+              &quot;value&quot;: 20,
+              &quot;type&quot;: &quot;number&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      }
+    },
+    {
+      &quot;name&quot;: &quot;提醒文字&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        440,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;a1&quot;,
+              &quot;name&quot;: &quot;text&quot;,
+              &quot;value&quot;: &quot;={{ $json.who }}，今天讀書 {{ $json.minutes }} 分鐘&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      }
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;手動&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;學習&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;學習&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;提醒文字&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}
+</code></pre></div>
+</details><h3 id="sec-7">看懂執行紀錄</h3>
+<p>打開 <strong>Executions</strong>，選擇剛剛的執行時間。位置見版本附頁。
+先看「假資料」輸出，再看「早報文字」輸入，確認兩邊同樣有 1 筆與三個欄位，最後比對 <code>report</code> 全句。
+刪除 <code>usd</code> 的那次執行，來源應缺少該欄位，最後文字應顯示「未提供」。</p>
+<p>故障驗收時打開失敗的「早報文字」，指出 <code>report</code> 的 <strong>Expression</strong> 引用出錯，記下錯誤訊息原文。修好後比對新的執行時間與輸出。</p>
+<h3 id="sec-8">驗收</h3>
+<ul>
+<li class="check"> 正常。早報輸出 1 筆，<code>report</code> 為 <code>【測試早報】假想甲收盤 100 元｜美元 32.85</code>。</li>
+<li class="check"> 缺資料。刪除 <code>usd</code> 後顯示 <code>美元 未提供</code>，沒有用 0 代填，恢復欄位後重跑成功。</li>
+<li class="check"> 重複。相同假資料連跑兩次，每次輸出各 1 筆，找到兩次執行紀錄。</li>
+<li class="check"> 故障。把 <code>report</code> 裡的美元取值暫改為 <code>{{ $(&#39;不存在&#39;).item.json.usd }}</code>，執行後指出「早報文字」的 <code>report</code> 引用失敗，再恢復原式並重跑。</li>
+<li class="check"> 變形題。用三個節點製作旅費草稿，自訂外幣預算與欄位名稱，說明每個欄位如何進入最後文字。</li>
+</ul>
+<details><summary id="sec-9">卡關救援</summary><ul>
+<li>改設定後結果沒變 → 查看執行時間及來源資料是否被 <strong>Pin data</strong> 釘住，釘選會固定測試輸出 → 先解除釘選並重跑整條流程 → 比對新的執行時間與改過的值。位置見版本附頁。</li>
+<li>畫面出現大括號原文 → 查看文字欄位的值模式 → 先切換 <strong>Expression</strong> → 確認預覽與執行輸出都換成資料。</li>
+<li>取不到欄位 → 查看上一個節點的輸出與連線 → 先核對大小寫與拼字 → 確認輸入有該欄位、輸出有對應文字。</li>
+<li>引用節點失敗 → 查看失敗節點的錯誤與 <code>report</code> → 先恢復 <code>$json.usd ?? &#39;未提供&#39;</code> → 重跑後確認完整早報與 1 筆輸出。</li>
+</ul>
+<p>求助時附 n8n 版本、預期與實際結果、哪個節點、錯誤訊息原文、已經試過什麼。截圖先遮住金鑰和個資。</p>
+</details><details><summary id="sec-10">官方連結</summary><p>依本地官方文件整理，查詢日期 2026-11-18。</p>
+<ul>
+<li><a href="https://docs.n8n.io/get-started/key-concept-glossary" target="_blank" rel="noopener noreferrer">n8n 名詞表</a><span class="dom">docs.n8n.io</span></li>
+<li><a href="https://docs.n8n.io/get-started/build-your-first-workflow" target="_blank" rel="noopener noreferrer">n8n 第一個流程</a><span class="dom">docs.n8n.io</span></li>
+</ul>
+</details><nav class="pager" aria-label="前後課程"><a class="prev" href="m0.html"><span>← 上一個</span>M0 準備環境</a><a class="next" href="m2.html"><span>下一個 →</span>M2 資料與 Expression</a></nav></article></main><aside class="toc" aria-label="本頁目錄"><div class="t">本頁</div><a href="#sec-1">成果與先修</a><a href="#sec-2">白話觀念</a><a href="#sec-3">素材包</a><a href="#sec-4">主線：假早報</a><a href="#sec-5">小練習①：午餐記帳</a><a href="#sec-6">小練習②：學習提醒</a><a href="#sec-7">看懂執行紀錄</a><a href="#sec-8">驗收</a><a href="#sec-9">卡關救援</a><a href="#sec-10">官方連結</a></aside><nav class="bottombar" aria-label="前後課程"><a href="m0.html">← M0 準備環境</a><a href="m2.html">M2 資料與 Expression →</a></nav></body></html>

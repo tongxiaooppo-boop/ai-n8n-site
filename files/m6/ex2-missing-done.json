@@ -1,0 +1,151 @@
+{
+  "name": "M6 小練習② 支出缺金額（缺金額）",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "手動",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0",
+              "name": "item",
+              "value": "午餐",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "一筆支出",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c0",
+              "leftValue": "={{ $json.amount }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "有金額嗎",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0",
+              "name": "text",
+              "value": "={{ $json.item + ' ' + $json.amount + ' 元' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "記帳",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "errorMessage": "=支出缺金額：{{ $json.item }}"
+      },
+      "name": "停下報錯",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        880,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "手動": {
+      "main": [
+        [
+          {
+            "node": "一筆支出",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "一筆支出": {
+      "main": [
+        [
+          {
+            "node": "有金額嗎",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "有金額嗎": {
+      "main": [
+        [
+          {
+            "node": "記帳",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "停下報錯",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

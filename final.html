@@ -1,0 +1,509 @@
+<!doctype html><html lang="zh-Hant" data-pal="teal"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>結業專題 生活題庫｜n8n 生活自動化</title><link rel="stylesheet" href="assets/style.css"><script src="assets/app.js" defer></script></head><body><a class="skip" href="#main">跳到正文</a><header class="topbar"><button type="button" aria-label="打開課表" aria-controls="schedule" aria-expanded="false">☰</button><span>結業專題 生活題庫</span></header><nav class="nav" id="schedule" aria-label="課表"><a class="brand" href="index.html">n8n 生活自動化</a><div class="stage">主線（M0–M5 照順序，之後照需要挑）</div><a class="mod" href="m0.html"><b>M0</b><span>準備環境</span></a><a class="mod" href="m1.html"><b>M1</b><span>第一個流程</span></a><a class="mod" href="m2.html"><b>M2</b><span>資料與 Expression</span></a><a class="mod" href="m3.html"><b>M3</b><span>判斷、多筆與合併</span></a><a class="mod" href="m4.html"><b>M4</b><span>API、RSS 與排程</span></a><a class="mod" href="m5.html"><b>M5</b><span>通知、憑證與檔案</span></a><a class="mod" href="m6.html"><b>M6</b><span>錯誤處理與可靠性</span></a><a class="mod" href="m7.html"><b>M7</b><span>Webhook 與子流程</span></a><a class="mod" href="m8.html"><b>M8</b><span>加入 AI（受限用法）</span></a><a class="mod" href="m9.html"><b>M9</b><span>上線與維護</span></a><div class="stage">結業</div><a class="mod cur" href="final.html" aria-current="page"><b>結業專題</b><span>生活題庫</span></a><div class="stage">選修</div><a class="mod" href="opt-a.html"><b>選修 A</b><span>AI Agent</span></a><a class="mod" href="opt-b.html"><b>選修 B</b><span>請 Claude 幫你寫流程</span></a><a class="mod" href="opt-c.html"><b>選修 C</b><span>更多資料來源與工具</span></a><div class="stage">附錄</div><a class="mod" href="version.html"><b>附錄</b><span>版本附頁</span></a></nav><button class="scrim" type="button" aria-label="關閉課表" tabindex="-1" hidden></button><main id="main"><article class="art"><div class="eyebrow">結業</div><h1>結業專題｜生活題庫</h1><div class="meta"><span class="tag">獨立完成一個生活流程：改需求、診斷失敗、復原各一次</span><span class="tag">約 4–6 小時</span><span class="tag">先修：<a href="m7.html">M7、M8</a></span><span class="tag">實測 n8n 2.48.4（2026-11-18）・你的畫面可能略有不同</span></div><h3 id="sec-1">結業要交什麼</h3>
+<p>成果：從 12 題生活題庫選一題，自己做出一個能跑的流程，並交出一張驗收紀錄表：<strong>正常 N、缺資料 M、故障 E</strong> 各一次的證據，加上<strong>改需求一次、診斷失敗一次、復原一次</strong>。
+先修：M7、M8（實際會用到 M2–M6、M9 的東西，題目表會列）。已經很熟 n8n 的人，可以直接看「怎麼選題」挑題，不必讀範例。
+要準備的帳號：看你選的題目（下面總表）；大部分只要 Telegram（M5 已建好）。
+費用：除了題 10（Gemini 額度，免費額度內 0 元）與題 12（LINE 與 ngrok 條件待查證），都是 0 元。時間約 4–6 小時。</p>
+<p>交件一共三樣：</p>
+<ol>
+<li>做好的流程（匯出成 JSON，不含憑證內容）。</li>
+<li>驗收紀錄表：用 <a href="files/f/final-log.csv" download>final-log.csv</a> 填，用 Excel 開。裡面有 N、M、E、改需求、診斷失敗、復原六列。每列寫：做了什麼、預期是什麼、實際是什麼（筆數或訊息原文）、過了嗎、執行紀錄編號。</li>
+<li>一段話：這次你改了什麼需求、哪裡壞過、怎麼確認修好了。</li>
+</ol>
+<p><strong>沒有「做出來」這回事，只有「驗過」。</strong> 流程匯入成功、節點全綠，都不算通過；每一種情境都要自己跑，把 <strong>Executions</strong> 裡看到的筆數和訊息記下來。</p>
+<blockquote>
+<p>⚠️ <strong>金額與個資提醒</strong>：股價、匯率只做紀錄與提醒，不是投資建議。題目裡的繳費、帳務、信件都是個資，截圖前遮住；金鑰與 Bot Token 不要寫進流程 JSON 或貼給別人。</p>
+</blockquote>
+<h3 id="sec-2">怎麼選題</h3>
+<p>先選你真的用得到的，會比較有動力把壞掉的地方修完。第一次做結業，建議從「易」開始。</p>
+<table>
+<thead>
+<tr>
+<th>題</th>
+<th>題目</th>
+<th>用到的模組</th>
+<th>節點數</th>
+<th>難度</th>
+<th>要的帳號</th>
+<th>是否免費</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>自選股盤後雷達（達門檻才通知）</td>
+<td>M2–M6、M9</td>
+<td>收集 5＋通知 5</td>
+<td>中</td>
+<td>Telegram</td>
+<td>是</td>
+</tr>
+<tr>
+<td>2</td>
+<td>旅費匯率提醒（低於自訂值）</td>
+<td>M2–M6、M9</td>
+<td>5</td>
+<td>易</td>
+<td>Telegram</td>
+<td>是</td>
+</tr>
+<tr>
+<td>3</td>
+<td>出門警特報（指定字詞才提醒）</td>
+<td>M3–M6、M9</td>
+<td>5</td>
+<td>易</td>
+<td>Telegram</td>
+<td>是</td>
+</tr>
+<tr>
+<td>4</td>
+<td>發票開獎提醒並存檔</td>
+<td>M3–M6、M9</td>
+<td>收集 5＋通知 5</td>
+<td>易</td>
+<td>Telegram</td>
+<td>是</td>
+</tr>
+<tr>
+<td>5</td>
+<td>家庭繳費清單提醒</td>
+<td>M2、M3、M5、M6、M9</td>
+<td>5</td>
+<td>易</td>
+<td>Telegram</td>
+<td>是</td>
+</tr>
+<tr>
+<td>6</td>
+<td>家用品補貨（不下單）</td>
+<td>M2、M3、M5、M9</td>
+<td>5</td>
+<td>易</td>
+<td>Telegram</td>
+<td>是</td>
+</tr>
+<tr>
+<td>7</td>
+<td>學習紀錄 Excel</td>
+<td>M2、M5、M6、M9</td>
+<td>5</td>
+<td>易</td>
+<td>不用</td>
+<td>是</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Gmail 購物通知簿</td>
+<td>M3、M5、M6、M9</td>
+<td>4</td>
+<td>中</td>
+<td>Google、Telegram</td>
+<td>是</td>
+</tr>
+<tr>
+<td>9</td>
+<td>出門借車提醒（台北指定站）</td>
+<td>M2–M6、M9</td>
+<td>5</td>
+<td>中</td>
+<td>Telegram</td>
+<td>是</td>
+</tr>
+<tr>
+<td>10</td>
+<td>家庭新聞三行摘要</td>
+<td>M3–M6、M8、M9</td>
+<td>收集 4＋AI 5＋通知 5</td>
+<td>中</td>
+<td>Telegram、Gemini</td>
+<td>免費額度內是</td>
+</tr>
+<tr>
+<td>11</td>
+<td>自選股除權息提醒</td>
+<td>M2–M6、M9</td>
+<td>收集 5＋通知 5</td>
+<td>中</td>
+<td>Telegram</td>
+<td>是</td>
+</tr>
+<tr>
+<td>12</td>
+<td>LINE 生活查詢機器人（進階）</td>
+<td>M2–M9</td>
+<td>共 12</td>
+<td>難</td>
+<td>LINE、ngrok</td>
+<td>有條件（待查證）</td>
+</tr>
+</tbody></table>
+<p>「收集＋通知」的題目要做成兩條流程（一條收資料、一條通知），節點數是兩條加起來；超過 6 個節點的流程，記得照 M3 的做法拆成子流程。「是」指你原本就有的設備與基本免費功能、不啟用計費；外部服務的現行限制以官網為準（待查證）。</p>
+<h3 id="sec-3">範例：旅費匯率提醒</h3>
+<p>這是題 2 的完整示範：每天早上抓央行匯率，美元低於你設的目標價才傳 Telegram。這題看起來簡單，但裡面有一個真的踩到的坑，後面會用它示範「改需求、診斷、復原」。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>每天早上（<strong>Schedule Trigger</strong>）</td>
+<td>每天定時啟動</td>
+<td>每天 8 點</td>
+</tr>
+<tr>
+<td>抓匯率（<strong>HTTP Request</strong>）</td>
+<td>抓央行每日匯率</td>
+<td>網址 <code>https://cpx.cbc.gov.tw/api/OpenData/FTDOpenData_Day</code>；逾時 20 秒</td>
+</tr>
+<tr>
+<td>最新一筆（<strong>Limit</strong>）</td>
+<td>只留最新一天</td>
+<td><strong>Keep</strong> 選 <strong>Last Items</strong>，筆數 1</td>
+</tr>
+<tr>
+<td>低於目標？（<strong>If</strong>）</td>
+<td>判斷要不要通知</td>
+<td>兩個條件都要成立（<strong>AND</strong>），見下面步驟</td>
+</tr>
+<tr>
+<td>傳通知（<strong>Telegram</strong>）</td>
+<td>傳訊息給自己</td>
+<td>憑證選你的 Telegram；<strong>Chat ID</strong> 填 <code>&lt;你的 Chat ID&gt;</code></td>
+</tr>
+</tbody></table>
+<p>位置見版本附頁；排程怎麼設、Telegram 憑證怎麼建，回 M4、M5。</p>
+<h4>做法：先照做一次</h4>
+<ol>
+<li><p>匯入 <a href="files/f/main-done.json" download>main-done.json</a>，「傳通知」選你的 Telegram 憑證，Chat ID 改成 <code>&lt;你的 Chat ID&gt;</code>。
+你應該看到：5 個節點，連成一條線；「低於目標？」下面有 true、false 兩個出口，只有 true 接「傳通知」。</p>
+</li>
+<li><p>先不管排程，按 <strong>Execute workflow</strong>。
+你應該看到（N）：「抓匯率」輸出 4,692 筆左右（央行把歷史每日資料都回給你）；「最新一筆」1 筆；「低於目標？」走 <strong>false</strong>，1 筆；「傳通知」沒有跑。2026-11-21 實測當天美元 32.936，目標價預設 30，所以不通知。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？「抓匯率」逾時或沒資料：先看網址有沒有貼對、逾時有沒有設到 20 秒（資料量大，預設時間可能不夠）。連續失敗就改用 M6 學的重試，不要一直手按。</p>
+</blockquote>
+<ol start="3">
+<li><p>改成你自己的目標：打開「低於目標？」，把第二個條件的 <code>30</code> 換成你的目標價。想測通知會不會真的送出，就暫時把 <code>30</code> 改大（例如 <code>40</code>），重跑。
+你應該看到：走 <strong>true</strong>，「傳通知」跑了，Telegram 收到「美元匯率 …（日期 央行資料，不是銀行牌告），低於你設的目標」。測完把目標價改回你的真值，不然每天都會被通知。</p>
+</li>
+<li><p>打開 <strong>Executions</strong>，確認這一次的紀錄筆數與走哪一路，記在驗收紀錄表。
+你應該看到：最近一筆是手動執行；各節點的筆數和你剛才看到的一樣。</p>
+</li>
+</ol>
+<details class="wf"><summary>完成版（f/main-done.json）</summary><a href="files/f/main-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;結業範例 旅費匯率提醒&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;parameters&quot;: {
+        &quot;rule&quot;: {
+          &quot;interval&quot;: [
+            {
+              &quot;triggerAtHour&quot;: 8
+            }
+          ]
+        }
+      },
+      &quot;name&quot;: &quot;每天早上&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.scheduleTrigger&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        0,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;url&quot;: &quot;https://cpx.cbc.gov.tw/api/OpenData/FTDOpenData_Day&quot;,
+        &quot;options&quot;: {
+          &quot;timeout&quot;: 20000
+        }
+      },
+      &quot;name&quot;: &quot;抓匯率&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.httpRequest&quot;,
+      &quot;typeVersion&quot;: 4.2,
+      &quot;position&quot;: [
+        220,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;maxItems&quot;: 1,
+        &quot;keep&quot;: &quot;lastItems&quot;
+      },
+      &quot;name&quot;: &quot;最新一筆&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.limit&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        440,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;conditions&quot;: {
+          &quot;options&quot;: {
+            &quot;caseSensitive&quot;: true,
+            &quot;leftValue&quot;: &quot;&quot;,
+            &quot;typeValidation&quot;: &quot;strict&quot;,
+            &quot;version&quot;: 2
+          },
+          &quot;conditions&quot;: [
+            {
+              &quot;id&quot;: &quot;c1&quot;,
+              &quot;leftValue&quot;: &quot;={{ $json.NTD_USD }}&quot;,
+              &quot;rightValue&quot;: &quot;&quot;,
+              &quot;operator&quot;: {
+                &quot;type&quot;: &quot;string&quot;,
+                &quot;operation&quot;: &quot;exists&quot;,
+                &quot;singleValue&quot;: true
+              }
+            },
+            {
+              &quot;id&quot;: &quot;c0&quot;,
+              &quot;leftValue&quot;: &quot;={{ $json.NTD_USD ? Number($json.NTD_USD) : null }}&quot;,
+              &quot;rightValue&quot;: 30,
+              &quot;operator&quot;: {
+                &quot;type&quot;: &quot;number&quot;,
+                &quot;operation&quot;: &quot;lt&quot;
+              }
+            }
+          ],
+          &quot;combinator&quot;: &quot;and&quot;
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;低於目標？&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.if&quot;,
+      &quot;typeVersion&quot;: 2.2,
+      &quot;position&quot;: [
+        660,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;chatId&quot;: &quot;&lt;你的 Chat ID&gt;&quot;,
+        &quot;text&quot;: &quot;={{ &#39;美元匯率 &#39; + $json.NTD_USD + &#39;（&#39; + $json[&#39;日期&#39;] + &#39; 央行資料，不是銀行牌告），低於你設的目標&#39; }}&quot;,
+        &quot;additionalFields&quot;: {
+          &quot;appendAttribution&quot;: false
+        }
+      },
+      &quot;name&quot;: &quot;傳通知&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.telegram&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        880,
+        0
+      ]
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;每天早上&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;抓匯率&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;抓匯率&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;最新一筆&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;最新一筆&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;低於目標？&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;低於目標？&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;傳通知&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}</code></pre></div>
+</details><h4>診斷示範：改需求、壞掉、修好</h4>
+<p>下面是真的發生過的事，不是編的。照著做一遍，你的驗收紀錄表就有「改需求、診斷失敗、復原」三列。</p>
+<p><strong>改需求。</strong> 原本的 If 只有一個條件：匯率小於 30。新需求是「來源如果沒回匯率，不能亂通知」，所以要測缺資料。</p>
+<p><strong>診斷失敗。</strong></p>
+<ol>
+<li>把「抓匯率」的網址暫時改成 <code>http://localhost:5678/webhook/mock?status=200</code>（M4、M6 用過的模擬來源，要先 <strong>Publish</strong>；它回 200 但裡面沒有匯率欄位）。</li>
+<li>把「低於目標？」先改成只留一個條件：<code>NTD_USD</code> 小於 30（刪掉「存在」那個條件）。重跑。
+你應該看到：<strong>走 true，「傳通知」跑了</strong>，收到「美元匯率 undefined（undefined 央行資料…）」這種訊息。流程是綠燈、通知也送出去了，但內容是錯的。</li>
+</ol>
+<blockquote>
+<p>卡住了？沒有走到 true：確認「抓匯率」網址真的是模擬來源、且模擬來源流程有 <strong>Publish</strong>；也確認第二個條件的左邊是 <code>NTD_USD</code>，不是別的欄位。</p>
+</blockquote>
+<ol start="3">
+<li>找原因。打開「最新一筆」的輸出，沒有 <code>NTD_USD</code> 這個欄位；再打開「低於目標？」，空值被當成「小於 30」，條件成立。
+你應該看到：輸入沒有匯率，If 卻判成 true。<strong>綠燈不代表對</strong>，只有打開輸出才知道。</li>
+</ol>
+<p><strong>復原。</strong></p>
+<ol>
+<li>加回第一個條件：<code>NTD_USD</code> 存在（<strong>exists</strong>），和「小於 30」用 <strong>AND</strong> 一起成立。</li>
+<li>用模擬來源重跑一次。
+你應該看到：走 <strong>false</strong>，沒有通知。</li>
+<li>把網址改回央行網址，再跑一次 N，確認回到原本的結果（false，1 筆）。
+你應該看到：N 的結果跟第 2 步一樣；缺資料那次的紀錄編號也記進驗收紀錄表。</li>
+</ol>
+<p><strong>503 故障（E）。</strong> 把網址改成 <code>http://localhost:5678/webhook/mock?status=503</code>。
+你應該看到：「抓匯率」紅燈，訊息「Service unavailable - try again later or consider setting this node to retry automatically」，後面都沒跑。這時要有人知道：M6 的錯誤流程與重試怎麼接，題目交件時至少要證明<strong>壞了你會知道</strong>。測完改回央行網址。</p>
+<h3 id="sec-4">題目卡</h3>
+<p>每題先做出 N，再依序測 M、E，最後改一次需求。下面的「建議節點」只是起點，數量和名稱可以自己調；沒寫到的來源網址，回對應模組找（只用白名單來源）。</p>
+<h4>題 1：自選股盤後雷達</h4>
+<ul>
+<li>需求：每天盤後讀你的自選股收盤價，只有達到你設的門檻才通知。</li>
+<li>建議節點：收集流程（排程、<strong>HTTP Request</strong>、<strong>Split Out</strong>、<strong>Filter</strong>、存檔）＋通知流程（讀檔、<strong>If</strong>、<strong>Telegram</strong>…）。M2–M6 的做法照用。</li>
+<li>N：有一檔達門檻，通知 1 則，內容含代號和價格。M：來源沒回某檔價格，不該用「空值」去比大小（見範例的診斷）。E：模擬 503，要有人被通知。</li>
+<li>風險：資料不是即時、不是投資建議；缺值誤算最容易發生。</li>
+</ul>
+<h4>題 2：旅費匯率提醒</h4>
+<ul>
+<li>需求：央行匯率低於你設的目標才通知。</li>
+<li>建議節點：就是上面的範例。</li>
+<li>N：不低於目標，不通知。M：模擬來源沒匯率欄位，不通知（診斷示範）。E：503，要有人知道。</li>
+<li>風險：這是央行資料，不是銀行實際成交的牌告價。</li>
+</ul>
+<h4>題 3：出門警特報</h4>
+<ul>
+<li>需求：氣象署警特報裡，出現你指定的字詞（例如你住的縣市）才通知。</li>
+<li>建議節點：排程、<strong>RSS Read</strong>、<strong>Filter</strong>（用 <strong>contains</strong>）、<strong>Remove Duplicates</strong>（同一則不重複通知）、<strong>Telegram</strong>。</li>
+<li>N：有符合的一則，通知 1 則。M：一則都沒有，0 筆、不通知，而且<strong>不等於故障</strong>。E：來源 503。</li>
+<li>風險：零筆不代表安全，這個流程不能保證你不會漏掉警報。</li>
+</ul>
+<h4>題 4：發票開獎提醒並存檔</h4>
+<ul>
+<li>需求：新的一期發票開獎資訊出來時通知，並把結果存成檔案。</li>
+<li>建議節點：收集流程（排程 Cron、來源、去重、寫檔）＋通知流程。發票的 Cron 在 M4 有做過。</li>
+<li>N：新的一期，通知 1 則。M：同一期不重複通知。E：來源失敗。</li>
+<li>風險：不含載具登入，也不保證自動對獎正確；中獎一定要對官方結果。</li>
+</ul>
+<h4>題 5：家庭繳費清單提醒</h4>
+<ul>
+<li>需求：讀本機的繳費清單，快到期的才提醒。</li>
+<li>測資：<a href="files/f/data-bills.csv" download>data-bills.csv</a>（4 列：電費重複一筆、瓦斯費沒填到期日）。</li>
+<li>建議節點：讀檔、解開 CSV、<strong>If</strong> 或 <strong>Filter</strong>（到期日在幾天內）、<strong>Telegram</strong>。</li>
+<li>N：快到期的各提醒 1 次。M：瓦斯費沒填到期日，<strong>不能算成「0 天到期」</strong>，要走另一路並標成「缺資料」。E：讀不到檔案。重複的電費要去重，不然被提醒兩次。</li>
+<li>風險：CSV 讀回來全是字串，空格子是「沒有這個欄位」（M5、M9 學過）；帳務是個資；<strong>不自動付款</strong>。</li>
+</ul>
+<h4>題 6：家用品補貨（不下單）</h4>
+<ul>
+<li>需求：庫存低於門檻就提醒，不自動下單。</li>
+<li>測資：<a href="files/f/data-pantry.csv" download>data-pantry.csv</a>（衛生紙 2／3 低於；洗衣精 1／1 剛好等於；米沒填數量）。</li>
+<li>建議節點：讀檔、解開 CSV、<strong>Edit Fields</strong>（把數量轉成數字）、<strong>If</strong>、<strong>Telegram</strong>。</li>
+<li>N：衛生紙要補。M：米沒填數量，<strong>不要默默當成沒事</strong>；要有一條路標出「資料缺」。邊界：洗衣精剛好等於，要自己決定算不算低於，再寫進驗收紀錄；改成含等於就是你的「改需求」。E：讀不到檔案。</li>
+<li>風險：人工庫存過期、重複採買。</li>
+</ul>
+<h4>題 7：學習紀錄 Excel</h4>
+<ul>
+<li>需求：把每天讀書的紀錄整理成 Excel 檔。進階變形：累積成一張總表。</li>
+<li>測資：<a href="files/f/data-study.csv" download>data-study.csv</a>（3 筆，數學沒填分鐘數）。</li>
+<li>建議節點：讀檔、解開 CSV、<strong>Edit Fields</strong>、<strong>Convert to File</strong>（XLSX）、寫檔。</li>
+<li>N：3 筆都寫進檔案。M：數學沒填分鐘數，不能算成 0 分鐘又悄悄寫進去；要標出來。E：寫檔的資料夾不存在（M5 的坑）。</li>
+<li>風險：檔名被覆寫、Excel 開著檔案時寫不進去。這題<strong>不用任何帳號</strong>。</li>
+</ul>
+<h4>題 8：Gmail 購物通知簿</h4>
+<ul>
+<li>需求：只讀你自己貼了測試標籤的購物通知信，整理後傳到手機。</li>
+<li>建議節點：<strong>Gmail</strong>、<strong>Edit Fields</strong>、<strong>If</strong>、<strong>Telegram</strong>（4 個節點；Google 授權回 M5 的 Google 關卡）。</li>
+<li>N：有貼標籤的 1 封，整理成 1 則通知。M：沒有符合的信，0 筆。E：授權過期或失效。</li>
+<li>風險：信件和訂單是個資，只用測試標籤，不要讀整個信箱；OAuth 會過期。實際節點選項（待查證）。</li>
+</ul>
+<h4>題 9：出門借車提醒（台北指定站）</h4>
+<ul>
+<li>需求：出門前查你指定的幾個站，還有車才提醒。</li>
+<li>建議節點：排程、<strong>HTTP Request</strong>、<strong>Filter</strong>（只留你指定的站）、<strong>If</strong>、<strong>Telegram</strong>。資料來源與欄位以白名單為準（待查證）。</li>
+<li>N：指定站有車，通知 1 則。M：指定站沒有出現在資料裡，要明確說「查不到」，不是「沒有車」。E：來源失敗。</li>
+<li>風險：車位隨時在變，資料也可能延遲，提醒只是參考。</li>
+</ul>
+<h4>題 10：家庭新聞三行摘要</h4>
+<ul>
+<li>需求：把今天新聞標題做成三行摘要，由你確認後再傳。</li>
+<li>建議節點：收集流程（M5 新聞快照）＋ AI 流程（M8 摘要子流程）＋通知流程。</li>
+<li>N：摘要 <code>ok: true</code>，每行對得回標題。M：沒有標題，不呼叫模型。E：標題夾帶命令（M8 的 E）。</li>
+<li>風險：幻覺、提示注入、新聞來源的使用條款；免費額度要看你自己的帳號（待查證）。</li>
+</ul>
+<h4>題 11：自選股除權息提醒</h4>
+<ul>
+<li>需求：自選股有除權息時提醒你；股利還沒公告的要標成「待公告」。</li>
+<li>建議節點：收集流程（排程、來源、<strong>Edit Fields</strong>、存檔）＋通知流程（<strong>If</strong>、<strong>Telegram</strong>）。</li>
+<li>N：有除權息的那檔提醒 1 則。M：股利欄位是空的，標成「待公告」，<strong>不能當成 0 元</strong>。E：來源失敗。</li>
+<li>風險：日期是民國年；空欄位；不是投資建議。</li>
+</ul>
+<h4>題 12：LINE 生活查詢機器人（進階）</h4>
+<ul>
+<li>需求：你傳「查 2330」給 LINE 官方帳號，機器人回你收盤價。</li>
+<li>規模：共 12 個節點（入口 5、查價 4、回覆 3），要分成多條流程；<strong>進階題，做不完不影響結業</strong>。</li>
+<li>要的帳號：LINE 官方帳號與 LINE Developers、ngrok（讓外面連得到你的電腦）；是否免費要看帳號條件（待查證）。</li>
+<li>一定要做的安全要求：<ul>
+<li><strong>驗簽章</strong>：確認訊息真的是 LINE 送來的（實際做法與節點待查證）。</li>
+<li><strong>只限本人</strong>：只回你自己的 userId，別人傳的不理。</li>
+<li><strong>處理重送</strong>：LINE 可能重送同一個事件，同一個事件不能回兩次。</li>
+<li>回覆用的 Channel access token 放在 <strong>Credentials</strong>，不寫進流程。</li>
+</ul>
+</li>
+<li>N：「查 2330」，回 1 則價格。M：「查 9999」查無此代號，回「查不到」。E：簽章錯誤，一律拒絕、不回覆。</li>
+<li>風險：reply token 有時效；userId 是個資。這些要求沒做到，<strong>不要公開</strong>，也不要把 M5 的 push 成功當成「收訊息成功」，兩件事不同。</li>
+</ul>
+<h3 id="sec-5">AI 幫你建的流程也要驗收</h3>
+<p>如果你請 AI（Claude 或其他）幫你寫流程，驗收規則不會變，<strong>還要更嚴</strong>：AI 給的流程通常匯入就綠燈，卻不代表邏輯對。</p>
+<ul>
+<li>一樣用 N／M／E 三種情境，自己跑，自己看 <strong>Executions</strong>。</li>
+<li>每個節點都要能說出「它在做什麼」，說不出來的就是你還沒懂的地方。</li>
+<li>特別測「缺資料」和「打錯欄位」：這兩種常常不會報錯，只是安靜地不提醒（選修 B 有實測）。</li>
+<li>不要給 AI 你的真憑證，也不要讓它幫你 <strong>Publish</strong>。</li>
+</ul>
+<p>做法與安全規則看選修 B。</p>
+<h3 id="sec-6">結業之後</h3>
+<ul>
+<li>把你的流程維持運作一週，每天看一次 <strong>Executions</strong>，把壞掉的原因記下來；備份與還原回 M9。</li>
+<li>n8n 官方有免費的學習課程與徽章（learn.n8n.io），想繼續進階可以去看，內容與費用以網站為準（待查證）。</li>
+<li>想再學：選修 A（Agent）、選修 B（讓 AI 幫你寫流程）、選修 C（網頁變動監看與其他主題）。</li>
+</ul>
+<details><summary id="sec-7">卡關救援</summary><ul>
+<li>流程匯入成功、也綠燈，但沒有通知 → 打開 <strong>Executions</strong>，看 If 走哪一路、每個節點筆數 → 通常是缺資料或欄位打錯，條件被判成 false → 補上「欄位存在」的條件，用 M 情境重跑確認。</li>
+<li>通知內容出現 <code>undefined</code> → 看通知節點的 Expression 讀的欄位 → 來源沒給這個欄位，卻照樣往下傳 → 在前面加 <strong>exists</strong> 條件，重跑確認走 false。</li>
+<li>排程沒有跑 → 先確認流程有 <strong>Publish</strong>、n8n 有開著、電腦沒睡著（M4、M9）→ 到 <strong>Executions</strong> 看有沒有排程啟動的紀錄 → 補跑後確認有紀錄。</li>
+<li>模擬來源沒回應 → 看模擬來源流程有沒有 <strong>Publish</strong> → 發布後等幾秒 → 再用瀏覽器打開網址確認有回應。</li>
+<li>通知重複 → 看有沒有去重（<strong>Remove Duplicates</strong>）與排程是否設了兩次 → 補上去重或刪掉多的排程 → 連跑兩次確認第二次 0 筆。</li>
+<li>做到一半，不知道哪裡改壞了 → 回到上一份備份或匯出的 JSON → 重新匯入比對（M9）→ 確認回到 N 的結果。</li>
+</ul>
+<p>求助時附 n8n 版本、哪個題目、哪個節點、錯誤訊息原文、已經試過什麼。截圖和貼文字前，先遮住 Bot Token、API 金鑰、Chat ID 和個資。</p>
+</details><details><summary id="sec-8">官方連結</summary><p>查詢日期 2026-11-21。</p>
+<ul>
+<li><a href="https://learn.n8n.io/" target="_blank" rel="noopener noreferrer">n8n 學習課程與徽章</a><span class="dom">learn.n8n.io</span></li>
+<li><a href="https://docs.n8n.io/workflows/export-import/" target="_blank" rel="noopener noreferrer">匯入與匯出流程</a><span class="dom">docs.n8n.io</span></li>
+<li><a href="https://docs.n8n.io/hosting/cli-commands/" target="_blank" rel="noopener noreferrer">n8n 指令列</a><span class="dom">docs.n8n.io</span></li>
+</ul>
+</details><nav class="pager" aria-label="前後課程"><a class="prev" href="m9.html"><span>← 上一個</span>M9 上線與維護</a><a class="next" href="opt-a.html"><span>下一個 →</span>選修 A AI Agent</a></nav></article></main><aside class="toc" aria-label="本頁目錄"><div class="t">本頁</div><a href="#sec-1">結業要交什麼</a><a href="#sec-2">怎麼選題</a><a href="#sec-3">範例：旅費匯率提醒</a><a href="#sec-4">題目卡</a><a href="#sec-5">AI 幫你建的流程也要驗收</a><a href="#sec-6">結業之後</a><a href="#sec-7">卡關救援</a><a href="#sec-8">官方連結</a></aside><nav class="bottombar" aria-label="前後課程"><a href="m9.html">← M9 上線與維護</a><a href="opt-a.html">選修 A AI Agent →</a></nav></body></html>

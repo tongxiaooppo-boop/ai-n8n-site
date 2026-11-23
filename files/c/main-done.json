@@ -1,0 +1,154 @@
+{
+  "name": "選修 C 網頁變動監看",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 1"
+            }
+          ]
+        }
+      },
+      "name": "每週一早上",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.ey.gov.tw/Page/5AC44DE3213868A9",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 20000
+        }
+      },
+      "name": "抓頁面",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "dataPropertyName": "data",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "names",
+              "cssSelector": "a[href*='RSS_Content']",
+              "returnArray": true
+            },
+            {
+              "key": "links",
+              "cssSelector": "a[href*='RSS_Content']",
+              "returnValue": "attribute",
+              "attribute": "href",
+              "returnArray": true
+            }
+          ]
+        },
+        "options": {
+          "trimValues": true,
+          "cleanUpText": true
+        }
+      },
+      "name": "擷取頻道",
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 基準：最近一次「人工確認過」的頻道名稱。確認變動沒問題後，自己改這一行\nconst baseline = [\"消費者保護消費資（警）訊\", \"消費者保護新聞稿\", \"本院新聞\", \"即時新聞澄清（資料來源：各部會）\", \"部會新聞（資料來源：各部會）\", \"院長行程\", \"院會決議\"];\nconst names = $input.first().json.names || [];\n// 一個都抓不到＝網頁改版或抓錯頁，不是頻道全被刪了\nif (names.length === 0) {\n  return [{ json: { status: '解析失敗', message: '⚠ 行政院 RSS 頻道頁一個頻道都抓不到，可能是網頁改版，請手動打開網頁確認' } }];\n}\nconst added = names.filter(n => !baseline.includes(n));\nconst removed = baseline.filter(n => !names.includes(n));\n// 沒變動就輸出 0 筆，後面的通知不會跑\nif (added.length === 0 && removed.length === 0) return [];\nreturn [{ json: { status: '有變動', added, removed,\n  message: '行政院 RSS 頻道有變動\\n新增：' + (added.join('、') || '無') + '\\n移除：' + (removed.join('、') || '無') + '\\n確認後記得更新基準' } }];"
+      },
+      "name": "比對基準",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "<你的 Chat ID>",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "name": "傳通知",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        880,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "每週一早上": {
+      "main": [
+        [
+          {
+            "node": "抓頁面",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "抓頁面": {
+      "main": [
+        [
+          {
+            "node": "擷取頻道",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "擷取頻道": {
+      "main": [
+        [
+          {
+            "node": "比對基準",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "比對基準": {
+      "main": [
+        [
+          {
+            "node": "傳通知",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

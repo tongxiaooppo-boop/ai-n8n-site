@@ -1,0 +1,120 @@
+{
+  "name": "M3 小練習 家庭採買合併",
+  "nodes": [
+    {
+      "name": "手動",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "name": "阿禾清單",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        -100
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\"list\": [{\"item\": \"衛生紙\", \"qty\": 1, \"who\": \"阿禾\"}, {\"item\": \"牛奶\", \"qty\": 2, \"who\": \"阿禾\"}]}",
+        "options": {}
+      }
+    },
+    {
+      "name": "小嵐清單",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        100
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\"list\": [{\"item\": \"雞蛋\", \"qty\": 1, \"who\": \"小嵐\"}, {\"item\": \"牛奶\", \"qty\": 1, \"who\": \"小嵐\"}, {\"item\": \"洗碗精\", \"qty\": 1, \"who\": \"小嵐\"}]}",
+        "options": {}
+      }
+    },
+    {
+      "name": "合併",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "name": "拆成多筆",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "fieldToSplitOut": "list",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "手動": {
+      "main": [
+        [
+          {
+            "node": "阿禾清單",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "小嵐清單",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "阿禾清單": {
+      "main": [
+        [
+          {
+            "node": "合併",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "小嵐清單": {
+      "main": [
+        [
+          {
+            "node": "合併",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "合併": {
+      "main": [
+        [
+          {
+            "node": "拆成多筆",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1,0 +1,111 @@
+{
+  "name": "M5 小練習② 數字寫進 Google 試算表",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "手動",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "fileSelector": "/home/node/.n8n-files/snap/{stock,fx}.csv",
+        "options": {}
+      },
+      "name": "讀快照",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "csv",
+        "options": {
+          "enableBOM": true
+        }
+      },
+      "name": "解開CSV",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "name": "寫進試算表",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        660,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "手動": {
+      "main": [
+        [
+          {
+            "node": "讀快照",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "讀快照": {
+      "main": [
+        [
+          {
+            "node": "解開CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "解開CSV": {
+      "main": [
+        [
+          {
+            "node": "寫進試算表",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

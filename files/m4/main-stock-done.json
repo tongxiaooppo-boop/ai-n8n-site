@@ -1,0 +1,168 @@
+{
+  "name": "M4 主線 股",
+  "nodes": [
+    {
+      "name": "排程",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "抓股價",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "url": "https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL",
+        "options": {}
+      }
+    },
+    {
+      "name": "挑自選股",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.Code }}",
+              "rightValue": "2330",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "c2",
+              "leftValue": "={{ $json.Code }}",
+              "rightValue": "2317",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      }
+    },
+    {
+      "name": "整理",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "dataDate",
+              "value": "={{ (Number($json.Date.slice(0,3))+1911) + '-' + $json.Date.slice(3,5) + '-' + $json.Date.slice(5,7) }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "code",
+              "value": "={{ $json.Code }}",
+              "type": "string"
+            },
+            {
+              "id": "a3",
+              "name": "name",
+              "value": "={{ $json.Name }}",
+              "type": "string"
+            },
+            {
+              "id": "a4",
+              "name": "close",
+              "value": "={{ $json.ClosingPrice === '' ? null : Number($json.ClosingPrice) }}",
+              "type": "number"
+            },
+            {
+              "id": "a5",
+              "name": "change",
+              "value": "={{ $json.ClosingPrice === '' ? null : Number($json.Change) }}",
+              "type": "number"
+            },
+            {
+              "id": "a6",
+              "name": "valid",
+              "value": "={{ $json.ClosingPrice !== '' }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "排程": {
+      "main": [
+        [
+          {
+            "node": "抓股價",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "抓股價": {
+      "main": [
+        [
+          {
+            "node": "挑自選股",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "挑自選股": {
+      "main": [
+        [
+          {
+            "node": "整理",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

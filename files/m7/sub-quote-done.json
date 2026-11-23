@@ -1,0 +1,150 @@
+{
+  "name": "M7 查價子流程",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "code",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "name": "子流程入口",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "name": "抓全部股價",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c0",
+              "leftValue": "={{ $json.Code === $('子流程入口').first().json.code }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "挑這檔",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "alwaysOutputData": true,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0",
+              "name": "code",
+              "value": "={{ $('子流程入口').first().json.code }}",
+              "type": "string"
+            },
+            {
+              "id": "f1",
+              "name": "found",
+              "value": "={{ !!$json.Code }}",
+              "type": "boolean"
+            },
+            {
+              "id": "f2",
+              "name": "text",
+              "value": "={{ !$json.Code ? '找不到 ' + $('子流程入口').first().json.code + '（只查得到上市股票）' : $json.ClosingPrice === '' ? $json.Name + '（' + $json.Code + '）' + (Number($json.Date.slice(0,3)) + 1911) + '-' + $json.Date.slice(3,5) + '-' + $json.Date.slice(5,7) + ' 沒有成交' : $json.Name + '（' + $json.Code + '）' + (Number($json.Date.slice(0,3)) + 1911) + '-' + $json.Date.slice(3,5) + '-' + $json.Date.slice(5,7) + ' 收盤 ' + Number($json.ClosingPrice) + ' 元（盤後資料，不是即時價）' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "回覆內容",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        660,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "子流程入口": {
+      "main": [
+        [
+          {
+            "node": "抓全部股價",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "抓全部股價": {
+      "main": [
+        [
+          {
+            "node": "挑這檔",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "挑這檔": {
+      "main": [
+        [
+          {
+            "node": "回覆內容",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

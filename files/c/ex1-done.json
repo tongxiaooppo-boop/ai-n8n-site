@@ -1,0 +1,121 @@
+{
+  "name": "選修 C 小練習① 自製網頁測試",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "手動執行",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "h1",
+              "name": "html",
+              "value": "<ul><li><a href=\"https://www.ey.gov.tw/RSS_Content.aspx?ModuleType=1\">消費者保護消費資（警）訊</a></li><li><a href=\"https://www.ey.gov.tw/RSS_Content.aspx?ModuleType=2\">消費者保護新聞稿</a></li><li><a href=\"https://www.ey.gov.tw/RSS_Content.aspx?ModuleType=3\">本院新聞</a></li><li><a href=\"https://www.ey.gov.tw/RSS_Content.aspx?ModuleType=4\">即時新聞澄清（資料來源：各部會）</a></li><li><a href=\"https://www.ey.gov.tw/RSS_Content.aspx?ModuleType=5\">部會新聞（資料來源：各部會）</a></li><li><a href=\"https://www.ey.gov.tw/RSS_Content.aspx?ModuleType=6\">院長行程</a></li><li><a href=\"https://www.ey.gov.tw/RSS_Content.aspx?ModuleType=7\">院會決議</a></li></ul>",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "假網頁",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "dataPropertyName": "html",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "names",
+              "cssSelector": "a[href*='RSS_Content']",
+              "returnArray": true
+            },
+            {
+              "key": "links",
+              "cssSelector": "a[href*='RSS_Content']",
+              "returnValue": "attribute",
+              "attribute": "href",
+              "returnArray": true
+            }
+          ]
+        },
+        "options": {
+          "trimValues": true,
+          "cleanUpText": true
+        }
+      },
+      "name": "擷取頻道",
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 基準：最近一次「人工確認過」的頻道名稱。確認變動沒問題後，自己改這一行\nconst baseline = [\"消費者保護消費資（警）訊\", \"消費者保護新聞稿\", \"本院新聞\", \"即時新聞澄清（資料來源：各部會）\", \"部會新聞（資料來源：各部會）\", \"院長行程\", \"院會決議\"];\nconst names = $input.first().json.names || [];\n// 一個都抓不到＝網頁改版或抓錯頁，不是頻道全被刪了\nif (names.length === 0) {\n  return [{ json: { status: '解析失敗', message: '⚠ 行政院 RSS 頻道頁一個頻道都抓不到，可能是網頁改版，請手動打開網頁確認' } }];\n}\nconst added = names.filter(n => !baseline.includes(n));\nconst removed = baseline.filter(n => !names.includes(n));\n// 沒變動就輸出 0 筆，後面的通知不會跑\nif (added.length === 0 && removed.length === 0) return [];\nreturn [{ json: { status: '有變動', added, removed,\n  message: '行政院 RSS 頻道有變動\\n新增：' + (added.join('、') || '無') + '\\n移除：' + (removed.join('、') || '無') + '\\n確認後記得更新基準' } }];"
+      },
+      "name": "比對基準",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "手動執行": {
+      "main": [
+        [
+          {
+            "node": "假網頁",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "假網頁": {
+      "main": [
+        [
+          {
+            "node": "擷取頻道",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "擷取頻道": {
+      "main": [
+        [
+          {
+            "node": "比對基準",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

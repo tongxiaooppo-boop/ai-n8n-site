@@ -1,0 +1,45 @@
+{
+  "name": "M2 主線 起始版",
+  "nodes": [
+    {
+      "name": "手動",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "name": "測資陣列",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\"data\": [{\"Date\": \"1151117\", \"Code\": \"2330\", \"Name\": \"假想甲\", \"ClosingPrice\": \"2170.00\", \"Change\": \"-45.0000\"}, {\"Date\": \"1151117\", \"Code\": \"2317\", \"Name\": \"假想乙\", \"ClosingPrice\": \"219.00\", \"Change\": \"0.5000\"}, {\"Date\": \"1151117\", \"Code\": \"9999\", \"Name\": \"假想丙\", \"ClosingPrice\": \"\", \"Change\": \"0.0000\"}, {\"Date\": \"1151117\", \"Code\": \"1101\", \"Name\": \"假想丁\", \"ClosingPrice\": \"30.00\", \"Change\": \"1.0000\"}]}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "手動": {
+      "main": [
+        [
+          {
+            "node": "測資陣列",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

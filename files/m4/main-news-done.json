@@ -1,0 +1,146 @@
+{
+  "name": "M4 主線 聞",
+  "nodes": [
+    {
+      "name": "排程",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "抓新聞",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "url": "https://www.ey.gov.tw/RSS_Content.aspx?ModuleType=3",
+        "options": {}
+      }
+    },
+    {
+      "name": "取前5則",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "maxItems": 5
+      }
+    },
+    {
+      "name": "新的才留",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "operation": "removeItemsSeenInPreviousExecutions",
+        "dedupeValue": "={{ $json.link }}",
+        "options": {}
+      }
+    },
+    {
+      "name": "整理",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "title",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "link",
+              "value": "={{ $json.link }}",
+              "type": "string"
+            },
+            {
+              "id": "a3",
+              "name": "pubDate",
+              "value": "={{ $json.isoDate }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "排程": {
+      "main": [
+        [
+          {
+            "node": "抓新聞",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "抓新聞": {
+      "main": [
+        [
+          {
+            "node": "取前5則",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "取前5則": {
+      "main": [
+        [
+          {
+            "node": "新的才留",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "新的才留": {
+      "main": [
+        [
+          {
+            "node": "整理",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

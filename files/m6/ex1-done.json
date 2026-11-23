@@ -1,0 +1,92 @@
+{
+  "name": "M6 小練習① 植物提醒來源故障",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "name": "排程",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:5678/webhook/mock?status=503&t=plant",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "name": "抓澆水資料",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0",
+              "name": "text",
+              "value": "今天記得澆水",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "提醒內容",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        440,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "排程": {
+      "main": [
+        [
+          {
+            "node": "抓澆水資料",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "抓澆水資料": {
+      "main": [
+        [
+          {
+            "node": "提醒內容",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

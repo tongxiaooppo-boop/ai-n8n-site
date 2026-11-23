@@ -1,0 +1,94 @@
+{
+  "name": "M0 小練習② 家庭提醒",
+  "nodes": [
+    {
+      "name": "手動",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "name": "家事",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "who",
+              "value": "阿禾",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "task",
+              "value": "倒垃圾",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "name": "提醒草稿",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "draft",
+              "value": "=提醒{{ $json.who }}：{{ $json.task }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "手動": {
+      "main": [
+        [
+          {
+            "node": "家事",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "家事": {
+      "main": [
+        [
+          {
+            "node": "提醒草稿",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

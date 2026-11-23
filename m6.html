@@ -1,0 +1,871 @@
+<!doctype html><html lang="zh-Hant" data-pal="teal"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>M6 錯誤處理與可靠性｜n8n 生活自動化</title><link rel="stylesheet" href="assets/style.css"><script src="assets/app.js" defer></script></head><body><a class="skip" href="#main">跳到正文</a><header class="topbar"><button type="button" aria-label="打開課表" aria-controls="schedule" aria-expanded="false">☰</button><span>M6 錯誤處理與可靠性</span></header><nav class="nav" id="schedule" aria-label="課表"><a class="brand" href="index.html">n8n 生活自動化</a><div class="stage">主線（M0–M5 照順序，之後照需要挑）</div><a class="mod" href="m0.html"><b>M0</b><span>準備環境</span></a><a class="mod" href="m1.html"><b>M1</b><span>第一個流程</span></a><a class="mod" href="m2.html"><b>M2</b><span>資料與 Expression</span></a><a class="mod" href="m3.html"><b>M3</b><span>判斷、多筆與合併</span></a><a class="mod" href="m4.html"><b>M4</b><span>API、RSS 與排程</span></a><a class="mod" href="m5.html"><b>M5</b><span>通知、憑證與檔案</span></a><a class="mod cur" href="m6.html" aria-current="page"><b>M6</b><span>錯誤處理與可靠性</span></a><a class="mod" href="m7.html"><b>M7</b><span>Webhook 與子流程</span></a><a class="mod" href="m8.html"><b>M8</b><span>加入 AI（受限用法）</span></a><a class="mod" href="m9.html"><b>M9</b><span>上線與維護</span></a><div class="stage">結業</div><a class="mod" href="final.html"><b>結業專題</b><span>生活題庫</span></a><div class="stage">選修</div><a class="mod" href="opt-a.html"><b>選修 A</b><span>AI Agent</span></a><a class="mod" href="opt-b.html"><b>選修 B</b><span>請 Claude 幫你寫流程</span></a><a class="mod" href="opt-c.html"><b>選修 C</b><span>更多資料來源與工具</span></a><div class="stage">附錄</div><a class="mod" href="version.html"><b>附錄</b><span>版本附頁</span></a></nav><button class="scrim" type="button" aria-label="關閉課表" tabindex="-1" hidden></button><main id="main"><article class="art"><div class="eyebrow">主線（M0–M5 照順序，之後照需要挑）</div><h1>M6｜錯誤處理與可靠性</h1><div class="meta"><span class="tag">來源壞掉時收到提醒，不會傳出空白早報</span><span class="tag">約 2 小時</span><span class="tag">先修：<a href="m5.html">M5</a></span><span class="tag">實測 n8n 2.48.4（2026-11-18）・你的畫面可能略有不同</span></div><h3 id="sec-1">成果與先修</h3>
+<p>來源壞掉時，n8n 會自己再試幾次；真的失敗，手機收到一則「⚠️ 流程失敗」，而不是安靜地送出空的或舊的早報。
+先完成 M5。已經會設定 <strong>Publish</strong> 與 Telegram 憑證的人，可以直接從主線第 2 段開始。
+不用新帳號，沿用 M5 的 Telegram Bot。費用 0 元，時間約 90–120 分鐘。股價與匯率只供紀錄與提醒。</p>
+<h3 id="sec-2">白話觀念</h3>
+<p>四件事，各一句話記住：</p>
+<ol>
+<li><strong>逾時（Timeout）</strong>：等太久就放棄，免得流程卡住。逾時的錯誤訊息是「The connection was aborted, perhaps the server is offline」，不是「timeout」。</li>
+<li><strong>重試（Retry）</strong>：Max Tries 3＝<strong>總共呼叫 3 次</strong>，不是失敗後再試 3 次。只對「暫時壞」有用（503、逾時）；401（鑰匙錯）、404（網址錯）重試幾次都一樣，不該重試。</li>
+<li><strong>錯誤流程（Error Workflow）</strong>：一條獨立的小流程，用 <strong>Error Trigger</strong> 開頭；在別條流程的 <strong>Workflow Settings</strong> 指定它，那條流程失敗時就會跑它。<strong>只有已 Publish、由排程或 Webhook 正式觸發的執行失敗才會觸發；手動按執行失敗不會</strong>（實測）。</li>
+<li><strong>壞掉不冒充正常</strong>：資料錯誤要變成「真正的失敗」（<strong>Stop And Error</strong>），才會留下紅色紀錄並觸發錯誤流程；不要用 0 或空字串假裝成功。</li>
+</ol>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">抓資料（Timeout 10 秒 → 失敗就重試，最多 3 次）→ 還是失敗 → 這條流程失敗
+                                                          ↓
+                    錯誤觸發 → 整理錯誤 → 傳到Telegram（另一條流程，手機收到提醒）</code></pre></div>
+<h3 id="sec-3">素材包</h3>
+<ul>
+<li><a href="files/m6/main-fx-done.json" download>main-fx-done.json</a>：「匯」收集流程加上逾時與重試（只含關鍵 4 節點）。</li>
+<li><a href="files/m6/main-errwf-done.json" download>main-errwf-done.json</a>：錯誤流程（3 節點：錯誤觸發 → 整理錯誤 → 傳到Telegram）。</li>
+<li><a href="files/m6/ex1-done.json" download>ex1-done.json</a>：植物提醒來源故障（每分鐘排程，模擬來源回 503）。</li>
+<li><a href="files/m6/ex2-done.json" download>ex2-done.json</a>：支出缺金額，正常版。</li>
+<li><a href="files/m6/ex2-missing-done.json" download>ex2-missing-done.json</a>：支出缺金額，缺金額版。</li>
+</ul>
+<p>用 <strong>Import from File</strong> 匯入，位置見版本附頁。錯誤流程匯入後要自己選 Telegram 憑證、填 chat ID。小練習①用的是 M4 的模擬來源，要先 <strong>Publish</strong>（M4 已做過；沒做就匯入 <a href="files/common/mock-source.json" download>mock-source.json</a> 並發布）。</p>
+<h3 id="sec-4">主線：來源壞掉時收到提醒</h3>
+<p>先替收集流程加逾時與重試，再建一條錯誤流程，並接到四條收集流程上。</p>
+<h4>第 1 段：替 M5 的收集流程加逾時與重試</h4>
+<p>在你自己的 M5「匯」流程上改這兩處，M5 的「存快照」節點保留；<code>main-fx-done.json</code> 只當對照（它只含前 4 個關鍵節點）。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>排程（<strong>Schedule Trigger</strong>）</td>
+<td>每天啟動</td>
+<td>每天 7 點，不變</td>
+</tr>
+<tr>
+<td>抓匯率（<strong>HTTP Request</strong>）</td>
+<td>取得央行歷史資料</td>
+<td><strong>Options</strong> 加 <strong>Timeout</strong> <code>10000</code>（毫秒，＝10 秒）；節點 <strong>Settings</strong> 開 <strong>Retry On Fail</strong>、<strong>Max Tries</strong> <code>3</code>、<strong>Wait Between Tries</strong> <code>2000</code>（毫秒）</td>
+</tr>
+<tr>
+<td>最新一筆（<strong>Limit</strong>）</td>
+<td>取最後一筆</td>
+<td>不變</td>
+</tr>
+<tr>
+<td>整理（<strong>Edit Fields (Set)</strong>）</td>
+<td>整理成快照欄位</td>
+<td>不變</td>
+</tr>
+</tbody></table>
+<ol>
+<li><p>打開「抓匯率」，在 <strong>Options</strong> 加 <strong>Timeout</strong>，填 <code>10000</code>。位置見版本附頁。
+你應該看到：Options 裡多了一項 Timeout，值是 10000。</p>
+</li>
+<li><p>在同一個節點的 <strong>Settings</strong> 打開 <strong>Retry On Fail</strong>，<strong>Max Tries</strong> 填 <code>3</code>，<strong>Wait Between Tries</strong> 填 <code>2000</code>。
+你應該看到：三個欄位都有值；Max Tries 是 3，意思是失敗時總共最多呼叫 3 次。</p>
+</li>
+<li><p>執行整條流程一次，確認照常。
+你應該看到：整理 1 筆，<code>status</code> 是 <code>ok</code>，和 M5 一樣；沒有紅色節點。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？找不到 Retry On Fail：它在節點的 <strong>Settings</strong> 分頁，不是 <strong>Parameters</strong>；找不到 Timeout：它在 <strong>Options</strong> 的新增選項裡。位置見版本附頁。</p>
+</blockquote>
+<p>股、警、聞三條也照同樣的兩處設定改（Timeout 10000、Retry On Fail、Max Tries 3、Wait Between Tries 2000），不重複步驟。</p>
+<details class="wf"><summary>「匯」逾時與重試完成版（m6/main-fx-done.json）</summary><a href="files/m6/main-fx-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M6 主線 匯（逾時＋重試）&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;parameters&quot;: {
+        &quot;rule&quot;: {
+          &quot;interval&quot;: [
+            {
+              &quot;triggerAtHour&quot;: 7
+            }
+          ]
+        }
+      },
+      &quot;name&quot;: &quot;排程&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.scheduleTrigger&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        0,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;url&quot;: &quot;https://cpx.cbc.gov.tw/api/OpenData/FTDOpenData_Day&quot;,
+        &quot;options&quot;: {
+          &quot;timeout&quot;: 10000
+        }
+      },
+      &quot;name&quot;: &quot;抓匯率&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.httpRequest&quot;,
+      &quot;typeVersion&quot;: 4.2,
+      &quot;retryOnFail&quot;: true,
+      &quot;maxTries&quot;: 3,
+      &quot;waitBetweenTries&quot;: 2000,
+      &quot;position&quot;: [
+        220,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;maxItems&quot;: 1,
+        &quot;keep&quot;: &quot;lastItems&quot;
+      },
+      &quot;name&quot;: &quot;最新一筆&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.limit&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        440,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;f0&quot;,
+              &quot;name&quot;: &quot;kind&quot;,
+              &quot;value&quot;: &quot;fx&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f1&quot;,
+              &quot;name&quot;: &quot;label&quot;,
+              &quot;value&quot;: &quot;美元&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f2&quot;,
+              &quot;name&quot;: &quot;value&quot;,
+              &quot;value&quot;: &quot;={{ $json.NTD_USD ? Number($json.NTD_USD) : null }}&quot;,
+              &quot;type&quot;: &quot;number&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f3&quot;,
+              &quot;name&quot;: &quot;dataDate&quot;,
+              &quot;value&quot;: &quot;={{ $json[&#39;日期&#39;] ? $json[&#39;日期&#39;].slice(0,4) + &#39;-&#39; + $json[&#39;日期&#39;].slice(4,6) + &#39;-&#39; + $json[&#39;日期&#39;].slice(6,8) : null }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f4&quot;,
+              &quot;name&quot;: &quot;status&quot;,
+              &quot;value&quot;: &quot;={{ $json.NTD_USD ? &#39;ok&#39; : &#39;missing&#39; }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f5&quot;,
+              &quot;name&quot;: &quot;fetchedAt&quot;,
+              &quot;value&quot;: &quot;={{ $now.toISO() }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;整理&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        660,
+        0
+      ]
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;排程&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;抓匯率&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;抓匯率&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;最新一筆&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;最新一筆&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;整理&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}</code></pre></div>
+</details><h4>第 2 段：建錯誤流程並接上</h4>
+<p>建一條獨立的流程，專門在別條流程失敗時傳訊息到手機。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>錯誤觸發（<strong>Error Trigger</strong>）</td>
+<td>別條流程失敗時啟動</td>
+<td>不用設定</td>
+</tr>
+<tr>
+<td>整理錯誤（<strong>Edit Fields (Set)</strong>）</td>
+<td>組成一段通知文字</td>
+<td>欄位 <code>text</code>，<strong>String</strong>，Expression 如下</td>
+</tr>
+<tr>
+<td>傳到Telegram（<strong>Telegram</strong>）</td>
+<td>傳到手機</td>
+<td>選憑證、填 chat ID，文字 <code>{{ $json.text }}</code>，<strong>Append n8n Attribution</strong> 關掉</td>
+</tr>
+</tbody></table>
+<p><code>text</code> 的 <strong>Expression</strong>（照抄素材）：</p>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">⚠️ 流程失敗：{{ $json.workflow.name }}
+節點：{{ $json.execution.lastNodeExecuted }}
+訊息：{{ $json.execution.error.message }}
+時間：{{ $now.toFormat(&#39;MM-dd HH:mm&#39;) }}</code></pre></div>
+<p>四行分別是：哪條流程、哪個節點、錯誤訊息原文、什麼時間。<code>$json.workflow</code>、<code>$json.execution</code> 是 Error Trigger 交出來的資料，不用自己準備。</p>
+<ol>
+<li><p>匯入 <code>main-errwf-done.json</code>，在「傳到Telegram」選你的 Telegram 憑證、填 chat ID，確認 <strong>Append n8n Attribution</strong> 是關的。位置見版本附頁。
+你應該看到：3 個節點依序連線，傳到Telegram 沒有紅色警示。</p>
+</li>
+<li><p>錯誤流程本身要不要 <strong>Publish</strong>：如果介面要求才 <strong>Publish</strong>（待查證）。
+你應該看到：流程列表裡有「M6 錯誤流程」。</p>
+</li>
+<li><p>到股、匯、警、聞四條流程，各自打開 <strong>Workflow Settings</strong>，把 <strong>Error Workflow</strong> 選成「M6 錯誤流程」。位置見版本附頁。
+你應該看到：四條流程的 Error Workflow 都顯示「M6 錯誤流程」。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？Error Workflow 清單裡找不到「M6 錯誤流程」：先確認錯誤流程開頭是 <strong>Error Trigger</strong>，並且已存檔。</p>
+</blockquote>
+<ol start="4">
+<li>測試：<strong>不能用手動執行測</strong>，手動執行失敗不會觸發錯誤流程。改用下面的小練習①：它是每分鐘的排程，<strong>Publish</strong> 後屬於正式觸發。
+你應該看到：手機收到「⚠️ 流程失敗：…／節點：…／訊息：…／時間：…」四行；Executions 裡錯誤流程有自己的一筆紀錄。Telegram 實際畫面（待查證）。</li>
+</ol>
+<details class="wf"><summary>錯誤流程完成版（m6/main-errwf-done.json）</summary><a href="files/m6/main-errwf-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M6 錯誤流程&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;parameters&quot;: {},
+      &quot;name&quot;: &quot;錯誤觸發&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.errorTrigger&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        0,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;f0&quot;,
+              &quot;name&quot;: &quot;text&quot;,
+              &quot;value&quot;: &quot;=⚠️ 流程失敗：{{ $json.workflow.name }}\n節點：{{ $json.execution.lastNodeExecuted }}\n訊息：{{ $json.execution.error.message }}\n時間：{{ $now.toFormat(&#39;MM-dd HH:mm&#39;) }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;整理錯誤&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        220,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;chatId&quot;: &quot;&quot;,
+        &quot;text&quot;: &quot;={{ $json.text }}&quot;,
+        &quot;additionalFields&quot;: {
+          &quot;appendAttribution&quot;: false
+        }
+      },
+      &quot;name&quot;: &quot;傳到Telegram&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.telegram&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        440,
+        0
+      ]
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;錯誤觸發&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;整理錯誤&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;整理錯誤&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;傳到Telegram&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}</code></pre></div>
+</details><h3 id="sec-5">小練習①：植物提醒來源故障</h3>
+<p>每分鐘到模擬來源要「澆水資料」，來源故意回 503；重試用完仍失敗，錯誤流程就傳通知到手機。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>排程（<strong>Schedule Trigger</strong>）</td>
+<td>每分鐘啟動</td>
+<td>每 1 分鐘</td>
+</tr>
+<tr>
+<td>抓澆水資料（<strong>HTTP Request</strong>）</td>
+<td>呼叫模擬來源</td>
+<td>網址 <code>http://localhost:5678/webhook/mock?status=503&amp;t=plant</code>；逾時與重試同主線（Timeout 10000、Max Tries 3、Wait 2000）</td>
+</tr>
+<tr>
+<td>提醒內容（<strong>Edit Fields (Set)</strong>）</td>
+<td>準備提醒文字</td>
+<td><code>text</code>＝<code>今天記得澆水</code>，<strong>String</strong></td>
+</tr>
+</tbody></table>
+<ol>
+<li><p>匯入 <code>ex1-done.json</code>，打開 <strong>Workflow Settings</strong>，<strong>Error Workflow</strong> 選「M6 錯誤流程」。
+你應該看到：3 個節點依序連線；Error Workflow 顯示「M6 錯誤流程」。</p>
+</li>
+<li><p>按 <strong>Publish</strong>，等 1–2 分鐘。模擬來源也要是已 <strong>Publish</strong> 的狀態。
+你應該看到：Executions 出現失敗紀錄，「抓澆水資料」是紅色的，訊息「Service unavailable - try again later…」；手機收到錯誤通知。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？訊息是「The connection was aborted, perhaps the server is offline」，多半是模擬來源沒 <strong>Publish</strong>，回去發布再等一分鐘。</p>
+</blockquote>
+<ol start="3">
+<li><strong>測完一定要 Unpublish</strong>，不然每分鐘會發一則通知到手機。
+你應該看到：流程列表上它不再顯示已發布；之後 Executions 不再新增紀錄。</li>
+</ol>
+<p>變形題：只把網址裡的 <code>status=503</code> 改成 <code>status=401</code>（其他參數保留，完整網址是 <code>http://localhost:5678/webhook/mock?status=401&amp;t=plant</code>），比較重試的差別。401 是鑰匙錯，重試 3 次都一樣失敗；這種節點應該關掉 <strong>Retry On Fail</strong>，直接通知。（不附素材，自己改網址。）</p>
+<details class="wf"><summary>完成版（m6/ex1-done.json）</summary><a href="files/m6/ex1-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M6 小練習① 植物提醒來源故障&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;parameters&quot;: {
+        &quot;rule&quot;: {
+          &quot;interval&quot;: [
+            {
+              &quot;field&quot;: &quot;minutes&quot;,
+              &quot;minutesInterval&quot;: 1
+            }
+          ]
+        }
+      },
+      &quot;name&quot;: &quot;排程&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.scheduleTrigger&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        0,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;url&quot;: &quot;http://localhost:5678/webhook/mock?status=503&amp;t=plant&quot;,
+        &quot;options&quot;: {
+          &quot;timeout&quot;: 10000
+        }
+      },
+      &quot;name&quot;: &quot;抓澆水資料&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.httpRequest&quot;,
+      &quot;typeVersion&quot;: 4.2,
+      &quot;retryOnFail&quot;: true,
+      &quot;maxTries&quot;: 3,
+      &quot;waitBetweenTries&quot;: 2000,
+      &quot;position&quot;: [
+        220,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;f0&quot;,
+              &quot;name&quot;: &quot;text&quot;,
+              &quot;value&quot;: &quot;今天記得澆水&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;提醒內容&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        440,
+        0
+      ]
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;排程&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;抓澆水資料&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;抓澆水資料&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;提醒內容&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}</code></pre></div>
+</details><h3 id="sec-6">小練習②：支出缺金額</h3>
+<p>一筆支出若沒有金額，要變成真正的失敗，而不是記成 0 元。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>手動（<strong>Manual Trigger</strong>）</td>
+<td>手動啟動</td>
+<td>無</td>
+</tr>
+<tr>
+<td>一筆支出（<strong>Edit Fields (Set)</strong>）</td>
+<td>準備測資</td>
+<td><code>item</code>＝<code>午餐</code>（<strong>String</strong>）、<code>amount</code>＝<code>120</code>（<strong>Number</strong>）</td>
+</tr>
+<tr>
+<td>有金額嗎（<strong>If</strong>）</td>
+<td>檢查金額是否存在</td>
+<td>條件：<code>{{ $json.amount }}</code> 的 <strong>exists</strong>（<strong>Number</strong>）</td>
+</tr>
+<tr>
+<td>記帳（<strong>Edit Fields (Set)</strong>）</td>
+<td>true 分支，組成記帳文字</td>
+<td><code>text</code>＝<code>{{ $json.item + &#39; &#39; + $json.amount + &#39; 元&#39; }}</code></td>
+</tr>
+<tr>
+<td>停下報錯（<strong>Stop And Error</strong>）</td>
+<td>false 分支，讓整次執行失敗</td>
+<td>錯誤訊息 <code>支出缺金額：{{ $json.item }}</code></td>
+</tr>
+</tbody></table>
+<ol>
+<li><p>匯入正常版 <code>ex2-done.json</code>，執行。
+你應該看到：「有金額嗎」的 true 分支 1 筆，「記帳」輸出 <code>午餐 120 元</code>。</p>
+</li>
+<li><p>匯入缺金額版 <code>ex2-missing-done.json</code>（「一筆支出」沒有 <code>amount</code>），執行。
+你應該看到：「有金額嗎」的 false 分支 1 筆，「停下報錯」變紅，訊息「支出缺金額：午餐」，整次執行算失敗，「記帳」沒有跑。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？缺金額版記成「午餐 undefined 元」或 0 元：檢查「有金額嗎」的 true、false 是不是接反，缺金額那一筆應走 false 分支。</p>
+</blockquote>
+<ol start="3">
+<li>想一想：如果這條是排程正式觸發，這個失敗會觸發錯誤流程；手動按的不會。
+你應該看到：手動執行時只有這次執行是紅的，手機沒有通知。</li>
+</ol>
+<details class="wf"><summary>正常版（m6/ex2-done.json）</summary><a href="files/m6/ex2-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M6 小練習② 支出缺金額（正常）&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;parameters&quot;: {},
+      &quot;name&quot;: &quot;手動&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.manualTrigger&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        0,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;f0&quot;,
+              &quot;name&quot;: &quot;item&quot;,
+              &quot;value&quot;: &quot;午餐&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f1&quot;,
+              &quot;name&quot;: &quot;amount&quot;,
+              &quot;value&quot;: 120,
+              &quot;type&quot;: &quot;number&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;一筆支出&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        220,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;conditions&quot;: {
+          &quot;options&quot;: {
+            &quot;caseSensitive&quot;: true,
+            &quot;leftValue&quot;: &quot;&quot;,
+            &quot;typeValidation&quot;: &quot;loose&quot;,
+            &quot;version&quot;: 2
+          },
+          &quot;conditions&quot;: [
+            {
+              &quot;id&quot;: &quot;c0&quot;,
+              &quot;leftValue&quot;: &quot;={{ $json.amount }}&quot;,
+              &quot;rightValue&quot;: &quot;&quot;,
+              &quot;operator&quot;: {
+                &quot;type&quot;: &quot;number&quot;,
+                &quot;operation&quot;: &quot;exists&quot;,
+                &quot;singleValue&quot;: true
+              }
+            }
+          ],
+          &quot;combinator&quot;: &quot;and&quot;
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;有金額嗎&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.if&quot;,
+      &quot;typeVersion&quot;: 2.2,
+      &quot;position&quot;: [
+        440,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;f0&quot;,
+              &quot;name&quot;: &quot;text&quot;,
+              &quot;value&quot;: &quot;={{ $json.item + &#39; &#39; + $json.amount + &#39; 元&#39; }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;記帳&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        660,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;errorMessage&quot;: &quot;=支出缺金額：{{ $json.item }}&quot;
+      },
+      &quot;name&quot;: &quot;停下報錯&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.stopAndError&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        880,
+        0
+      ]
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;手動&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;一筆支出&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;一筆支出&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;有金額嗎&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;有金額嗎&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;記帳&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ],
+        [
+          {
+            &quot;node&quot;: &quot;停下報錯&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}</code></pre></div>
+</details><details class="wf"><summary>缺金額版（m6/ex2-missing-done.json）</summary><a href="files/m6/ex2-missing-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M6 小練習② 支出缺金額（缺金額）&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;parameters&quot;: {},
+      &quot;name&quot;: &quot;手動&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.manualTrigger&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        0,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;f0&quot;,
+              &quot;name&quot;: &quot;item&quot;,
+              &quot;value&quot;: &quot;午餐&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;一筆支出&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        220,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;conditions&quot;: {
+          &quot;options&quot;: {
+            &quot;caseSensitive&quot;: true,
+            &quot;leftValue&quot;: &quot;&quot;,
+            &quot;typeValidation&quot;: &quot;loose&quot;,
+            &quot;version&quot;: 2
+          },
+          &quot;conditions&quot;: [
+            {
+              &quot;id&quot;: &quot;c0&quot;,
+              &quot;leftValue&quot;: &quot;={{ $json.amount }}&quot;,
+              &quot;rightValue&quot;: &quot;&quot;,
+              &quot;operator&quot;: {
+                &quot;type&quot;: &quot;number&quot;,
+                &quot;operation&quot;: &quot;exists&quot;,
+                &quot;singleValue&quot;: true
+              }
+            }
+          ],
+          &quot;combinator&quot;: &quot;and&quot;
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;有金額嗎&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.if&quot;,
+      &quot;typeVersion&quot;: 2.2,
+      &quot;position&quot;: [
+        440,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;f0&quot;,
+              &quot;name&quot;: &quot;text&quot;,
+              &quot;value&quot;: &quot;={{ $json.item + &#39; &#39; + $json.amount + &#39; 元&#39; }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;記帳&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        660,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;errorMessage&quot;: &quot;=支出缺金額：{{ $json.item }}&quot;
+      },
+      &quot;name&quot;: &quot;停下報錯&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.stopAndError&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        880,
+        0
+      ]
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;手動&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;一筆支出&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;一筆支出&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;有金額嗎&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;有金額嗎&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;記帳&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ],
+        [
+          {
+            &quot;node&quot;: &quot;停下報錯&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}</code></pre></div>
+</details><h3 id="sec-7">看懂執行紀錄</h3>
+<p>打開 <strong>Executions</strong>。重試的那幾次不會各自一筆紀錄，<strong>整次執行只有一筆</strong>；節點裡是否看得到嘗試次數（待查證）。
+錯誤流程是另一筆獨立紀錄：失敗的流程一筆、「M6 錯誤流程」一筆，要兩筆一起看。
+<strong>Stop And Error</strong> 的節點是紅色，後面不會再跑；先看哪個節點紅、訊息是什麼，再看前一個節點輸出了幾筆。
+不能只看有沒有綠燈：錯誤通知有沒有送到手機，要和紀錄一起確認。</p>
+<h3 id="sec-8">驗收</h3>
+<ul>
+<li class="check"> 正常 N。主線「匯」照常執行，整理 1 筆、<code>status</code> 是 <code>ok</code>。</li>
+<li class="check"> 缺資料 M。匯入 <code>ex2-missing-done.json</code> 執行：缺金額版失敗，訊息是「支出缺金額：午餐」，不是記成 0 元。</li>
+<li class="check"> 重跑 D。小練習①在 <strong>Publish</strong> 期間，每分鐘一筆失敗紀錄與一則通知；<strong>Unpublish</strong> 後停止。錯誤通知<strong>不保證只送一次</strong>，補跑前先看手機與 Executions。</li>
+<li class="check"> 故障 E。確認小練習①已選錯誤流程、Publish 後等 1–2 分鐘：503 重試後失敗，Executions 有失敗紀錄，手機收到錯誤通知。</li>
+<li class="check"> 變形題。把小練習①網址的 <code>status=503</code> 改成 <code>status=401</code>（其他參數保留），說明為什麼這個節點應該關掉重試；測完 <strong>Unpublish</strong>。</li>
+</ul>
+<details><summary id="sec-9">卡關救援</summary><ul>
+<li>手動執行失敗卻沒收到通知 → 看流程是怎麼觸發的 → 手動執行不會觸發錯誤流程，改用已 <strong>Publish</strong> 的排程 → 等排程跑過，確認 Executions 出現錯誤流程那一筆。</li>
+<li>錯誤流程完全沒跑 → 看失敗流程的 <strong>Workflow Settings</strong> → <strong>Error Workflow</strong> 沒選「M6 錯誤流程」，選好 → 再讓它失敗一次確認。</li>
+<li>手機每分鐘一直響 → 看小練習①是不是還在發布 → 忘了 <strong>Unpublish</strong>，馬上取消發布 → 確認 Executions 不再新增。</li>
+<li>「The connection was aborted, perhaps the server is offline」→ 看是不是逾時，或模擬來源沒 <strong>Publish</strong> → 發布模擬來源、等幾秒再跑 → 確認訊息改變。</li>
+<li>「Service unavailable - try again later…」→ 看網址是不是 <code>?status=503</code> → 來源回 503、重試用完才失敗，這是預期結果 → 想要正常就只把 <code>status=503</code> 改成 <code>status=200</code>，其他參數保留。</li>
+<li>401 一直重試 → 看 <strong>Retry On Fail</strong> 是不是還開著 → 401 重試也一樣失敗，關掉重試、直接通知 → 確認只呼叫一次就失敗。</li>
+<li>錯誤通知也沒來 → 去 Executions 看錯誤流程那一筆 → 可能是 Telegram 憑證或通知管道本身壞了，修好憑證與 chat ID → 手機收到測試訊息。<strong>不要宣稱告警一定送達。</strong></li>
+</ul>
+<p>求助時附 n8n 版本、哪個節點、錯誤訊息原文、已經試過什麼。截圖和貼文字前，先遮住 Bot token、chat ID 和個資。</p>
+</details><details><summary id="sec-10">官方連結</summary><p>依本地官方文件與實測紀錄整理，查詢日期 2026-11-21。</p>
+<ul>
+<li><a href="https://docs.n8n.io/build/flow-logic/error-handling" target="_blank" rel="noopener noreferrer">n8n 錯誤處理</a><span class="dom">docs.n8n.io</span></li>
+<li><a href="https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.errortrigger/" target="_blank" rel="noopener noreferrer">Error Trigger 節點</a><span class="dom">docs.n8n.io</span></li>
+<li><a href="https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.stopanderror/" target="_blank" rel="noopener noreferrer">Stop And Error 節點</a><span class="dom">docs.n8n.io</span></li>
+</ul>
+</details><nav class="pager" aria-label="前後課程"><a class="prev" href="m5.html"><span>← 上一個</span>M5 通知、憑證與檔案</a><a class="next" href="m7.html"><span>下一個 →</span>M7 Webhook 與子流程</a></nav></article></main><aside class="toc" aria-label="本頁目錄"><div class="t">本頁</div><a href="#sec-1">成果與先修</a><a href="#sec-2">白話觀念</a><a href="#sec-3">素材包</a><a href="#sec-4">主線：來源壞掉時收到提醒</a><a href="#sec-5">小練習①：植物提醒來源故障</a><a href="#sec-6">小練習②：支出缺金額</a><a href="#sec-7">看懂執行紀錄</a><a href="#sec-8">驗收</a><a href="#sec-9">卡關救援</a><a href="#sec-10">官方連結</a></aside><nav class="bottombar" aria-label="前後課程"><a href="m5.html">← M5 通知、憑證與檔案</a><a href="m7.html">M7 Webhook 與子流程 →</a></nav></body></html>

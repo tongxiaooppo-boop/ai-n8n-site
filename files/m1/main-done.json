@@ -1,0 +1,100 @@
+{
+  "name": "M1 主線 假早報",
+  "nodes": [
+    {
+      "name": "手動",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "name": "假資料",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "stockName",
+              "value": "假想甲",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "stockClose",
+              "value": 100,
+              "type": "number"
+            },
+            {
+              "id": "a3",
+              "name": "usd",
+              "value": 32.85,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "name": "早報文字",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "report",
+              "value": "=【測試早報】{{ $json.stockName }}收盤 {{ $json.stockClose }} 元｜美元 {{ $json.usd ?? '未提供' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "手動": {
+      "main": [
+        [
+          {
+            "node": "假資料",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "假資料": {
+      "main": [
+        [
+          {
+            "node": "早報文字",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

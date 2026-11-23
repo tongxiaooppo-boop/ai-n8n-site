@@ -1,0 +1,131 @@
+{
+  "name": "M5 主線 早報",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7,
+              "triggerAtMinute": 10
+            }
+          ]
+        }
+      },
+      "name": "排程",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "fileSelector": "/home/node/.n8n-files/snap/*.csv",
+        "options": {}
+      },
+      "name": "讀快照",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "csv",
+        "options": {
+          "enableBOM": true
+        }
+      },
+      "name": "解開CSV",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "name": "合成一筆",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "",
+        "text": "={{ '生活早報 ' + $now.toFormat('yyyy-MM-dd') + '\\n' + $json.data.map(r => '・' + r.label + (r.value ? ' ' + r.value : '') + (r.status === 'missing' ? ' 資料不足' : '') + (r.dataDate ? '（' + r.dataDate + '）' : '') + ((r.fetchedAt || '').startsWith($now.toFormat('yyyy-MM-dd')) ? '' : ' ⚠舊資料')).join('\\n') }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "name": "傳到Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        880,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "排程": {
+      "main": [
+        [
+          {
+            "node": "讀快照",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "讀快照": {
+      "main": [
+        [
+          {
+            "node": "解開CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "解開CSV": {
+      "main": [
+        [
+          {
+            "node": "合成一筆",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "合成一筆": {
+      "main": [
+        [
+          {
+            "node": "傳到Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

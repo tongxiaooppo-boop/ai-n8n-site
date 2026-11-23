@@ -1,0 +1,145 @@
+{
+  "name": "M6 主線 匯（逾時＋重試）",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "name": "排程",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://cpx.cbc.gov.tw/api/OpenData/FTDOpenData_Day",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "name": "抓匯率",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "maxItems": 1,
+        "keep": "lastItems"
+      },
+      "name": "最新一筆",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0",
+              "name": "kind",
+              "value": "fx",
+              "type": "string"
+            },
+            {
+              "id": "f1",
+              "name": "label",
+              "value": "美元",
+              "type": "string"
+            },
+            {
+              "id": "f2",
+              "name": "value",
+              "value": "={{ $json.NTD_USD ? Number($json.NTD_USD) : null }}",
+              "type": "number"
+            },
+            {
+              "id": "f3",
+              "name": "dataDate",
+              "value": "={{ $json['日期'] ? $json['日期'].slice(0,4) + '-' + $json['日期'].slice(4,6) + '-' + $json['日期'].slice(6,8) : null }}",
+              "type": "string"
+            },
+            {
+              "id": "f4",
+              "name": "status",
+              "value": "={{ $json.NTD_USD ? 'ok' : 'missing' }}",
+              "type": "string"
+            },
+            {
+              "id": "f5",
+              "name": "fetchedAt",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "整理",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        660,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "排程": {
+      "main": [
+        [
+          {
+            "node": "抓匯率",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "抓匯率": {
+      "main": [
+        [
+          {
+            "node": "最新一筆",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "最新一筆": {
+      "main": [
+        [
+          {
+            "node": "整理",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

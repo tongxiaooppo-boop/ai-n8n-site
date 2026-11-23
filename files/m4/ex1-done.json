@@ -1,0 +1,153 @@
+{
+  "name": "M4 小練習 出門看警報",
+  "nodes": [
+    {
+      "name": "排程",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "抓警特報",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "url": "https://www.cwa.gov.tw/rss/Data/cwa_warning.xml",
+        "options": {}
+      }
+    },
+    {
+      "name": "挑關鍵字",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c0",
+              "leftValue": "={{ $json.title }}",
+              "rightValue": "颱風",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.title }}",
+              "rightValue": "豪雨",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "c2",
+              "leftValue": "={{ $json.title }}",
+              "rightValue": "強風",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      }
+    },
+    {
+      "name": "提醒草稿",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "text",
+              "value": "={{ '出門注意：' + $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "link",
+              "value": "={{ $json.link }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "排程": {
+      "main": [
+        [
+          {
+            "node": "抓警特報",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "抓警特報": {
+      "main": [
+        [
+          {
+            "node": "挑關鍵字",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "挑關鍵字": {
+      "main": [
+        [
+          {
+            "node": "提醒草稿",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

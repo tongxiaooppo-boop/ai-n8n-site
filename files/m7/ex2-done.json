@@ -1,0 +1,92 @@
+{
+  "name": "M7 小練習② 手機查採買清單",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "m7-shopping",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "查清單",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "webhookId": "m7-shopping",
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0",
+              "name": "items",
+              "value": "=[\"牛奶\",\"雞蛋\",\"衛生紙\"]",
+              "type": "array"
+            },
+            {
+              "id": "f1",
+              "name": "text",
+              "value": "牛奶、雞蛋、衛生紙",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "採買清單",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, count: $json.items.length, text: $json.text } }}",
+        "options": {}
+      },
+      "name": "回覆清單",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        440,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "查清單": {
+      "main": [
+        [
+          {
+            "node": "採買清單",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "採買清單": {
+      "main": [
+        [
+          {
+            "node": "回覆清單",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1,0 +1,441 @@
+<!doctype html><html lang="zh-Hant" data-pal="teal"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>選修 C 更多資料來源與工具｜n8n 生活自動化</title><link rel="stylesheet" href="assets/style.css"><script src="assets/app.js" defer></script></head><body><a class="skip" href="#main">跳到正文</a><header class="topbar"><button type="button" aria-label="打開課表" aria-controls="schedule" aria-expanded="false">☰</button><span>選修 C 更多資料來源與工具</span></header><nav class="nav" id="schedule" aria-label="課表"><a class="brand" href="index.html">n8n 生活自動化</a><div class="stage">主線（M0–M5 照順序，之後照需要挑）</div><a class="mod" href="m0.html"><b>M0</b><span>準備環境</span></a><a class="mod" href="m1.html"><b>M1</b><span>第一個流程</span></a><a class="mod" href="m2.html"><b>M2</b><span>資料與 Expression</span></a><a class="mod" href="m3.html"><b>M3</b><span>判斷、多筆與合併</span></a><a class="mod" href="m4.html"><b>M4</b><span>API、RSS 與排程</span></a><a class="mod" href="m5.html"><b>M5</b><span>通知、憑證與檔案</span></a><a class="mod" href="m6.html"><b>M6</b><span>錯誤處理與可靠性</span></a><a class="mod" href="m7.html"><b>M7</b><span>Webhook 與子流程</span></a><a class="mod" href="m8.html"><b>M8</b><span>加入 AI（受限用法）</span></a><a class="mod" href="m9.html"><b>M9</b><span>上線與維護</span></a><div class="stage">結業</div><a class="mod" href="final.html"><b>結業專題</b><span>生活題庫</span></a><div class="stage">選修</div><a class="mod" href="opt-a.html"><b>選修 A</b><span>AI Agent</span></a><a class="mod" href="opt-b.html"><b>選修 B</b><span>請 Claude 幫你寫流程</span></a><a class="mod cur" href="opt-c.html" aria-current="page"><b>選修 C</b><span>更多資料來源與工具</span></a><div class="stage">附錄</div><a class="mod" href="version.html"><b>附錄</b><span>版本附頁</span></a></nav><button class="scrim" type="button" aria-label="關閉課表" tabindex="-1" hidden></button><main id="main"><article class="art"><div class="eyebrow">選修</div><h1>選修 C｜更多資料來源與工具</h1><div class="meta"><span class="tag">監看網頁變動，以及其他進階主題</span><span class="tag">依主題</span><span class="tag">先修：<a href="m4.html">M4、M5</a></span><span class="tag">實測 n8n 2.48.4（2026-11-18）・你的畫面可能略有不同</span></div><h3 id="sec-1">成果與先修</h3>
+<p>做一個「網頁變動監看」：每週一抓行政院的 RSS 頻道總表，跟你最近一次確認過的清單比對，有新增、移除或解析失敗才傳 Telegram，沒變動就不吵你。另外有一節「其他進階主題」，簡介幾個之後可以再學的東西。
+先修 M4、M5（排程、<strong>HTTP Request</strong>、Telegram 憑證）。
+要準備的帳號：不用新帳號，通知沿用 M5 的 Telegram。
+費用 0 元。時間約 90 分鐘（進階主題依你選的而定）。</p>
+<h3 id="sec-2">白話觀念</h3>
+<ol>
+<li><strong>基準</strong>：你「最近一次人工確認過」的清單。每次抓到的結果都拿來跟它比，有差別才通知。基準寫在 <strong>Code</strong> 節點的第一行，你確認變動沒問題，就自己改那一行。<strong>這不是自動保存每次版本。</strong></li>
+<li><strong>0 筆 ＝ 沒變</strong>：比對後沒有差別，節點就輸出 0 筆，後面的 Telegram 就不會跑。這是故意的，不是壞掉。</li>
+<li><strong>空擷取 ≠ 全部被刪</strong>：如果一個頻道都抓不到，多半是網頁改版或抓錯頁，不是 7 個頻道同時被刪。所以程式要另外標成「解析失敗」，不能寫成「7 個都移除」。</li>
+<li><strong>禮貌</strong>：每週一次就好；只抓白名單裡的頁面；不抓要登入的網站；蝦皮等購物網站的價格是動態載入、而且有使用條款，不要碰；保留來源連結。<strong>n8n 不能幫你操作瀏覽器點按鈕</strong>，只能抓網頁原始內容。</li>
+</ol>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">每週一早上 → 抓頁面（HTTP Request） → 擷取頻道（HTML） → 比對基準（Code） → 傳通知（Telegram）
+                                                               └─ 沒變動：0 筆，到此為止</code></pre></div>
+<h3 id="sec-3">素材包</h3>
+<ul>
+<li><a href="files/c/main-done.json" download>main-done.json</a>：主線，行政院 RSS 頻道監看（5 節點）。</li>
+<li><a href="files/c/ex1-done.json" download>ex1-done.json</a>：小練習，自製網頁測試（4 節點，不用連網）。</li>
+</ul>
+<p>用 <strong>Import from File</strong> 匯入，位置見版本附頁。匯入後要自己補的事：「傳通知」選你的 Telegram 憑證，Chat ID 改成 <code>&lt;你的 Chat ID&gt;</code>。</p>
+<h3 id="sec-4">主線：行政院 RSS 頻道監看</h3>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>每週一早上（<strong>Schedule Trigger</strong>）</td>
+<td>每週一早上啟動</td>
+<td><strong>Custom (Cron)</strong>：<code>0 9 * * 1</code>（週一 9 點）</td>
+</tr>
+<tr>
+<td>抓頁面（<strong>HTTP Request</strong>）</td>
+<td>抓行政院 RSS 頻道總表網頁</td>
+<td>網址 <code>https://www.ey.gov.tw/Page/5AC44DE3213868A9</code>；回應格式 <strong>Text</strong>；逾時 20 秒</td>
+</tr>
+<tr>
+<td>擷取頻道（<strong>HTML</strong>，<strong>Extract HTML Content</strong>）</td>
+<td>從網頁裡挑出頻道名稱與連結</td>
+<td>CSS selector <code>a[href*=&#39;RSS_Content&#39;]</code>；<code>names</code> 取文字、<code>links</code> 取 <code>href</code> 屬性，兩個都回傳陣列</td>
+</tr>
+<tr>
+<td>比對基準（<strong>Code</strong>）</td>
+<td>跟基準比，決定要不要通知</td>
+<td>只改第一行 <code>baseline</code>；程式的做法見下面</td>
+</tr>
+<tr>
+<td>傳通知（<strong>Telegram</strong>）</td>
+<td>傳訊息給自己</td>
+<td>憑證選你的 Telegram；訊息讀 <code>$json.message</code></td>
+</tr>
+</tbody></table>
+<p><strong>Code</strong> 節點是本課第一次用。你<strong>不用會寫程式</strong>，只要會改第一行的 <code>baseline</code>（基準清單）。程式做三件事：</p>
+<ol>
+<li><p>一個頻道都抓不到：輸出 1 筆「解析失敗」。</p>
+</li>
+<li><p>跟基準一樣：輸出 <strong>0 筆</strong>，後面的通知不會跑。</p>
+</li>
+<li><p>有不同：輸出 1 筆，列出新增和移除。</p>
+</li>
+<li><p>匯入 <code>main-done.json</code>，「傳通知」選你的 Telegram 憑證，Chat ID 改成 <code>&lt;你的 Chat ID&gt;</code>。
+你應該看到：5 個節點連成一條線；「比對基準」打開是一段程式，第一行是 <code>baseline</code>，有 7 個頻道名稱。</p>
+</li>
+<li><p>按 <strong>Execute workflow</strong>（不用等週一）。
+你應該看到（N）：「抓頁面」1 筆；「擷取頻道」1 筆，<code>names</code> 有 7 個名稱，<code>links</code> 有 7 個網址；「比對基準」<strong>0 筆</strong>；「傳通知」沒有跑。2026-11-21 實測抓到的 7 個頻道是：消費者保護消費資（警）訊、消費者保護新聞稿、本院新聞、即時新聞澄清（資料來源：各部會）、部會新聞（資料來源：各部會）、院長行程、院會決議，也就是素材裡的基準。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？「比對基準」有輸出、顯示有變動：先打開「擷取頻道」，把 <code>names</code> 跟基準逐個比，看是網頁真的改了，還是名稱有多一個空白、括號全形半形不同。確認是真的變動，就更新基準那一行。</p>
+</blockquote>
+<ol start="3">
+<li><p>打開 <strong>Executions</strong>，看這一次的紀錄。
+你應該看到：手動執行的一筆；各節點的筆數跟上一步一樣，「比對基準」是 0 筆。<strong>0 筆不是失敗</strong>。</p>
+</li>
+<li><p>測 503（E）：把「抓頁面」網址暫時改成 <code>http://localhost:5678/webhook/mock?status=503</code>（M4 的模擬來源，要先 <strong>Publish</strong>），重跑。
+你應該看到：「抓頁面」紅燈，訊息跟 M6、結業範例一樣：「Service unavailable - try again later or consider setting this node to retry automatically」，後面的節點都沒跑。測完把網址改回行政院。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？改完網址後還是抓到行政院的資料：看有沒有按到存檔，或打開的是不是另一個流程；模擬來源也要先 <strong>Publish</strong> 並等幾秒。</p>
+</blockquote>
+<p><strong>基準怎麼更新</strong>：確認變動是合理的（例如行政院真的新增了頻道）之後，把 <code>baseline</code> 那一行改成新的清單。基準是「最近一次<strong>人工確認</strong>」，不是自動記住上次的結果。</p>
+<details class="wf"><summary>完成版（c/main-done.json）</summary><a href="files/c/main-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;選修 C 網頁變動監看&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;parameters&quot;: {
+        &quot;rule&quot;: {
+          &quot;interval&quot;: [
+            {
+              &quot;field&quot;: &quot;cronExpression&quot;,
+              &quot;expression&quot;: &quot;0 9 * * 1&quot;
+            }
+          ]
+        }
+      },
+      &quot;name&quot;: &quot;每週一早上&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.scheduleTrigger&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        0,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;url&quot;: &quot;https://www.ey.gov.tw/Page/5AC44DE3213868A9&quot;,
+        &quot;options&quot;: {
+          &quot;response&quot;: {
+            &quot;response&quot;: {
+              &quot;responseFormat&quot;: &quot;text&quot;
+            }
+          },
+          &quot;timeout&quot;: 20000
+        }
+      },
+      &quot;name&quot;: &quot;抓頁面&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.httpRequest&quot;,
+      &quot;typeVersion&quot;: 4.2,
+      &quot;position&quot;: [
+        220,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;operation&quot;: &quot;extractHtmlContent&quot;,
+        &quot;dataPropertyName&quot;: &quot;data&quot;,
+        &quot;extractionValues&quot;: {
+          &quot;values&quot;: [
+            {
+              &quot;key&quot;: &quot;names&quot;,
+              &quot;cssSelector&quot;: &quot;a[href*=&#39;RSS_Content&#39;]&quot;,
+              &quot;returnArray&quot;: true
+            },
+            {
+              &quot;key&quot;: &quot;links&quot;,
+              &quot;cssSelector&quot;: &quot;a[href*=&#39;RSS_Content&#39;]&quot;,
+              &quot;returnValue&quot;: &quot;attribute&quot;,
+              &quot;attribute&quot;: &quot;href&quot;,
+              &quot;returnArray&quot;: true
+            }
+          ]
+        },
+        &quot;options&quot;: {
+          &quot;trimValues&quot;: true,
+          &quot;cleanUpText&quot;: true
+        }
+      },
+      &quot;name&quot;: &quot;擷取頻道&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.html&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        440,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;jsCode&quot;: &quot;// 基準：最近一次「人工確認過」的頻道名稱。確認變動沒問題後，自己改這一行\nconst baseline = [\&quot;消費者保護消費資（警）訊\&quot;, \&quot;消費者保護新聞稿\&quot;, \&quot;本院新聞\&quot;, \&quot;即時新聞澄清（資料來源：各部會）\&quot;, \&quot;部會新聞（資料來源：各部會）\&quot;, \&quot;院長行程\&quot;, \&quot;院會決議\&quot;];\nconst names = $input.first().json.names || [];\n// 一個都抓不到＝網頁改版或抓錯頁，不是頻道全被刪了\nif (names.length === 0) {\n  return [{ json: { status: &#39;解析失敗&#39;, message: &#39;⚠ 行政院 RSS 頻道頁一個頻道都抓不到，可能是網頁改版，請手動打開網頁確認&#39; } }];\n}\nconst added = names.filter(n =&gt; !baseline.includes(n));\nconst removed = baseline.filter(n =&gt; !names.includes(n));\n// 沒變動就輸出 0 筆，後面的通知不會跑\nif (added.length === 0 &amp;&amp; removed.length === 0) return [];\nreturn [{ json: { status: &#39;有變動&#39;, added, removed,\n  message: &#39;行政院 RSS 頻道有變動\\n新增：&#39; + (added.join(&#39;、&#39;) || &#39;無&#39;) + &#39;\\n移除：&#39; + (removed.join(&#39;、&#39;) || &#39;無&#39;) + &#39;\\n確認後記得更新基準&#39; } }];&quot;
+      },
+      &quot;name&quot;: &quot;比對基準&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.code&quot;,
+      &quot;typeVersion&quot;: 2,
+      &quot;position&quot;: [
+        660,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;chatId&quot;: &quot;&lt;你的 Chat ID&gt;&quot;,
+        &quot;text&quot;: &quot;={{ $json.message }}&quot;,
+        &quot;additionalFields&quot;: {
+          &quot;appendAttribution&quot;: false
+        }
+      },
+      &quot;name&quot;: &quot;傳通知&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.telegram&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        880,
+        0
+      ]
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;每週一早上&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;抓頁面&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;抓頁面&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;擷取頻道&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;擷取頻道&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;比對基準&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;比對基準&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;傳通知&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}</code></pre></div>
+</details><h3 id="sec-5">小練習：自製網頁測試</h3>
+<p>不連網，自己改一段假網頁，測新增與空擷取兩種情境，不用等行政院改版。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>手動執行（<strong>Manual Trigger</strong>）</td>
+<td>手動啟動</td>
+<td>不用設定</td>
+</tr>
+<tr>
+<td>假網頁（<strong>Edit Fields (Set)</strong>）</td>
+<td>放一段 HTML，假裝是抓回來的網頁</td>
+<td>欄位 <code>html</code>（<strong>String</strong>），內容是 7 個 <code>&lt;li&gt;&lt;a href=&quot;…RSS_Content…&quot;&gt;名稱&lt;/a&gt;&lt;/li&gt;</code></td>
+</tr>
+<tr>
+<td>擷取頻道（<strong>HTML</strong>）</td>
+<td>同主線，改成讀 <code>html</code> 這個欄位</td>
+<td><code>dataPropertyName</code> 是 <code>html</code>；selector 同主線</td>
+</tr>
+<tr>
+<td>比對基準（<strong>Code</strong>）</td>
+<td>同主線</td>
+<td>基準同主線</td>
+</tr>
+</tbody></table>
+<ol>
+<li><p>匯入 <code>ex1-done.json</code>，按 <strong>Execute workflow</strong>。
+你應該看到（N）：「擷取頻道」1 筆，<code>names</code> 有 7 個；「比對基準」<strong>0 筆</strong>。</p>
+</li>
+<li><p>新增：在假網頁的 <code>&lt;/ul&gt;</code> 前面多加一個 <code>&lt;li&gt;&lt;a href=&quot;https://www.ey.gov.tw/RSS_Content.aspx?ModuleType=9&quot;&gt;寵物新聞&lt;/a&gt;&lt;/li&gt;</code>，重跑。
+你應該看到：「比對基準」1 筆，<code>status: 有變動</code>，<code>added: [&quot;寵物新聞&quot;]</code>，<code>removed: []</code>；訊息是「行政院 RSS 頻道有變動／新增：寵物新聞／移除：無／確認後記得更新基準」（實際分行）。</p>
+</li>
+<li><p>空擷取：把假網頁裡的 <code>RSS_Content.aspx</code> 全部換成 <code>Other.aspx</code>（模擬網頁改版，連結不再有 <code>RSS_Content</code>），重跑。
+你應該看到：「擷取頻道」的 <code>names</code> 是<strong>空陣列</strong>；「比對基準」1 筆，<code>status: 解析失敗</code>，訊息「⚠ 行政院 RSS 頻道頁一個頻道都抓不到，可能是網頁改版，請手動打開網頁確認」。<strong>不是</strong>「7 個都移除」。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？改完 HTML 「比對基準」仍是 0 筆：先確認改的是「假網頁」的內容，不是別的節點；再看「擷取頻道」的 <code>names</code> 有沒有真的變。</p>
+</blockquote>
+<details class="wf"><summary>完成版（c/ex1-done.json）</summary><a href="files/c/ex1-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;選修 C 小練習① 自製網頁測試&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;parameters&quot;: {},
+      &quot;name&quot;: &quot;手動執行&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.manualTrigger&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        0,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;h1&quot;,
+              &quot;name&quot;: &quot;html&quot;,
+              &quot;value&quot;: &quot;&lt;ul&gt;&lt;li&gt;&lt;a href=\&quot;https://www.ey.gov.tw/RSS_Content.aspx?ModuleType=1\&quot;&gt;消費者保護消費資（警）訊&lt;/a&gt;&lt;/li&gt;&lt;li&gt;&lt;a href=\&quot;https://www.ey.gov.tw/RSS_Content.aspx?ModuleType=2\&quot;&gt;消費者保護新聞稿&lt;/a&gt;&lt;/li&gt;&lt;li&gt;&lt;a href=\&quot;https://www.ey.gov.tw/RSS_Content.aspx?ModuleType=3\&quot;&gt;本院新聞&lt;/a&gt;&lt;/li&gt;&lt;li&gt;&lt;a href=\&quot;https://www.ey.gov.tw/RSS_Content.aspx?ModuleType=4\&quot;&gt;即時新聞澄清（資料來源：各部會）&lt;/a&gt;&lt;/li&gt;&lt;li&gt;&lt;a href=\&quot;https://www.ey.gov.tw/RSS_Content.aspx?ModuleType=5\&quot;&gt;部會新聞（資料來源：各部會）&lt;/a&gt;&lt;/li&gt;&lt;li&gt;&lt;a href=\&quot;https://www.ey.gov.tw/RSS_Content.aspx?ModuleType=6\&quot;&gt;院長行程&lt;/a&gt;&lt;/li&gt;&lt;li&gt;&lt;a href=\&quot;https://www.ey.gov.tw/RSS_Content.aspx?ModuleType=7\&quot;&gt;院會決議&lt;/a&gt;&lt;/li&gt;&lt;/ul&gt;&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;假網頁&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        220,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;operation&quot;: &quot;extractHtmlContent&quot;,
+        &quot;dataPropertyName&quot;: &quot;html&quot;,
+        &quot;extractionValues&quot;: {
+          &quot;values&quot;: [
+            {
+              &quot;key&quot;: &quot;names&quot;,
+              &quot;cssSelector&quot;: &quot;a[href*=&#39;RSS_Content&#39;]&quot;,
+              &quot;returnArray&quot;: true
+            },
+            {
+              &quot;key&quot;: &quot;links&quot;,
+              &quot;cssSelector&quot;: &quot;a[href*=&#39;RSS_Content&#39;]&quot;,
+              &quot;returnValue&quot;: &quot;attribute&quot;,
+              &quot;attribute&quot;: &quot;href&quot;,
+              &quot;returnArray&quot;: true
+            }
+          ]
+        },
+        &quot;options&quot;: {
+          &quot;trimValues&quot;: true,
+          &quot;cleanUpText&quot;: true
+        }
+      },
+      &quot;name&quot;: &quot;擷取頻道&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.html&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        440,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;jsCode&quot;: &quot;// 基準：最近一次「人工確認過」的頻道名稱。確認變動沒問題後，自己改這一行\nconst baseline = [\&quot;消費者保護消費資（警）訊\&quot;, \&quot;消費者保護新聞稿\&quot;, \&quot;本院新聞\&quot;, \&quot;即時新聞澄清（資料來源：各部會）\&quot;, \&quot;部會新聞（資料來源：各部會）\&quot;, \&quot;院長行程\&quot;, \&quot;院會決議\&quot;];\nconst names = $input.first().json.names || [];\n// 一個都抓不到＝網頁改版或抓錯頁，不是頻道全被刪了\nif (names.length === 0) {\n  return [{ json: { status: &#39;解析失敗&#39;, message: &#39;⚠ 行政院 RSS 頻道頁一個頻道都抓不到，可能是網頁改版，請手動打開網頁確認&#39; } }];\n}\nconst added = names.filter(n =&gt; !baseline.includes(n));\nconst removed = baseline.filter(n =&gt; !names.includes(n));\n// 沒變動就輸出 0 筆，後面的通知不會跑\nif (added.length === 0 &amp;&amp; removed.length === 0) return [];\nreturn [{ json: { status: &#39;有變動&#39;, added, removed,\n  message: &#39;行政院 RSS 頻道有變動\\n新增：&#39; + (added.join(&#39;、&#39;) || &#39;無&#39;) + &#39;\\n移除：&#39; + (removed.join(&#39;、&#39;) || &#39;無&#39;) + &#39;\\n確認後記得更新基準&#39; } }];&quot;
+      },
+      &quot;name&quot;: &quot;比對基準&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.code&quot;,
+      &quot;typeVersion&quot;: 2,
+      &quot;position&quot;: [
+        660,
+        0
+      ]
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;手動執行&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;假網頁&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;假網頁&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;擷取頻道&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;擷取頻道&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;比對基準&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}</code></pre></div>
+</details><p>變形題（移除）：從假網頁裡刪掉一個 <code>&lt;li&gt;…&lt;/li&gt;</code>，重跑，看 <code>removed</code> 出現哪個名稱；再把基準那一行改成現在這份清單，重跑，確認回到 0 筆。（不附素材，自己改。）</p>
+<h3 id="sec-6">驗收</h3>
+<ul>
+<li class="check"> 正常 N。真實網頁沒變：「擷取頻道」<code>names</code> 有 7 個，「比對基準」0 筆，沒有通知。</li>
+<li class="check"> 新增。小練習加一個「寵物新聞」：1 筆，<code>added</code> 是 <code>[&quot;寵物新聞&quot;]</code>，有通知（或在小練習裡看到訊息）。</li>
+<li class="check"> 缺資料（空擷取）。連結不再有 <code>RSS_Content</code>：<code>names</code> 空陣列，標「解析失敗」，說得出為什麼不能說成全部刪除。</li>
+<li class="check"> 故障 503。模擬來源 <code>status=503</code>：「抓頁面」紅燈，後面沒跑；測完改回行政院網址。</li>
+<li class="check"> 變形題。刪掉一個頻道，看到 <code>removed</code>；更新基準後回到 0 筆。</li>
+<li class="check"> 說得出：為什麼每週只抓一次、為什麼不抓購物網站價格、為什麼基準要人工更新。</li>
+</ul>
+<h3 id="sec-7">其他進階主題</h3>
+<p>下面幾項不附素材、不寫步驟，只讓你知道有這些東西，細節都待查證，要學再另外找官方文件。</p>
+<ul>
+<li><strong>氣象署天氣預報</strong>：天氣預報資料要先註冊成為會員、取得授權碼（免費），再用 <strong>HTTP Request</strong> 帶授權碼去抓。申請流程與資料欄位待查證。（待查證）</li>
+<li><strong>本機 Ollama</strong>：把 AI 模型裝在自己電腦上跑，不用送資料給雲端，也沒有額度問題，但吃電腦效能，要看你的機器夠不夠力。n8n 怎麼接、哪些模型適合待查證。（待查證）</li>
+<li><strong>Code 節點進階</strong>：這課你只改了一行 <code>baseline</code>。想自己寫轉換資料的小程式，可以再學 <strong>Code</strong> 節點的寫法；先把能用 <strong>Edit Fields</strong>、<strong>If</strong> 做到的事用內建節點做，比較好維護。（待查證）</li>
+<li><strong>n8n 雲端版</strong>：n8n 官方有雲端服務，不用自己開電腦跑。方案、價格、資料放在哪裡都待查證；本教材一律用自架的免費版。（待查證）</li>
+<li><strong>Microsoft 365</strong>：n8n 有連 Microsoft 365（例如信件、日曆）的節點，需要微軟帳號與授權。授權方式與限制待查證。（待查證）</li>
+</ul>
+<details><summary id="sec-8">卡關救援</summary><ul>
+<li>通知沒有出現，但流程綠燈 → 打開 <strong>Executions</strong> 看「比對基準」是不是 0 筆 → 0 筆代表基準與網頁一樣，是正常結果 → 要測通知，用小練習加一個頻道，確認有輸出。</li>
+<li>一直說有變動，但看不出差在哪 → 打開「比對基準」輸出的 <code>added</code>／<code>removed</code> → 多半是全形半形、空白字不同 → 把基準改成「擷取頻道」輸出的原樣，重跑確認回到 0 筆。</li>
+<li><code>names</code> 是空陣列 → 先看「抓頁面」的回應格式是不是 <strong>Text</strong>、selector 有沒有打錯 <code>a[href*=&#39;RSS_Content&#39;]</code>，再手動用瀏覽器打開網頁看結構是否改了 → 修好後重跑；真的改版就要重新找 selector（進階）→ 確認 <code>names</code> 有名稱。</li>
+<li>解析失敗的通知一直來 → 看網頁有沒有改版或暫時打不開 → 手動用瀏覽器確認，不要因此去改基準 → 網頁恢復後重跑確認回到 0 筆。</li>
+<li>503 或逾時 → 看來源是否暫時故障 → 先不要連續重按，過一陣子再試；需要自動重試回 M6 → 確認再跑會成功。</li>
+<li>想拿來監看購物網站價格 → 停 → 動態載入、有使用條款，也需要點按鈕才能看到，n8n 不能操作瀏覽器 → 改用有開放資料的白名單來源。</li>
+</ul>
+<p>求助時附 n8n 版本、哪個節點、錯誤訊息原文、已經試過什麼。截圖和貼文字前，先遮住 Bot Token、Chat ID 和個資。</p>
+</details><details><summary id="sec-9">官方連結</summary><p>查詢日期 2026-11-21。</p>
+<ul>
+<li><a href="https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.html/" target="_blank" rel="noopener noreferrer">HTML 節點</a><span class="dom">docs.n8n.io</span></li>
+<li><a href="https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.code/" target="_blank" rel="noopener noreferrer">Code 節點</a><span class="dom">docs.n8n.io</span></li>
+<li><a href="https://docs.n8n.io/code/" target="_blank" rel="noopener noreferrer">Code in n8n</a><span class="dom">docs.n8n.io</span></li>
+<li><a href="https://www.ey.gov.tw/Page/5AC44DE3213868A9" target="_blank" rel="noopener noreferrer">行政院 RSS 頻道總表</a><span class="dom">www.ey.gov.tw</span></li>
+</ul>
+</details><nav class="pager" aria-label="前後課程"><a class="prev" href="opt-b.html"><span>← 上一個</span>選修 B 請 Claude 幫你寫流程</a><a class="next" href="version.html"><span>下一個 →</span>附錄 版本附頁</a></nav></article></main><aside class="toc" aria-label="本頁目錄"><div class="t">本頁</div><a href="#sec-1">成果與先修</a><a href="#sec-2">白話觀念</a><a href="#sec-3">素材包</a><a href="#sec-4">主線：行政院 RSS 頻道監看</a><a href="#sec-5">小練習：自製網頁測試</a><a href="#sec-6">驗收</a><a href="#sec-7">其他進階主題</a><a href="#sec-8">卡關救援</a><a href="#sec-9">官方連結</a></aside><nav class="bottombar" aria-label="前後課程"><a href="opt-b.html">← 選修 B 請 Claude 幫你寫流程</a><a href="version.html">附錄 版本附頁 →</a></nav></body></html>

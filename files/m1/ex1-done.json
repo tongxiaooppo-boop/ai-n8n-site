@@ -1,0 +1,94 @@
+{
+  "name": "M1 小練習① 午餐記帳",
+  "nodes": [
+    {
+      "name": "手動",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "name": "午餐",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "item",
+              "value": "便當",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "amount",
+              "value": 95,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "name": "支出草稿",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "draft",
+              "value": "=午餐：{{ $json.item }} {{ $json.amount }} 元",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "手動": {
+      "main": [
+        [
+          {
+            "node": "午餐",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "午餐": {
+      "main": [
+        [
+          {
+            "node": "支出草稿",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

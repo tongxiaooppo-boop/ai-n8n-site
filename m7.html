@@ -1,0 +1,1075 @@
+<!doctype html><html lang="zh-Hant" data-pal="teal"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>M7 Webhook 與子流程｜n8n 生活自動化</title><link rel="stylesheet" href="assets/style.css"><script src="assets/app.js" defer></script></head><body><a class="skip" href="#main">跳到正文</a><header class="topbar"><button type="button" aria-label="打開課表" aria-controls="schedule" aria-expanded="false">☰</button><span>M7 Webhook 與子流程</span></header><nav class="nav" id="schedule" aria-label="課表"><a class="brand" href="index.html">n8n 生活自動化</a><div class="stage">主線（M0–M5 照順序，之後照需要挑）</div><a class="mod" href="m0.html"><b>M0</b><span>準備環境</span></a><a class="mod" href="m1.html"><b>M1</b><span>第一個流程</span></a><a class="mod" href="m2.html"><b>M2</b><span>資料與 Expression</span></a><a class="mod" href="m3.html"><b>M3</b><span>判斷、多筆與合併</span></a><a class="mod" href="m4.html"><b>M4</b><span>API、RSS 與排程</span></a><a class="mod" href="m5.html"><b>M5</b><span>通知、憑證與檔案</span></a><a class="mod" href="m6.html"><b>M6</b><span>錯誤處理與可靠性</span></a><a class="mod cur" href="m7.html" aria-current="page"><b>M7</b><span>Webhook 與子流程</span></a><a class="mod" href="m8.html"><b>M8</b><span>加入 AI（受限用法）</span></a><a class="mod" href="m9.html"><b>M9</b><span>上線與維護</span></a><div class="stage">結業</div><a class="mod" href="final.html"><b>結業專題</b><span>生活題庫</span></a><div class="stage">選修</div><a class="mod" href="opt-a.html"><b>選修 A</b><span>AI Agent</span></a><a class="mod" href="opt-b.html"><b>選修 B</b><span>請 Claude 幫你寫流程</span></a><a class="mod" href="opt-c.html"><b>選修 C</b><span>更多資料來源與工具</span></a><div class="stage">附錄</div><a class="mod" href="version.html"><b>附錄</b><span>版本附頁</span></a></nav><button class="scrim" type="button" aria-label="關閉課表" tabindex="-1" hidden></button><main id="main"><article class="art"><div class="eyebrow">主線（M0–M5 照順序，之後照需要挑）</div><h1>M7｜Webhook 與子流程</h1><div class="meta"><span class="tag">在 Telegram 傳「查 2330」就回覆收盤價</span><span class="tag">約 3 小時</span><span class="tag">先修：<a href="m6.html">M6</a></span><span class="tag">實測 n8n 2.48.4（2026-11-18）・你的畫面可能略有不同</span></div><h3 id="sec-1">成果與先修</h3>
+<p>在 Telegram 傳「查 2330」，就回覆這檔股票最近交易日的收盤價（盤後資料，不是即時報價）。
+先完成 M6（要會 <strong>Publish</strong>、設定憑證、用 <strong>Executions</strong> 看紀錄）。已經做過 M5 子流程的人，可以直接從主線第 1 段開始。
+主線第 1、2 段不用新帳號；第 3 段（Telegram）是<strong>進階</strong>（入口 4 個＋子流程 4 個，共 8 個節點），要沿用 M5 的 Telegram Bot，並註冊 ngrok 免費帳號。做不到第 3 段，第 1、2 段做完也算完成本模組的主線。
+費用 0 元（ngrok 免費版要不要綁卡，待查證），時間約 3 小時。股價只供紀錄與提醒，不是投資建議。</p>
+<h3 id="sec-2">白話觀念</h3>
+<p>四件事，各一句話記住：</p>
+<ol>
+<li><strong>Webhook＝流程的門鈴</strong>：別的程式（或你自己用 <code>curl.exe</code>）按一下網址，流程就開始跑，還能把結果回給按門鈴的人（用 <strong>Respond to Webhook</strong> 回覆）。</li>
+<li><strong>測試網址和正式網址</strong>：測試網址 <code>http://localhost:5678/webhook-test/&lt;路徑&gt;</code>，只在節點按下聽取測試時才有效，資料會直接顯示在畫布上；正式網址 <code>http://localhost:5678/webhook/&lt;路徑&gt;</code>，要 <strong>Publish</strong> 後才有效，結果不會顯示在畫布，要到 <strong>Executions</strong> 看。最常見的卡關，就是拿測試網址當正式用。</li>
+<li><strong>門口要有鎖</strong>：網址可能被別人知道，所以要檢查標頭密語；錯的直接 403，流程連跑都不跑。流程裡也只接受固定格式的指令（「查＋數字」），其他一律拒絕，不要「猜」對方想做什麼。</li>
+<li><strong>子流程的輸入</strong>：M5 的快照子流程是「整包收下」（<strong>Accept all data</strong>）；這次的查價子流程<strong>只收一個欄位 <code>code</code></strong>。把輸入寫清楚，呼叫的人就知道要給什麼，同一個子流程可以讓 HTTP 入口和 Telegram 入口重用。</li>
+</ol>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">curl.exe 或 Telegram → 入口（驗密語、檢查指令）→ 呼叫查價子流程（只收 code）→ 回覆</code></pre></div>
+<h3 id="sec-3">素材包</h3>
+<ul>
+<li><a href="files/m7/sub-quote-done.json" download>sub-quote-done.json</a>：查價子流程（4 節點）。</li>
+<li><a href="files/m7/main-http-done.json" download>main-http-done.json</a>：HTTP 入口（5 節點）。</li>
+<li><a href="files/m7/main-telegram-done.json" download>main-telegram-done.json</a>：Telegram 入口（4 節點，進階）。</li>
+<li><a href="files/m7/ex1-done.json" download>ex1-done.json</a>：家庭提醒入口（5 節點）。</li>
+<li><a href="files/m7/ex2-done.json" download>ex2-done.json</a>：手機查採買清單（3 節點）。</li>
+<li><a href="files/m7/req-2330.json" download>req-2330.json</a>：請求檔，<code>查 2330</code>。</li>
+<li><a href="files/m7/req-9999.json" download>req-9999.json</a>：請求檔，<code>查 9999</code>（找不到的情境）。</li>
+<li><a href="files/m7/req-empty.json" download>req-empty.json</a>：請求檔，空的（格式錯的情境）。</li>
+<li><a href="files/m7/req-family-ok.json" download>req-family-ok.json</a>：請求檔，家庭提醒，欄位齊全。</li>
+<li><a href="files/m7/req-family-missing.json" download>req-family-missing.json</a>：請求檔，家庭提醒，少了 <code>when</code>。</li>
+</ul>
+<p>用 <strong>Import from File</strong> 匯入，位置見版本附頁。匯入後要自己補的事：</p>
+<ul>
+<li>查價子流程要<strong>先匯入並 Publish</strong>。</li>
+<li>兩個入口的「呼叫查價」匯入後要自己選子流程。</li>
+<li>三個 <strong>Webhook</strong> 節點（HTTP 入口、兩個小練習）要自己選標頭驗證憑證，三個共用同一把。</li>
+<li><code>main-telegram-done.json</code> 要自己選 Telegram 憑證，並把「你的chatID」換成自己的。</li>
+</ul>
+<p>把請求檔下載到同一個資料夾，之後在 PowerShell 先 <code>cd</code> 到那個資料夾再送請求。</p>
+<h3 id="sec-4">主線：傳「查 2330」回覆收盤價</h3>
+<p>分三段：先做查價子流程，再做 HTTP 入口在自己電腦測，最後（進階）接上 Telegram。</p>
+<h4>第 1 段：查價子流程</h4>
+<p>這條流程自己不會啟動，要等別的流程呼叫它才會跑。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>子流程入口（<strong>Execute Workflow Trigger</strong>）</td>
+<td>子流程的入口，規定要收什麼</td>
+<td>輸入方式選「定義輸入欄位」，加一個 <code>code</code>（字串）</td>
+</tr>
+<tr>
+<td>抓全部股價（<strong>HTTP Request</strong>）</td>
+<td>取得全部上市股票的最近交易日資料</td>
+<td>網址照素材；沿用 M6 的逾時與重試（Timeout <code>10000</code>、Retry On Fail、Max Tries <code>3</code>、Wait Between Tries <code>2000</code>）</td>
+</tr>
+<tr>
+<td>挑這檔（<strong>Filter</strong>）</td>
+<td>只留下 <code>code</code> 那一檔</td>
+<td>條件比對代號；節點 <strong>Settings</strong> 開 <strong>Always Output Data</strong></td>
+</tr>
+<tr>
+<td>回覆內容（<strong>Edit Fields (Set)</strong>）</td>
+<td>組出要回覆的文字</td>
+<td>欄位 <code>code</code>、<code>found</code>（<strong>Boolean</strong>）、<code>text</code>（<strong>String</strong>）</td>
+</tr>
+</tbody></table>
+<p>「挑這檔」開了 <strong>Always Output Data</strong>，所以代號不存在時，也會有一筆空資料往下走，「回覆內容」才有機會寫「找不到」，而不是整條流程安靜地沒有輸出。</p>
+<p><code>text</code> 有三種結果（照素材的 <strong>Expression</strong>，不用自己寫）：</p>
+<ul>
+<li>有成交：<code>台積電（2330）YYYY-MM-DD 收盤 NNN 元（盤後資料，不是即時價）</code>。民國年會自動換成西元年。</li>
+<li>沒有成交：收盤價是空的，就回 <code>名稱（代號）YYYY-MM-DD 沒有成交</code>。</li>
+<li>找不到：回 <code>找不到 9999（只查得到上市股票）</code>，不會回 0 元。</li>
+</ul>
+<ol>
+<li><p>匯入 <code>sub-quote-done.json</code>，打開「子流程入口」，確認輸入方式是定義輸入欄位、有一個 <code>code</code>（字串）。位置見版本附頁。
+你應該看到：4 個節點依序連線；子流程入口只有一個欄位 <code>code</code>。</p>
+</li>
+<li><p>按 <strong>Publish</strong>。
+你應該看到：流程列表上它是已發布狀態。先不測，下一段由入口流程呼叫它時一起測（子流程要被呼叫才會跑）。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？之後呼叫時出現「Workflow is not active」，就是這條子流程沒 <strong>Publish</strong>。</p>
+</blockquote>
+<details class="wf"><summary>查價子流程完成版（m7/sub-quote-done.json）</summary><a href="files/m7/sub-quote-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M7 查價子流程&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;parameters&quot;: {
+        &quot;inputSource&quot;: &quot;workflowInputs&quot;,
+        &quot;workflowInputs&quot;: {
+          &quot;values&quot;: [
+            {
+              &quot;name&quot;: &quot;code&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            }
+          ]
+        }
+      },
+      &quot;name&quot;: &quot;子流程入口&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.executeWorkflowTrigger&quot;,
+      &quot;typeVersion&quot;: 1.1,
+      &quot;position&quot;: [
+        0,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;url&quot;: &quot;https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL&quot;,
+        &quot;options&quot;: {
+          &quot;timeout&quot;: 10000
+        }
+      },
+      &quot;name&quot;: &quot;抓全部股價&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.httpRequest&quot;,
+      &quot;typeVersion&quot;: 4.2,
+      &quot;retryOnFail&quot;: true,
+      &quot;maxTries&quot;: 3,
+      &quot;waitBetweenTries&quot;: 2000,
+      &quot;position&quot;: [
+        220,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;conditions&quot;: {
+          &quot;options&quot;: {
+            &quot;caseSensitive&quot;: true,
+            &quot;leftValue&quot;: &quot;&quot;,
+            &quot;typeValidation&quot;: &quot;loose&quot;,
+            &quot;version&quot;: 2
+          },
+          &quot;conditions&quot;: [
+            {
+              &quot;id&quot;: &quot;c0&quot;,
+              &quot;leftValue&quot;: &quot;={{ $json.Code === $(&#39;子流程入口&#39;).first().json.code }}&quot;,
+              &quot;rightValue&quot;: &quot;&quot;,
+              &quot;operator&quot;: {
+                &quot;type&quot;: &quot;boolean&quot;,
+                &quot;operation&quot;: &quot;true&quot;,
+                &quot;singleValue&quot;: true
+              }
+            }
+          ],
+          &quot;combinator&quot;: &quot;and&quot;
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;挑這檔&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.filter&quot;,
+      &quot;typeVersion&quot;: 2.2,
+      &quot;alwaysOutputData&quot;: true,
+      &quot;position&quot;: [
+        440,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;f0&quot;,
+              &quot;name&quot;: &quot;code&quot;,
+              &quot;value&quot;: &quot;={{ $(&#39;子流程入口&#39;).first().json.code }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f1&quot;,
+              &quot;name&quot;: &quot;found&quot;,
+              &quot;value&quot;: &quot;={{ !!$json.Code }}&quot;,
+              &quot;type&quot;: &quot;boolean&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f2&quot;,
+              &quot;name&quot;: &quot;text&quot;,
+              &quot;value&quot;: &quot;={{ !$json.Code ? &#39;找不到 &#39; + $(&#39;子流程入口&#39;).first().json.code + &#39;（只查得到上市股票）&#39; : $json.ClosingPrice === &#39;&#39; ? $json.Name + &#39;（&#39; + $json.Code + &#39;）&#39; + (Number($json.Date.slice(0,3)) + 1911) + &#39;-&#39; + $json.Date.slice(3,5) + &#39;-&#39; + $json.Date.slice(5,7) + &#39; 沒有成交&#39; : $json.Name + &#39;（&#39; + $json.Code + &#39;）&#39; + (Number($json.Date.slice(0,3)) + 1911) + &#39;-&#39; + $json.Date.slice(3,5) + &#39;-&#39; + $json.Date.slice(5,7) + &#39; 收盤 &#39; + Number($json.ClosingPrice) + &#39; 元（盤後資料，不是即時價）&#39; }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;回覆內容&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        660,
+        0
+      ]
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;子流程入口&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;抓全部股價&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;抓全部股價&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;挑這檔&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;挑這檔&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;回覆內容&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}</code></pre></div>
+</details><h4>第 2 段：HTTP 入口，在自己電腦測</h4>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>收到查詢（<strong>Webhook</strong>）</td>
+<td>流程的門鈴，收 POST 請求</td>
+<td><strong>HTTP Method</strong> <code>POST</code>、<strong>Path</strong> <code>m7-quote</code>、<strong>Authentication</strong> 選 <strong>Header Auth</strong>、<strong>Respond</strong> 選 <strong>Using &#39;Respond to Webhook&#39; Node</strong></td>
+</tr>
+<tr>
+<td>指令對嗎（<strong>If</strong>）</td>
+<td>檢查指令是不是「查＋數字」</td>
+<td>條件：指令符合「查」加 4–6 位數字（照素材 Expression）；true、false 兩條路</td>
+</tr>
+<tr>
+<td>呼叫查價（<strong>Execute Sub-workflow</strong>）</td>
+<td>true 分支，呼叫查價子流程</td>
+<td>選「M7 查價子流程」；Workflow Inputs 的 <code>code</code> 是指令裡的數字</td>
+</tr>
+<tr>
+<td>回覆價格（<strong>Respond to Webhook</strong>）</td>
+<td>把結果回給按門鈴的人</td>
+<td><strong>Respond With</strong> 選 <strong>JSON</strong>；內容 <code>ok</code> 是 true、<code>text</code> 是子流程給的文字</td>
+</tr>
+<tr>
+<td>回覆格式錯（<strong>Respond to Webhook</strong>）</td>
+<td>false 分支，拒絕不合格式的指令</td>
+<td><strong>Respond With</strong> 選 <strong>JSON</strong>；<strong>Response Code</strong> <code>400</code>；內容是「請傳「查 代號」，例如：查 2330」</td>
+</tr>
+</tbody></table>
+<ol>
+<li><p>建標頭驗證憑證：<strong>Credentials</strong> 新增 <strong>Header Auth</strong>，<strong>Name</strong> 填 <code>X-Family-Key</code>，<strong>Value</strong> 填你自己想的密語。位置見版本附頁。
+你應該看到：憑證存好了。素材驗證用的密語是 <code>DEMO_ONLY</code>，<strong>你自己的不要用這個</strong>。</p>
+</li>
+<li><p>匯入 <code>main-http-done.json</code>，「收到查詢」選剛建的憑證，「呼叫查價」選「M7 查價子流程」。
+你應該看到：5 個節點連線完整；兩個選項都沒有紅色警示。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？「呼叫查價」的子流程清單是空的或找不到：確認第 1 段的子流程已 <strong>Publish</strong>，並重新整理頁面。</p>
+</blockquote>
+<ol start="3">
+<li>先用<strong>測試網址</strong>：在「收到查詢」打開 Test URL，按聽取測試（按鈕名稱見版本附頁，待查證）。PowerShell 先 <code>cd</code> 到素材資料夾，再送：
+<code>curl.exe -s -X POST http://localhost:5678/webhook-test/m7-quote -H &quot;X-Family-Key: 你的密語&quot; -H &quot;Content-Type: application/json&quot; --data-binary &quot;@req-2330.json&quot;</code>
+你應該看到：畫布上資料一路流過去，「指令對嗎」走 true；PowerShell 印出 <code>{&quot;ok&quot;:true,&quot;text&quot;:&quot;台積電（2330）YYYY-MM-DD 收盤 NNN 元（盤後資料，不是即時價）&quot;}</code>。</li>
+</ol>
+<blockquote>
+<p>卡住了？一定打 <code>curl.exe</code>，不是 <code>curl</code>：PowerShell 5.1 的 <code>curl</code> 是別的指令，會跳一堆紅字。也不要用 <code>-d &#39;{&quot;command&quot;:&quot;查 2330&quot;}&#39;</code>，PowerShell 5.1 會吃掉引號，n8n 回 422「Failed to parse request body」；一律用請求檔。</p>
+</blockquote>
+<ol start="4">
+<li><p>按 <strong>Publish</strong>，改用<strong>正式網址</strong>（網址裡的 <code>webhook-test</code> 改成 <code>webhook</code>），照順序送：</p>
+<ul>
+<li>N：<code>req-2330.json</code>。</li>
+<li>D：同一個請求再送一次。</li>
+<li>M：<code>req-empty.json</code>。</li>
+<li>E：把密語改成錯的，送 <code>req-2330.json</code>。</li>
+<li>找不到：<code>req-9999.json</code>。</li>
+</ul>
+<p>你應該看到：</p>
+<ul>
+<li>N：200，<code>{&quot;ok&quot;:true,&quot;text&quot;:&quot;台積電（2330）YYYY-MM-DD 收盤 NNN 元（盤後資料，不是即時價）&quot;}</code>。</li>
+<li>D：回一模一樣的內容（只是查詢，送兩次沒有副作用）。</li>
+<li>M：<strong>400</strong>，<code>{&quot;ok&quot;:false,&quot;text&quot;:&quot;請傳「查 代號」，例如：查 2330&quot;}</code>。</li>
+<li>E：<strong>403</strong>，內文 <code>Authorization data is wrong!</code>。</li>
+<li>找不到：200，<code>找不到 9999（只查得到上市股票）</code>，不是 0 元。</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？404「The requested webhook &quot;POST m7-quote&quot; is not registered」：用了正式網址卻還沒 <strong>Publish</strong>，或剛 Publish 還沒生效，等幾秒再試。</p>
+</blockquote>
+<details class="wf"><summary>HTTP 入口完成版（m7/main-http-done.json）</summary><a href="files/m7/main-http-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M7 主線 HTTP 入口&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;parameters&quot;: {
+        &quot;httpMethod&quot;: &quot;POST&quot;,
+        &quot;path&quot;: &quot;m7-quote&quot;,
+        &quot;authentication&quot;: &quot;headerAuth&quot;,
+        &quot;responseMode&quot;: &quot;responseNode&quot;,
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;收到查詢&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.webhook&quot;,
+      &quot;typeVersion&quot;: 2.2,
+      &quot;webhookId&quot;: &quot;m7-quote&quot;,
+      &quot;position&quot;: [
+        0,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;conditions&quot;: {
+          &quot;options&quot;: {
+            &quot;caseSensitive&quot;: true,
+            &quot;leftValue&quot;: &quot;&quot;,
+            &quot;typeValidation&quot;: &quot;loose&quot;,
+            &quot;version&quot;: 2
+          },
+          &quot;conditions&quot;: [
+            {
+              &quot;id&quot;: &quot;c0&quot;,
+              &quot;leftValue&quot;: &quot;={{ /^查\\s?\\d{4,6}$/.test(String($json.body.command).trim()) }}&quot;,
+              &quot;rightValue&quot;: &quot;&quot;,
+              &quot;operator&quot;: {
+                &quot;type&quot;: &quot;boolean&quot;,
+                &quot;operation&quot;: &quot;true&quot;,
+                &quot;singleValue&quot;: true
+              }
+            }
+          ],
+          &quot;combinator&quot;: &quot;and&quot;
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;指令對嗎&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.if&quot;,
+      &quot;typeVersion&quot;: 2.2,
+      &quot;position&quot;: [
+        220,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;workflowId&quot;: {
+          &quot;__rl&quot;: true,
+          &quot;value&quot;: &quot;&quot;,
+          &quot;mode&quot;: &quot;list&quot;
+        },
+        &quot;workflowInputs&quot;: {
+          &quot;mappingMode&quot;: &quot;defineBelow&quot;,
+          &quot;value&quot;: {
+            &quot;code&quot;: &quot;={{ String($json.body.command).replace(/\\D/g, &#39;&#39;) }}&quot;
+          },
+          &quot;matchingColumns&quot;: [],
+          &quot;schema&quot;: [
+            {
+              &quot;id&quot;: &quot;code&quot;,
+              &quot;displayName&quot;: &quot;code&quot;,
+              &quot;required&quot;: false,
+              &quot;defaultMatch&quot;: false,
+              &quot;display&quot;: true,
+              &quot;canBeUsedToMatch&quot;: true,
+              &quot;type&quot;: &quot;string&quot;
+            }
+          ],
+          &quot;attemptToConvertTypes&quot;: false,
+          &quot;convertFieldsToString&quot;: true
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;呼叫查價&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.executeWorkflow&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        440,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;respondWith&quot;: &quot;json&quot;,
+        &quot;responseBody&quot;: &quot;={{ { ok: true, text: $json.text } }}&quot;,
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;回覆價格&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.respondToWebhook&quot;,
+      &quot;typeVersion&quot;: 1.5,
+      &quot;position&quot;: [
+        660,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;respondWith&quot;: &quot;json&quot;,
+        &quot;responseBody&quot;: &quot;={{ { ok: false, text: &#39;請傳「查 代號」，例如：查 2330&#39; } }}&quot;,
+        &quot;options&quot;: {
+          &quot;responseCode&quot;: 400
+        }
+      },
+      &quot;name&quot;: &quot;回覆格式錯&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.respondToWebhook&quot;,
+      &quot;typeVersion&quot;: 1.5,
+      &quot;position&quot;: [
+        660,
+        200
+      ]
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;收到查詢&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;指令對嗎&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;指令對嗎&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;呼叫查價&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ],
+        [
+          {
+            &quot;node&quot;: &quot;回覆格式錯&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;呼叫查價&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;回覆價格&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}</code></pre></div>
+</details><h4>第 3 段：Telegram 入口（進階）</h4>
+<p>做完這段，手機就能直接傳「查 2330」。這段要比前面多一些準備，做不到也不影響主線完成。</p>
+<p>為什麼要通道：Telegram 要能從網路連到你電腦的 n8n，而且一定要 HTTPS，<code>localhost</code> 它連不到。用 ngrok 免費版當通道（要註冊；要不要綁卡待查證）。備案是 Cloudflare Quick Tunnel：免帳號，但每次網址都會變，變了就要重設。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Telegram觸發（<strong>Telegram Trigger</strong>）</td>
+<td>收到 Bot 的新訊息就啟動</td>
+<td>憑證選你的 Telegram Bot；<strong>Updates</strong> 選 <code>message</code></td>
+</tr>
+<tr>
+<td>本人且指令對（<strong>Filter</strong>）</td>
+<td>只放行本人、而且是「查＋數字」的訊息</td>
+<td>條件：chat ID 等於你的，且文字符合格式；把「你的chatID」換成自己的</td>
+</tr>
+<tr>
+<td>呼叫查價（<strong>Execute Sub-workflow</strong>）</td>
+<td>呼叫同一個查價子流程</td>
+<td>選「M7 查價子流程」；<code>code</code> 是文字裡的數字</td>
+</tr>
+<tr>
+<td>回覆Telegram（<strong>Telegram</strong>）</td>
+<td>把結果傳回去</td>
+<td>憑證同上；chat ID 取自觸發的那則訊息；<strong>Append n8n Attribution</strong> 關掉</td>
+</tr>
+</tbody></table>
+<p>一個 Bot 同時只能接一個 Telegram 觸發（節點說明寫的）；M5 的早報用同一個 Bot <strong>傳送</strong>沒關係。</p>
+<blockquote>
+<p>⚠️ <strong>安全提醒</strong>：ngrok 會把整個 n8n（包含編輯器）開到網路上。應該只放行 <code>/webhook/</code> 開頭的路徑；ngrok 的設定方式（待查證）。在那之前：n8n 一定要有登入密碼，不測的時候關掉 ngrok。「本人且指令對」確保只有你本人、而且只有「查＋數字」會被處理，別人傳的訊息直接丟掉。</p>
+</blockquote>
+<p>開 ngrok 之前先確認：打開 <code>http://localhost:5678</code> 要輸入帳號密碼才進得去。如果不用登入就能進編輯器，<strong>先停下來，不要開 ngrok</strong>。路徑限制查證前，通道只在測試時短時間開著，網址不要給別人，測完就關。</p>
+<ol>
+<li><p>安裝 ngrok 並註冊帳號，執行 <code>ngrok http 5678</code>，取得一個 <code>https://…</code> 網址。ngrok 的實際畫面與指令輸出（待查證）。
+你應該看到：終端機出現一個對外的 HTTPS 網址（以下寫成 <code>https://你的網址/</code>）。</p>
+</li>
+<li><p>先停掉正在跑的 n8n，再加上 <code>WEBHOOK_URL</code> 用原本的方式重開（ngrok 那個視窗不要關）：</p>
+<ul>
+<li>Docker：先停掉舊的容器，再用你 M0 的 <code>docker run</code> 指令加上 <code>-e WEBHOOK_URL=https://你的網址/</code>；埠號、資料夾掛載等其他參數照舊，不要另開一個同埠的容器。</li>
+<li>npx：在跑 n8n 的視窗按 Ctrl+C 停掉，先 <code>$env:WEBHOOK_URL=&quot;https://你的網址/&quot;</code>，再 <code>npx n8n</code>。</li>
+</ul>
+<p>實際效果（待查證）。
+你應該看到：n8n 重開後可以正常登入。</p>
+</li>
+<li><p>匯入 <code>main-telegram-done.json</code>，選 Telegram 憑證和「M7 查價子流程」，按 <strong>Publish</strong>。
+你應該看到：4 個節點連線完整；流程是已發布狀態。</p>
+</li>
+<li><p>在 Telegram 傳任何一句話給你的 Bot，到 <strong>Executions</strong> 打開那一筆，在「Telegram觸發」的輸出找到 <code>message.chat.id</code>，填進「本人且指令對」取代「你的chatID」，再 <strong>Publish</strong> 一次。第一次 Publish 時還是「你的chatID」，任何人的訊息都會被這個節點擋下，不會查價也不會回覆；拿到 ID 就馬上換掉。
+你應該看到：Executions 有一筆是你剛傳的話；Filter 設定裡已經是你自己的 chat ID。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？傳了話但 Executions 完全沒有紀錄：ngrok 網址變了、<code>WEBHOOK_URL</code> 沒設或設了沒重開 n8n，或同一個 Bot 有兩個 Telegram 觸發。</p>
+</blockquote>
+<ol start="5">
+<li>在 Telegram 傳「查 2330」。
+你應該看到：Bot 回「台積電（2330）YYYY-MM-DD 收盤 NNN 元（盤後資料，不是即時價）」。用別的帳號傳不會有回應（待查證）。Telegram 實際畫面（待查證）。</li>
+</ol>
+<details class="wf"><summary>Telegram 入口完成版（m7/main-telegram-done.json）</summary><a href="files/m7/main-telegram-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M7 主線 Telegram 入口&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;parameters&quot;: {
+        &quot;updates&quot;: [
+          &quot;message&quot;
+        ],
+        &quot;additionalFields&quot;: {}
+      },
+      &quot;name&quot;: &quot;Telegram觸發&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.telegramTrigger&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;webhookId&quot;: &quot;m7-telegram&quot;,
+      &quot;position&quot;: [
+        0,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;conditions&quot;: {
+          &quot;options&quot;: {
+            &quot;caseSensitive&quot;: true,
+            &quot;leftValue&quot;: &quot;&quot;,
+            &quot;typeValidation&quot;: &quot;loose&quot;,
+            &quot;version&quot;: 2
+          },
+          &quot;conditions&quot;: [
+            {
+              &quot;id&quot;: &quot;c0&quot;,
+              &quot;leftValue&quot;: &quot;={{ String($json.message.chat.id) === &#39;你的chatID&#39; &amp;&amp; /^查\\s?\\d{4,6}$/.test(String($json.message.text).trim()) }}&quot;,
+              &quot;rightValue&quot;: &quot;&quot;,
+              &quot;operator&quot;: {
+                &quot;type&quot;: &quot;boolean&quot;,
+                &quot;operation&quot;: &quot;true&quot;,
+                &quot;singleValue&quot;: true
+              }
+            }
+          ],
+          &quot;combinator&quot;: &quot;and&quot;
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;本人且指令對&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.filter&quot;,
+      &quot;typeVersion&quot;: 2.2,
+      &quot;position&quot;: [
+        220,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;workflowId&quot;: {
+          &quot;__rl&quot;: true,
+          &quot;value&quot;: &quot;&quot;,
+          &quot;mode&quot;: &quot;list&quot;
+        },
+        &quot;workflowInputs&quot;: {
+          &quot;mappingMode&quot;: &quot;defineBelow&quot;,
+          &quot;value&quot;: {
+            &quot;code&quot;: &quot;={{ String($json.message.text).replace(/\\D/g, &#39;&#39;) }}&quot;
+          },
+          &quot;matchingColumns&quot;: [],
+          &quot;schema&quot;: [
+            {
+              &quot;id&quot;: &quot;code&quot;,
+              &quot;displayName&quot;: &quot;code&quot;,
+              &quot;required&quot;: false,
+              &quot;defaultMatch&quot;: false,
+              &quot;display&quot;: true,
+              &quot;canBeUsedToMatch&quot;: true,
+              &quot;type&quot;: &quot;string&quot;
+            }
+          ],
+          &quot;attemptToConvertTypes&quot;: false,
+          &quot;convertFieldsToString&quot;: true
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;呼叫查價&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.executeWorkflow&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        440,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;chatId&quot;: &quot;={{ $(&#39;Telegram觸發&#39;).first().json.message.chat.id }}&quot;,
+        &quot;text&quot;: &quot;={{ $json.text }}&quot;,
+        &quot;additionalFields&quot;: {
+          &quot;appendAttribution&quot;: false
+        }
+      },
+      &quot;name&quot;: &quot;回覆Telegram&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.telegram&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        660,
+        0
+      ]
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;Telegram觸發&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;本人且指令對&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;本人且指令對&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;呼叫查價&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;呼叫查價&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;回覆Telegram&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}</code></pre></div>
+</details><h3 id="sec-5">小練習①：家庭提醒入口</h3>
+<p>收到 <code>title</code> 和 <code>when</code> 兩個欄位才整理成一筆提醒草稿，欄位不齊就回 400 拒絕。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>收到提醒（<strong>Webhook</strong>）</td>
+<td>收 POST 請求</td>
+<td><strong>Path</strong> <code>m7-family</code>、<strong>Authentication</strong> 選 <strong>Header Auth</strong>（同一把憑證）、<strong>Respond</strong> 選 <strong>Using &#39;Respond to Webhook&#39; Node</strong></td>
+</tr>
+<tr>
+<td>欄位齊嗎（<strong>If</strong>）</td>
+<td>檢查 <code>title</code> 和 <code>when</code> 都有</td>
+<td>true、false 兩條路</td>
+</tr>
+<tr>
+<td>整理草稿（<strong>Edit Fields (Set)</strong>）</td>
+<td>true 分支，組出草稿</td>
+<td>欄位 <code>title</code>、<code>when</code>，加 <code>status</code> 固定寫 <code>draft</code></td>
+</tr>
+<tr>
+<td>回覆成功（<strong>Respond to Webhook</strong>）</td>
+<td>回草稿給對方</td>
+<td><strong>Respond With</strong> 選 <strong>JSON</strong></td>
+</tr>
+<tr>
+<td>回覆缺欄位（<strong>Respond to Webhook</strong>）</td>
+<td>false 分支，拒絕</td>
+<td><strong>Response Code</strong> <code>400</code>；內容是「要有 title（提醒什麼）和 when（什麼時候）」</td>
+</tr>
+</tbody></table>
+<ol>
+<li><p>匯入 <code>ex1-done.json</code>，「收到提醒」選標頭驗證憑證，按 <strong>Publish</strong>。
+你應該看到：5 個節點連線完整；流程是已發布狀態。</p>
+</li>
+<li><p>在 PowerShell 送 <code>req-family-ok.json</code> 到 <code>http://localhost:5678/webhook/m7-family</code>（寫法同主線，網址換掉）。
+你應該看到：200，<code>{&quot;ok&quot;:true,&quot;draft&quot;:{&quot;title&quot;:&quot;倒垃圾&quot;,&quot;when&quot;:&quot;週二 19:30&quot;,&quot;status&quot;:&quot;draft&quot;}}</code>。<code>status</code> 是 <code>draft</code>：只是草稿，還沒有真的排進任何行事曆。</p>
+</li>
+<li><p>送 <code>req-family-missing.json</code>，再把密語改錯送一次。
+你應該看到：缺欄位回 <strong>400</strong>，<code>要有 title（提醒什麼）和 when（什麼時候）</code>；密語錯回 <strong>403</strong>。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？404「…is not registered」：沒 <strong>Publish</strong>，或路徑不是 <code>m7-family</code>。</p>
+</blockquote>
+<details class="wf"><summary>完成版（m7/ex1-done.json）</summary><a href="files/m7/ex1-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M7 小練習① 家庭提醒入口&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;parameters&quot;: {
+        &quot;httpMethod&quot;: &quot;POST&quot;,
+        &quot;path&quot;: &quot;m7-family&quot;,
+        &quot;authentication&quot;: &quot;headerAuth&quot;,
+        &quot;responseMode&quot;: &quot;responseNode&quot;,
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;收到提醒&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.webhook&quot;,
+      &quot;typeVersion&quot;: 2.2,
+      &quot;webhookId&quot;: &quot;m7-family&quot;,
+      &quot;position&quot;: [
+        0,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;conditions&quot;: {
+          &quot;options&quot;: {
+            &quot;caseSensitive&quot;: true,
+            &quot;leftValue&quot;: &quot;&quot;,
+            &quot;typeValidation&quot;: &quot;loose&quot;,
+            &quot;version&quot;: 2
+          },
+          &quot;conditions&quot;: [
+            {
+              &quot;id&quot;: &quot;c0&quot;,
+              &quot;leftValue&quot;: &quot;={{ !!$json.body.title &amp;&amp; !!$json.body.when }}&quot;,
+              &quot;rightValue&quot;: &quot;&quot;,
+              &quot;operator&quot;: {
+                &quot;type&quot;: &quot;boolean&quot;,
+                &quot;operation&quot;: &quot;true&quot;,
+                &quot;singleValue&quot;: true
+              }
+            }
+          ],
+          &quot;combinator&quot;: &quot;and&quot;
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;欄位齊嗎&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.if&quot;,
+      &quot;typeVersion&quot;: 2.2,
+      &quot;position&quot;: [
+        220,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;f0&quot;,
+              &quot;name&quot;: &quot;title&quot;,
+              &quot;value&quot;: &quot;={{ $json.body.title }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f1&quot;,
+              &quot;name&quot;: &quot;when&quot;,
+              &quot;value&quot;: &quot;={{ $json.body.when }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f2&quot;,
+              &quot;name&quot;: &quot;status&quot;,
+              &quot;value&quot;: &quot;draft&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;整理草稿&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        440,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;respondWith&quot;: &quot;json&quot;,
+        &quot;responseBody&quot;: &quot;={{ { ok: true, draft: $json } }}&quot;,
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;回覆成功&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.respondToWebhook&quot;,
+      &quot;typeVersion&quot;: 1.5,
+      &quot;position&quot;: [
+        660,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;respondWith&quot;: &quot;json&quot;,
+        &quot;responseBody&quot;: &quot;={{ { ok: false, text: &#39;要有 title（提醒什麼）和 when（什麼時候）&#39; } }}&quot;,
+        &quot;options&quot;: {
+          &quot;responseCode&quot;: 400
+        }
+      },
+      &quot;name&quot;: &quot;回覆缺欄位&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.respondToWebhook&quot;,
+      &quot;typeVersion&quot;: 1.5,
+      &quot;position&quot;: [
+        660,
+        200
+      ]
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;收到提醒&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;欄位齊嗎&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;欄位齊嗎&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;整理草稿&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ],
+        [
+          {
+            &quot;node&quot;: &quot;回覆缺欄位&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;整理草稿&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;回覆成功&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}</code></pre></div>
+</details><h3 id="sec-6">小練習②：手機查採買清單</h3>
+<p>一個用 GET 的門鈴：按一下就回一份假的採買清單。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>查清單（<strong>Webhook</strong>）</td>
+<td>收 GET 請求</td>
+<td><strong>HTTP Method</strong> <code>GET</code>、<strong>Path</strong> <code>m7-shopping</code>、<strong>Authentication</strong> 選 <strong>Header Auth</strong>、<strong>Respond</strong> 選 <strong>Using &#39;Respond to Webhook&#39; Node</strong></td>
+</tr>
+<tr>
+<td>採買清單（<strong>Edit Fields (Set)</strong>）</td>
+<td>準備假清單</td>
+<td><code>items</code>（<strong>Array</strong>）、<code>text</code>（<strong>String</strong>）</td>
+</tr>
+<tr>
+<td>回覆清單（<strong>Respond to Webhook</strong>）</td>
+<td>回給對方</td>
+<td><strong>Respond With</strong> 選 <strong>JSON</strong>；內容有 <code>ok</code>、<code>count</code>、<code>text</code></td>
+</tr>
+</tbody></table>
+<ol>
+<li><p>匯入 <code>ex2-done.json</code>，選標頭驗證憑證，按 <strong>Publish</strong>。
+你應該看到：3 個節點連線完整；流程是已發布狀態。</p>
+</li>
+<li><p>在電腦的 PowerShell 測（GET 不用請求檔）：
+<code>curl.exe -s http://localhost:5678/webhook/m7-shopping -H &quot;X-Family-Key: 你的密語&quot;</code>
+你應該看到：200，<code>{&quot;ok&quot;:true,&quot;count&quot;:3,&quot;text&quot;:&quot;牛奶、雞蛋、衛生紙&quot;}</code>。</p>
+</li>
+<li><p>不帶密語再送一次。
+你應該看到：<strong>403</strong>，<code>Authorization data is wrong!</code>。</p>
+</li>
+</ol>
+<p>手機要用得到，需要第 3 段的通道；而且手機瀏覽器不能自己加標頭，要用能設定標頭的 App（例如 iPhone 的捷徑，待查證）。</p>
+<details class="wf"><summary>完成版（m7/ex2-done.json）</summary><a href="files/m7/ex2-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M7 小練習② 手機查採買清單&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;parameters&quot;: {
+        &quot;httpMethod&quot;: &quot;GET&quot;,
+        &quot;path&quot;: &quot;m7-shopping&quot;,
+        &quot;authentication&quot;: &quot;headerAuth&quot;,
+        &quot;responseMode&quot;: &quot;responseNode&quot;,
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;查清單&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.webhook&quot;,
+      &quot;typeVersion&quot;: 2.2,
+      &quot;webhookId&quot;: &quot;m7-shopping&quot;,
+      &quot;position&quot;: [
+        0,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;f0&quot;,
+              &quot;name&quot;: &quot;items&quot;,
+              &quot;value&quot;: &quot;=[\&quot;牛奶\&quot;,\&quot;雞蛋\&quot;,\&quot;衛生紙\&quot;]&quot;,
+              &quot;type&quot;: &quot;array&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f1&quot;,
+              &quot;name&quot;: &quot;text&quot;,
+              &quot;value&quot;: &quot;牛奶、雞蛋、衛生紙&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;採買清單&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        220,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;respondWith&quot;: &quot;json&quot;,
+        &quot;responseBody&quot;: &quot;={{ { ok: true, count: $json.items.length, text: $json.text } }}&quot;,
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;回覆清單&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.respondToWebhook&quot;,
+      &quot;typeVersion&quot;: 1.5,
+      &quot;position&quot;: [
+        440,
+        0
+      ]
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;查清單&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;採買清單&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;採買清單&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;回覆清單&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}</code></pre></div>
+</details><p>變形題：在主線「指令對嗎」再加一個條件，只允許你的自選股（例如 2330、2317、0050），其他代號回「這檔不在你的清單」。重點：不在清單就說不在清單，不要回 0 元或空白。（不附素材，自己改。）</p>
+<h3 id="sec-7">看懂執行紀錄</h3>
+<p>打開 <strong>Executions</strong>，注意四件事：</p>
+<ul>
+<li>正式網址的執行，只在 Executions 看得到，不會顯示在畫布上。</li>
+<li>子流程是另一筆紀錄：每呼叫一次，就多一筆子流程自己的紀錄，要和入口那一筆一起看。</li>
+<li><strong>403 被擋的請求沒有紀錄</strong>：流程根本沒跑。要知道有沒有人亂試，不能靠 Executions。</li>
+<li><strong>400 格式錯算成功的一筆</strong>：流程跑完了，只是回了拒絕。打開那一筆，看資料是走 false 那條（「回覆格式錯」）。</li>
+</ul>
+<p>不能只看有沒有綠燈：還要看資料走了哪一條、子流程有沒有被呼叫、回覆的狀態碼對不對。</p>
+<h3 id="sec-8">驗收</h3>
+<ul>
+<li class="check"> 正常 N。用正式網址送 <code>req-2330.json</code>，回最近交易日收盤價，文字寫明是盤後資料。</li>
+<li class="check"> 缺資料 M。送 <code>req-empty.json</code>，回 400，要求照「查 代號」的格式。</li>
+<li class="check"> 重跑 D。同一個請求再送一次，回一樣的內容，沒有寫入任何東西。</li>
+<li class="check"> 故障 E。密語改錯，回 403；Executions 沒有這一筆，子流程也沒被呼叫。</li>
+<li class="check"> 進階。在 Telegram 傳「查 2330」收到回覆；通道網址被打開編輯器的處理，見第 3 段安全提醒（待查證）。</li>
+<li class="check"> 變形題。主線加上自選股限制，不在清單的代號回「這檔不在你的清單」，不是 0 元。</li>
+</ul>
+<details><summary id="sec-9">卡關救援</summary><ul>
+<li>404「The requested webhook &quot;POST m7-quote&quot; is not registered」→ 看是不是用了正式網址 → 用了正式網址卻沒 <strong>Publish</strong>，或 Publish 後還沒生效，<strong>Publish</strong> 後等幾秒再試 → 確認改回 200。</li>
+<li>測試網址沒反應 → 看有沒有按聽取測試 → 沒按，或聽完一次就停了（待查證），重按再送 → 確認畫布上有資料。</li>
+<li>422「Failed to parse request body」→ 看你是不是用 <code>-d</code> 直接帶 JSON → PowerShell 吃掉引號，改用請求檔 <code>--data-binary &quot;@req-2330.json&quot;</code> → 確認回 200。</li>
+<li>403「Authorization data is wrong!」→ 看密語和標頭名稱 → 密語或標頭名稱不對（<code>X-Family-Key</code> 大小寫照抄）→ 確認回 200。</li>
+<li><code>curl</code> 跳出一堆紅字參數錯誤 → 看打的是不是 <code>curl</code> → 改打 <code>curl.exe</code> → 確認有回 JSON。</li>
+<li>「Workflow is not active」→ 看查價子流程 → 沒 <strong>Publish</strong>，發布它 → 重送一次確認有回價格。</li>
+<li>回覆一直「找不到」→ 看代號 → 代號打錯，或是上櫃股票（只查得到上市股票）→ 換成 2330 確認有價格。</li>
+<li>Telegram 沒反應 → 逐一檢查 ngrok 網址變了、<code>WEBHOOK_URL</code> 沒設或沒重開 n8n、chat ID 沒換、同一個 Bot 有兩個 Telegram 觸發 → 修好後在 Telegram 再傳一次，確認 Executions 有新紀錄。</li>
+</ul>
+<p>求助時附 n8n 版本、哪個節點、錯誤訊息原文、已經試過什麼。截圖和貼文字前，先遮住 Bot token、chat ID、密語和 ngrok 網址。</p>
+</details><details><summary id="sec-10">官方連結</summary><p>依本地官方文件與實測紀錄整理，查詢日期 2026-11-21。</p>
+<ul>
+<li><a href="https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.webhook/" target="_blank" rel="noopener noreferrer">Webhook 節點</a><span class="dom">docs.n8n.io</span></li>
+<li><a href="https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.respondtowebhook/" target="_blank" rel="noopener noreferrer">Respond to Webhook 節點</a><span class="dom">docs.n8n.io</span></li>
+<li><a href="https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.executeworkflowtrigger/" target="_blank" rel="noopener noreferrer">Execute Workflow Trigger 節點</a><span class="dom">docs.n8n.io</span></li>
+<li><a href="https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.executeworkflow/" target="_blank" rel="noopener noreferrer">Execute Sub-workflow 節點</a><span class="dom">docs.n8n.io</span></li>
+<li><a href="https://docs.n8n.io/integrations/builtin/trigger-nodes/n8n-nodes-base.telegramtrigger/" target="_blank" rel="noopener noreferrer">Telegram Trigger 節點</a><span class="dom">docs.n8n.io</span></li>
+<li><a href="https://docs.n8n.io/build/flow-logic/break-workflows-into-smaller-parts" target="_blank" rel="noopener noreferrer">子流程（拆小流程）</a><span class="dom">docs.n8n.io</span></li>
+<li><a href="https://docs.n8n.io/hosting/configuration/configuration-examples/webhook-url/" target="_blank" rel="noopener noreferrer">設定 Webhook 網址</a><span class="dom">docs.n8n.io</span></li>
+<li><a href="https://ngrok.com/" target="_blank" rel="noopener noreferrer">ngrok</a><span class="dom">ngrok.com</span></li>
+</ul>
+</details><nav class="pager" aria-label="前後課程"><a class="prev" href="m6.html"><span>← 上一個</span>M6 錯誤處理與可靠性</a><a class="next" href="m8.html"><span>下一個 →</span>M8 加入 AI（受限用法）</a></nav></article></main><aside class="toc" aria-label="本頁目錄"><div class="t">本頁</div><a href="#sec-1">成果與先修</a><a href="#sec-2">白話觀念</a><a href="#sec-3">素材包</a><a href="#sec-4">主線：傳「查 2330」回覆收盤價</a><a href="#sec-5">小練習①：家庭提醒入口</a><a href="#sec-6">小練習②：手機查採買清單</a><a href="#sec-7">看懂執行紀錄</a><a href="#sec-8">驗收</a><a href="#sec-9">卡關救援</a><a href="#sec-10">官方連結</a></aside><nav class="bottombar" aria-label="前後課程"><a href="m6.html">← M6 錯誤處理與可靠性</a><a href="m8.html">M8 加入 AI（受限用法） →</a></nav></body></html>

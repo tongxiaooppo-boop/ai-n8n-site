@@ -1,0 +1,100 @@
+{
+  "name": "M0 主線 教材檢查流程",
+  "nodes": [
+    {
+      "name": "手動",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "name": "假早報",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "name",
+              "value": "假想甲",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "close",
+              "value": 100,
+              "type": "number"
+            },
+            {
+              "id": "a3",
+              "name": "usd",
+              "value": 32.85,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "name": "顯示文字",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "text",
+              "value": "=【測試】今天的早報：{{ $json.name }} {{ $json.close }} 元，美元 {{ $json.usd }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "手動": {
+      "main": [
+        [
+          {
+            "node": "假早報",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "假早報": {
+      "main": [
+        [
+          {
+            "node": "顯示文字",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

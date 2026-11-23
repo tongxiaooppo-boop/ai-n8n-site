@@ -1,0 +1,69 @@
+{
+  "name": "M3 主線 起始版",
+  "nodes": [
+    {
+      "name": "手動",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "name": "整理後股票",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\"data\": [{\"dataDate\": \"2026-11-17\", \"code\": \"2330\", \"name\": \"假想甲\", \"close\": 2170, \"change\": -45, \"valid\": true}, {\"dataDate\": \"2026-11-17\", \"code\": \"2317\", \"name\": \"假想乙\", \"close\": 219, \"change\": 0.5, \"valid\": true}, {\"dataDate\": \"2026-11-17\", \"code\": \"9999\", \"name\": \"假想丙\", \"close\": null, \"change\": null, \"valid\": false}, {\"dataDate\": \"2026-11-17\", \"code\": \"3008\", \"name\": \"假想丁\", \"close\": 31.5, \"change\": 1.5, \"valid\": true}, {\"dataDate\": \"2026-11-17\", \"code\": \"2603\", \"name\": \"假想戊\", \"close\": 190, \"change\": -10, \"valid\": true}]}",
+        "options": {}
+      }
+    },
+    {
+      "name": "拆成多筆",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "手動": {
+      "main": [
+        [
+          {
+            "node": "整理後股票",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "整理後股票": {
+      "main": [
+        [
+          {
+            "node": "拆成多筆",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

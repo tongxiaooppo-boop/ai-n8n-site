@@ -1,0 +1,699 @@
+<!doctype html><html lang="zh-Hant" data-pal="teal"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>M3 判斷、多筆與合併｜n8n 生活自動化</title><link rel="stylesheet" href="assets/style.css"><script src="assets/app.js" defer></script></head><body><a class="skip" href="#main">跳到正文</a><header class="topbar"><button type="button" aria-label="打開課表" aria-controls="schedule" aria-expanded="false">☰</button><span>M3 判斷、多筆與合併</span></header><nav class="nav" id="schedule" aria-label="課表"><a class="brand" href="index.html">n8n 生活自動化</a><div class="stage">主線（M0–M5 照順序，之後照需要挑）</div><a class="mod" href="m0.html"><b>M0</b><span>準備環境</span></a><a class="mod" href="m1.html"><b>M1</b><span>第一個流程</span></a><a class="mod" href="m2.html"><b>M2</b><span>資料與 Expression</span></a><a class="mod cur" href="m3.html" aria-current="page"><b>M3</b><span>判斷、多筆與合併</span></a><a class="mod" href="m4.html"><b>M4</b><span>API、RSS 與排程</span></a><a class="mod" href="m5.html"><b>M5</b><span>通知、憑證與檔案</span></a><a class="mod" href="m6.html"><b>M6</b><span>錯誤處理與可靠性</span></a><a class="mod" href="m7.html"><b>M7</b><span>Webhook 與子流程</span></a><a class="mod" href="m8.html"><b>M8</b><span>加入 AI（受限用法）</span></a><a class="mod" href="m9.html"><b>M9</b><span>上線與維護</span></a><div class="stage">結業</div><a class="mod" href="final.html"><b>結業專題</b><span>生活題庫</span></a><div class="stage">選修</div><a class="mod" href="opt-a.html"><b>選修 A</b><span>AI Agent</span></a><a class="mod" href="opt-b.html"><b>選修 B</b><span>請 Claude 幫你寫流程</span></a><a class="mod" href="opt-c.html"><b>選修 C</b><span>更多資料來源與工具</span></a><div class="stage">附錄</div><a class="mod" href="version.html"><b>附錄</b><span>版本附頁</span></a></nav><button class="scrim" type="button" aria-label="關閉課表" tabindex="-1" hidden></button><main id="main"><article class="art"><div class="eyebrow">主線（M0–M5 照順序，之後照需要挑）</div><h1>M3｜判斷、多筆與合併</h1><div class="meta"><span class="tag">漲跌超過門檻才標記，同一則新聞不重複</span><span class="tag">約 2 小時</span><span class="tag">先修：<a href="m2.html">M2</a></span><span class="tag">實測 n8n 2.48.4（2026-11-18）・你的畫面可能略有不同</span></div><h3 id="sec-1">成果與先修</h3>
+<p>把漲跌達門檻的股票送到標記分支，去掉重複新聞，再把兩人的採買清單接起來。
+先完成 M2。已經會條件分支與多筆資料的人可以從驗收的重複與故障情境開始。
+不用新帳號，主線費用 0 元。股票都是假想測資，只供紀錄與提醒練習。</p>
+<h3 id="sec-2">白話觀念</h3>
+<p><strong>If</strong> 把資料分到 true、false 兩路；<strong>Filter</strong> 只留下符合條件的資料。<strong>Remove Duplicates</strong> 用指定欄位辨認重複，這課只比同一次輸入。<strong>Merge</strong> 的 <strong>Append</strong> 把兩路資料前後接起來。n8n 通常會處理每個 <strong>Item</strong>，這三個練習都不用 Loop。例外如 <strong>RSS Read</strong> 是讀指定網址一次，不是為每筆輸入再讀一次。缺資料用 <code>null</code>，不能當成漲跌為 0。</p>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">手動 → 股票陣列 → Split Out → 算漲跌幅 → If（true／false）
+手動 → 新聞陣列 → Split Out → Remove Duplicates → Filter
+手動 → 兩份清單 → Merge（Append）→ Split Out</code></pre></div>
+<h3 id="sec-3">素材包</h3>
+<ul>
+<li><a href="files/m3/main-start.json" download>main-start.json</a>：主線前三個節點與五筆股票。</li>
+<li><a href="files/m3/main-done.json" download>main-done.json</a>：主線漲跌幅與門檻判斷完成版。</li>
+<li><a href="files/m3/ex1-done.json" download>ex1-done.json</a>：新聞去重完成版。</li>
+<li><a href="files/m3/ex2-done.json" download>ex2-done.json</a>：家庭採買合併完成版。</li>
+<li><a href="files/m3/data-normal.json" download>data-normal.json</a>：前一日收盤為 95 的正常測資。</li>
+<li><a href="files/m3/data-missing.json" download>data-missing.json</a>：收盤與漲跌都缺值的測資。</li>
+<li><a href="files/m3/data-dup.json" download>data-dup.json</a>：兩筆同連結新聞的測資。</li>
+</ul>
+<p>用 <strong>Import from File</strong> 匯入流程，位置見版本附頁。測資檔不是流程；開啟後複製整份內容，貼到對應陣列節點的 <strong>JSON Output</strong>。本課不用憑證。</p>
+<h3 id="sec-4">主線：漲跌超過門檻才標記</h3>
+<p>從五筆整理後股票計算漲跌幅，挑出漲或跌達 3% 的資料。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>手動（<strong>Manual Trigger</strong>）</td>
+<td>啟動流程</td>
+<td>手動執行</td>
+</tr>
+<tr>
+<td>整理後股票（<strong>Edit Fields (Set)</strong>）</td>
+<td>提供五筆測資</td>
+<td><strong>Mode</strong> 選 <strong>JSON</strong>，內容如下</td>
+</tr>
+<tr>
+<td>拆成多筆（<strong>Split Out</strong>）</td>
+<td>拆開股票陣列</td>
+<td><strong>Fields To Split Out</strong> 填 <code>data</code></td>
+</tr>
+<tr>
+<td>算漲跌幅（<strong>Edit Fields (Set)</strong>）</td>
+<td>新增百分比</td>
+<td>保留其他欄位，<code>pct</code> 用 <strong>Number</strong></td>
+</tr>
+<tr>
+<td>超過門檻嗎（<strong>If</strong>）</td>
+<td>分成要標記與不用標記</td>
+<td><strong>Boolean</strong> 的 <strong>is true</strong></td>
+</tr>
+</tbody></table>
+<details class="wf"><summary>起始版（m3/main-start.json）</summary><a href="files/m3/main-start.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M3 主線 起始版&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;name&quot;: &quot;手動&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.manualTrigger&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        0,
+        0
+      ],
+      &quot;parameters&quot;: {}
+    },
+    {
+      &quot;name&quot;: &quot;整理後股票&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        220,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;raw&quot;,
+        &quot;jsonOutput&quot;: &quot;{\&quot;data\&quot;: [{\&quot;dataDate\&quot;: \&quot;2026-11-17\&quot;, \&quot;code\&quot;: \&quot;2330\&quot;, \&quot;name\&quot;: \&quot;假想甲\&quot;, \&quot;close\&quot;: 2170, \&quot;change\&quot;: -45, \&quot;valid\&quot;: true}, {\&quot;dataDate\&quot;: \&quot;2026-11-17\&quot;, \&quot;code\&quot;: \&quot;2317\&quot;, \&quot;name\&quot;: \&quot;假想乙\&quot;, \&quot;close\&quot;: 219, \&quot;change\&quot;: 0.5, \&quot;valid\&quot;: true}, {\&quot;dataDate\&quot;: \&quot;2026-11-17\&quot;, \&quot;code\&quot;: \&quot;9999\&quot;, \&quot;name\&quot;: \&quot;假想丙\&quot;, \&quot;close\&quot;: null, \&quot;change\&quot;: null, \&quot;valid\&quot;: false}, {\&quot;dataDate\&quot;: \&quot;2026-11-17\&quot;, \&quot;code\&quot;: \&quot;3008\&quot;, \&quot;name\&quot;: \&quot;假想丁\&quot;, \&quot;close\&quot;: 31.5, \&quot;change\&quot;: 1.5, \&quot;valid\&quot;: true}, {\&quot;dataDate\&quot;: \&quot;2026-11-17\&quot;, \&quot;code\&quot;: \&quot;2603\&quot;, \&quot;name\&quot;: \&quot;假想戊\&quot;, \&quot;close\&quot;: 190, \&quot;change\&quot;: -10, \&quot;valid\&quot;: true}]}&quot;,
+        &quot;options&quot;: {}
+      }
+    },
+    {
+      &quot;name&quot;: &quot;拆成多筆&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.splitOut&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        440,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;fieldToSplitOut&quot;: &quot;data&quot;,
+        &quot;options&quot;: {}
+      }
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;手動&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;整理後股票&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;整理後股票&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;拆成多筆&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}
+</code></pre></div>
+</details><ol>
+<li>匯入起始版，核對「整理後股票」的 <strong>JSON Output</strong> 是下方五筆測資，再執行到「拆成多筆」。位置見版本附頁。
+你應該看到：陣列節點輸出 1 個 Item，「拆成多筆」輸出 5 個 Items。</li>
+</ol>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{&quot;data&quot;:[
+ {&quot;dataDate&quot;:&quot;2026-11-17&quot;,&quot;code&quot;:&quot;2330&quot;,&quot;name&quot;:&quot;假想甲&quot;,&quot;close&quot;:2170,&quot;change&quot;:-45,&quot;valid&quot;:true},
+ {&quot;dataDate&quot;:&quot;2026-11-17&quot;,&quot;code&quot;:&quot;2317&quot;,&quot;name&quot;:&quot;假想乙&quot;,&quot;close&quot;:219,&quot;change&quot;:0.5,&quot;valid&quot;:true},
+ {&quot;dataDate&quot;:&quot;2026-11-17&quot;,&quot;code&quot;:&quot;9999&quot;,&quot;name&quot;:&quot;假想丙&quot;,&quot;close&quot;:null,&quot;change&quot;:null,&quot;valid&quot;:false},
+ {&quot;dataDate&quot;:&quot;2026-11-17&quot;,&quot;code&quot;:&quot;3008&quot;,&quot;name&quot;:&quot;假想丁&quot;,&quot;close&quot;:31.5,&quot;change&quot;:1.5,&quot;valid&quot;:true},
+ {&quot;dataDate&quot;:&quot;2026-11-17&quot;,&quot;code&quot;:&quot;2603&quot;,&quot;name&quot;:&quot;假想戊&quot;,&quot;close&quot;:190,&quot;change&quot;:-10,&quot;valid&quot;:true}]}</code></pre></div>
+<ol start="2">
+<li>接上「算漲跌幅」，開啟 <strong>Include Other Input Fields</strong> 保留其他欄位；新增 <code>pct</code>，選 <strong>Number</strong>，值切換 <strong>Expression</strong> 並貼上下式。位置見版本附頁。
+你應該看到：第一筆仍有 <code>code=&quot;2330&quot;</code>、<code>close=2170</code>、<code>change=-45</code>，新增 <code>pct=-2.03</code>。</li>
+</ol>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">{{ $json.valid &amp;&amp; ($json.close - $json.change) &gt; 0 ? Math.round($json.change / ($json.close - $json.change) * 10000) / 100 : null }}</code></pre></div>
+<p>前一日收盤＝今天收盤 − 漲跌。漲跌幅＝漲跌 ÷ 前一日收盤 × 100，再四捨五入到小數 2 位。資料無效或分母不是正數就給 <code>null</code>，不硬算。</p>
+<blockquote>
+<p>卡住了？代號消失時先開啟保留其他欄位；<code>pct</code> 出現引號時先核對型別是 <strong>Number</strong>。</p>
+</blockquote>
+<ol start="3">
+<li>接上「超過門檻嗎」，條件填下式，選 <strong>Boolean</strong> 的 <strong>is true</strong>；執行整條流程並分別檢查兩個輸出。
+你應該看到：true 2 筆，第一筆 <code>code=&quot;3008&quot;</code>、<code>pct=5</code>；false 3 筆，第一筆為 2330。</li>
+</ol>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">{{ $json.pct !== null &amp;&amp; Math.abs($json.pct) &gt;= 3 }}</code></pre></div>
+<p><code>Math.abs</code> 是不管正負，只看大小。這裡「漲或跌超過 3%」包含剛好 3%；改條件裡的 <code>3</code> 就能換門檻。true 是要標記的 3008（+5%）、2603（−5%）。false 是 2330（−2.03%）、2317（+0.23%）、9999（無資料）。<strong>無資料走 false 不代表沒漲跌，是「不知道」</strong>，M5 早報會另外標「資料不足」。</p>
+<ol start="4">
+<li>分別把正常、缺資料測資貼進「整理後股票」，每次替換整份內容後重跑，最後恢復五筆資料。
+你應該看到：正常測資 <code>pct=5.26</code> 並走 true；缺資料測資 <code>pct=null</code> 並走 false，沒有變成 0。</li>
+</ol>
+<details class="wf"><summary>完成版（m3/main-done.json）</summary><a href="files/m3/main-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M3 主線 漲跌超過門檻才標記&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;name&quot;: &quot;手動&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.manualTrigger&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        0,
+        0
+      ],
+      &quot;parameters&quot;: {}
+    },
+    {
+      &quot;name&quot;: &quot;整理後股票&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        220,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;raw&quot;,
+        &quot;jsonOutput&quot;: &quot;{\&quot;data\&quot;: [{\&quot;dataDate\&quot;: \&quot;2026-11-17\&quot;, \&quot;code\&quot;: \&quot;2330\&quot;, \&quot;name\&quot;: \&quot;假想甲\&quot;, \&quot;close\&quot;: 2170, \&quot;change\&quot;: -45, \&quot;valid\&quot;: true}, {\&quot;dataDate\&quot;: \&quot;2026-11-17\&quot;, \&quot;code\&quot;: \&quot;2317\&quot;, \&quot;name\&quot;: \&quot;假想乙\&quot;, \&quot;close\&quot;: 219, \&quot;change\&quot;: 0.5, \&quot;valid\&quot;: true}, {\&quot;dataDate\&quot;: \&quot;2026-11-17\&quot;, \&quot;code\&quot;: \&quot;9999\&quot;, \&quot;name\&quot;: \&quot;假想丙\&quot;, \&quot;close\&quot;: null, \&quot;change\&quot;: null, \&quot;valid\&quot;: false}, {\&quot;dataDate\&quot;: \&quot;2026-11-17\&quot;, \&quot;code\&quot;: \&quot;3008\&quot;, \&quot;name\&quot;: \&quot;假想丁\&quot;, \&quot;close\&quot;: 31.5, \&quot;change\&quot;: 1.5, \&quot;valid\&quot;: true}, {\&quot;dataDate\&quot;: \&quot;2026-11-17\&quot;, \&quot;code\&quot;: \&quot;2603\&quot;, \&quot;name\&quot;: \&quot;假想戊\&quot;, \&quot;close\&quot;: 190, \&quot;change\&quot;: -10, \&quot;valid\&quot;: true}]}&quot;,
+        &quot;options&quot;: {}
+      }
+    },
+    {
+      &quot;name&quot;: &quot;拆成多筆&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.splitOut&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        440,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;fieldToSplitOut&quot;: &quot;data&quot;,
+        &quot;options&quot;: {}
+      }
+    },
+    {
+      &quot;name&quot;: &quot;算漲跌幅&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        660,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;a1&quot;,
+              &quot;name&quot;: &quot;pct&quot;,
+              &quot;value&quot;: &quot;={{ $json.valid &amp;&amp; ($json.close - $json.change) &gt; 0 ? Math.round($json.change / ($json.close - $json.change) * 10000) / 100 : null }}&quot;,
+              &quot;type&quot;: &quot;number&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {},
+        &quot;includeOtherFields&quot;: true
+      }
+    },
+    {
+      &quot;name&quot;: &quot;超過門檻嗎&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.if&quot;,
+      &quot;typeVersion&quot;: 2.2,
+      &quot;position&quot;: [
+        880,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;conditions&quot;: {
+          &quot;options&quot;: {
+            &quot;caseSensitive&quot;: true,
+            &quot;leftValue&quot;: &quot;&quot;,
+            &quot;typeValidation&quot;: &quot;strict&quot;,
+            &quot;version&quot;: 2
+          },
+          &quot;conditions&quot;: [
+            {
+              &quot;id&quot;: &quot;c0&quot;,
+              &quot;leftValue&quot;: &quot;={{ $json.pct !== null &amp;&amp; Math.abs($json.pct) &gt;= 3 }}&quot;,
+              &quot;rightValue&quot;: &quot;&quot;,
+              &quot;operator&quot;: {
+                &quot;type&quot;: &quot;boolean&quot;,
+                &quot;operation&quot;: &quot;true&quot;,
+                &quot;singleValue&quot;: true
+              }
+            }
+          ],
+          &quot;combinator&quot;: &quot;or&quot;
+        },
+        &quot;options&quot;: {}
+      }
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;手動&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;整理後股票&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;整理後股票&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;拆成多筆&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;拆成多筆&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;算漲跌幅&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;算漲跌幅&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;超過門檻嗎&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}
+</code></pre></div>
+</details><h3 id="sec-5">小練習①：新聞不重複</h3>
+<p>用連結辨認同一則新聞，再留下標題含「颱風」的資料。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>手動（<strong>Manual Trigger</strong>）</td>
+<td>啟動流程</td>
+<td>手動執行</td>
+</tr>
+<tr>
+<td>新聞陣列（<strong>Edit Fields (Set)</strong>）</td>
+<td>提供五筆新聞</td>
+<td><strong>Mode</strong> 選 <strong>JSON</strong></td>
+</tr>
+<tr>
+<td>拆成多筆（<strong>Split Out</strong>）</td>
+<td>拆開陣列</td>
+<td><strong>Fields To Split Out</strong> 填 <code>news</code></td>
+</tr>
+<tr>
+<td>去掉重複（<strong>Remove Duplicates</strong>）</td>
+<td>同次輸入只留一筆同連結</td>
+<td><strong>Remove Items Repeated Within Current Input</strong>，比較 <code>link</code></td>
+</tr>
+<tr>
+<td>挑字詞（<strong>Filter</strong>）</td>
+<td>留下颱風新聞</td>
+<td><code>title</code> 的 <strong>String</strong> <strong>contains</strong> <code>颱風</code></td>
+</tr>
+</tbody></table>
+<ol>
+<li>建立前三個節點，在「新聞陣列」的 <strong>JSON Output</strong> 填入下方資料，接上拆分後執行。
+你應該看到：「拆成多筆」有 5 筆，前兩筆連結都是 <code>https://example.invalid/n1</code>。</li>
+</ol>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{&quot;news&quot;:[{&quot;title&quot;:&quot;颱風假最新消息&quot;,&quot;link&quot;:&quot;https://example.invalid/n1&quot;},{&quot;title&quot;:&quot;颱風假最新消息&quot;,&quot;link&quot;:&quot;https://example.invalid/n1&quot;},{&quot;title&quot;:&quot;颱風假最新消息&quot;,&quot;link&quot;:&quot;https://example.invalid/n2&quot;},{&quot;title&quot;:&quot;防詐騙宣導&quot;,&quot;link&quot;:&quot;https://example.invalid/n3&quot;},{&quot;title&quot;:&quot;電費調整說明&quot;,&quot;link&quot;:&quot;https://example.invalid/n4&quot;}]}</code></pre></div>
+<ol start="2">
+<li>接上「去掉重複」，選表中的本次輸入操作，指定比較欄位 <code>link</code>。位置見版本附頁。
+你應該看到：5 筆變 4 筆，<code>n1</code> 留一筆，<code>n2</code> 也保留。</li>
+</ol>
+<blockquote>
+<p>卡住了？只剩一則颱風新聞時先看比較欄位是否誤選 <code>title</code>。第 3 筆標題相同但連結不同，是另一則新聞。</p>
+</blockquote>
+<ol start="3">
+<li>接上「挑字詞」，比較 <code>{{ $json.title }}</code> 是否 <strong>contains</strong> <code>颱風</code>，執行並核對連結。
+你應該看到：4 筆變 2 筆，第一筆連結為 <code>https://example.invalid/n1</code>，第二筆為 <code>https://example.invalid/n2</code>。</li>
+</ol>
+<p>這裡只看這一次的資料，跨天記得用的是 M4 的另一個操作。</p>
+<details class="wf"><summary>完成版（m3/ex1-done.json）</summary><a href="files/m3/ex1-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M3 小練習 新聞不重複&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;name&quot;: &quot;手動&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.manualTrigger&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        0,
+        0
+      ],
+      &quot;parameters&quot;: {}
+    },
+    {
+      &quot;name&quot;: &quot;新聞陣列&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        220,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;raw&quot;,
+        &quot;jsonOutput&quot;: &quot;{\&quot;news\&quot;: [{\&quot;title\&quot;: \&quot;颱風假最新消息\&quot;, \&quot;link\&quot;: \&quot;https://example.invalid/n1\&quot;}, {\&quot;title\&quot;: \&quot;颱風假最新消息\&quot;, \&quot;link\&quot;: \&quot;https://example.invalid/n1\&quot;}, {\&quot;title\&quot;: \&quot;颱風假最新消息\&quot;, \&quot;link\&quot;: \&quot;https://example.invalid/n2\&quot;}, {\&quot;title\&quot;: \&quot;防詐騙宣導\&quot;, \&quot;link\&quot;: \&quot;https://example.invalid/n3\&quot;}, {\&quot;title\&quot;: \&quot;電費調整說明\&quot;, \&quot;link\&quot;: \&quot;https://example.invalid/n4\&quot;}]}&quot;,
+        &quot;options&quot;: {}
+      }
+    },
+    {
+      &quot;name&quot;: &quot;拆成多筆&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.splitOut&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        440,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;fieldToSplitOut&quot;: &quot;news&quot;,
+        &quot;options&quot;: {}
+      }
+    },
+    {
+      &quot;name&quot;: &quot;去掉重複&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.removeDuplicates&quot;,
+      &quot;typeVersion&quot;: 2,
+      &quot;position&quot;: [
+        660,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;operation&quot;: &quot;removeDuplicateInputItems&quot;,
+        &quot;compare&quot;: &quot;selectedFields&quot;,
+        &quot;fieldsToCompare&quot;: &quot;link&quot;,
+        &quot;options&quot;: {}
+      }
+    },
+    {
+      &quot;name&quot;: &quot;挑字詞&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.filter&quot;,
+      &quot;typeVersion&quot;: 2.2,
+      &quot;position&quot;: [
+        880,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;conditions&quot;: {
+          &quot;options&quot;: {
+            &quot;caseSensitive&quot;: true,
+            &quot;leftValue&quot;: &quot;&quot;,
+            &quot;typeValidation&quot;: &quot;strict&quot;,
+            &quot;version&quot;: 2
+          },
+          &quot;conditions&quot;: [
+            {
+              &quot;id&quot;: &quot;c0&quot;,
+              &quot;leftValue&quot;: &quot;={{ $json.title }}&quot;,
+              &quot;rightValue&quot;: &quot;颱風&quot;,
+              &quot;operator&quot;: {
+                &quot;type&quot;: &quot;string&quot;,
+                &quot;operation&quot;: &quot;contains&quot;
+              }
+            }
+          ],
+          &quot;combinator&quot;: &quot;or&quot;
+        },
+        &quot;options&quot;: {}
+      }
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;手動&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;新聞陣列&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;新聞陣列&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;拆成多筆&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;拆成多筆&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;去掉重複&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;去掉重複&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;挑字詞&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}
+</code></pre></div>
+</details><h3 id="sec-6">小練習②：家庭採買合併</h3>
+<p>把阿禾與小嵐的清單前後接起來，再拆成逐項採買資料。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>手動（<strong>Manual Trigger</strong>）</td>
+<td>同時啟動兩路</td>
+<td>輸出同時接兩個清單節點</td>
+</tr>
+<tr>
+<td>阿禾清單（<strong>Edit Fields (Set)</strong>）</td>
+<td>放阿禾兩項採買</td>
+<td><strong>JSON</strong> 模式，接合併的 <strong>Input 1</strong></td>
+</tr>
+<tr>
+<td>小嵐清單（<strong>Edit Fields (Set)</strong>）</td>
+<td>放小嵐三項採買</td>
+<td><strong>JSON</strong> 模式，接合併的 <strong>Input 2</strong></td>
+</tr>
+<tr>
+<td>合併（<strong>Merge</strong>）</td>
+<td>接起兩份清單</td>
+<td><strong>Append</strong></td>
+</tr>
+<tr>
+<td>拆成多筆（<strong>Split Out</strong>）</td>
+<td>拆開兩個清單陣列</td>
+<td><strong>Fields To Split Out</strong> 填 <code>list</code></td>
+</tr>
+</tbody></table>
+<ol>
+<li>建立「手動」與兩個清單節點，把手動的同一個輸出分別接到兩個清單，依序填入下方兩份 <strong>JSON Output</strong>。
+你應該看到：阿禾清單輸出 1 個 Item，<code>list</code> 內 2 項；小嵐清單輸出 1 個 Item，<code>list</code> 內 3 項。</li>
+</ol>
+<p>阿禾清單：</p>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{&quot;list&quot;:[{&quot;item&quot;:&quot;衛生紙&quot;,&quot;qty&quot;:1,&quot;who&quot;:&quot;阿禾&quot;},{&quot;item&quot;:&quot;牛奶&quot;,&quot;qty&quot;:2,&quot;who&quot;:&quot;阿禾&quot;}]}</code></pre></div>
+<p>小嵐清單：</p>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{&quot;list&quot;:[{&quot;item&quot;:&quot;雞蛋&quot;,&quot;qty&quot;:1,&quot;who&quot;:&quot;小嵐&quot;},{&quot;item&quot;:&quot;牛奶&quot;,&quot;qty&quot;:1,&quot;who&quot;:&quot;小嵐&quot;},{&quot;item&quot;:&quot;洗碗精&quot;,&quot;qty&quot;:1,&quot;who&quot;:&quot;小嵐&quot;}]}</code></pre></div>
+<ol start="2">
+<li>加入「合併」，阿禾接 <strong>Input 1</strong>、小嵐接 <strong>Input 2</strong>，模式選 <strong>Append</strong>。位置見版本附頁。
+你應該看到：「合併」輸出 2 個 Items，各自帶著一個 <code>list</code> 陣列。</li>
+</ol>
+<blockquote>
+<p>卡住了？少一人的清單時先檢查兩個輸入口都有接線，再確認模式是 <strong>Append</strong>。</p>
+</blockquote>
+<ol start="3">
+<li>接上「拆成多筆」，指定 <code>list</code> 並執行整條流程，逐筆查看 <code>who</code>。
+你應該看到：5 筆，第一筆 <code>item=&quot;衛生紙&quot;</code>、<code>qty=1</code>、<code>who=&quot;阿禾&quot;</code>，兩人的牛奶各自保留。</li>
+</ol>
+<p><strong>Append</strong> 就是前後接起來，這課不合併同品項。想一想：要怎麼知道牛奶共買幾瓶？先寫出做法，不用做出來。</p>
+<details class="wf"><summary>完成版（m3/ex2-done.json）</summary><a href="files/m3/ex2-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M3 小練習 家庭採買合併&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;name&quot;: &quot;手動&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.manualTrigger&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        0,
+        0
+      ],
+      &quot;parameters&quot;: {}
+    },
+    {
+      &quot;name&quot;: &quot;阿禾清單&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        220,
+        -100
+      ],
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;raw&quot;,
+        &quot;jsonOutput&quot;: &quot;{\&quot;list\&quot;: [{\&quot;item\&quot;: \&quot;衛生紙\&quot;, \&quot;qty\&quot;: 1, \&quot;who\&quot;: \&quot;阿禾\&quot;}, {\&quot;item\&quot;: \&quot;牛奶\&quot;, \&quot;qty\&quot;: 2, \&quot;who\&quot;: \&quot;阿禾\&quot;}]}&quot;,
+        &quot;options&quot;: {}
+      }
+    },
+    {
+      &quot;name&quot;: &quot;小嵐清單&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        220,
+        100
+      ],
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;raw&quot;,
+        &quot;jsonOutput&quot;: &quot;{\&quot;list\&quot;: [{\&quot;item\&quot;: \&quot;雞蛋\&quot;, \&quot;qty\&quot;: 1, \&quot;who\&quot;: \&quot;小嵐\&quot;}, {\&quot;item\&quot;: \&quot;牛奶\&quot;, \&quot;qty\&quot;: 1, \&quot;who\&quot;: \&quot;小嵐\&quot;}, {\&quot;item\&quot;: \&quot;洗碗精\&quot;, \&quot;qty\&quot;: 1, \&quot;who\&quot;: \&quot;小嵐\&quot;}]}&quot;,
+        &quot;options&quot;: {}
+      }
+    },
+    {
+      &quot;name&quot;: &quot;合併&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.merge&quot;,
+      &quot;typeVersion&quot;: 3.2,
+      &quot;position&quot;: [
+        440,
+        0
+      ],
+      &quot;parameters&quot;: {}
+    },
+    {
+      &quot;name&quot;: &quot;拆成多筆&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.splitOut&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        660,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;fieldToSplitOut&quot;: &quot;list&quot;,
+        &quot;options&quot;: {}
+      }
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;手動&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;阿禾清單&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          },
+          {
+            &quot;node&quot;: &quot;小嵐清單&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;阿禾清單&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;合併&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;小嵐清單&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;合併&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 1
+          }
+        ]
+      ]
+    },
+    &quot;合併&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;拆成多筆&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}
+</code></pre></div>
+</details><h3 id="sec-7">看懂執行紀錄</h3>
+<p>打開 <strong>Executions</strong> 選最新一次，位置見版本附頁。主線記下拆分 5 筆、計算 5 筆、true 2 筆與 false 3 筆。打開 9999，確認 <code>pct=null</code>；不能只看綠燈就以為每筆資料都完整。</p>
+<p>新聞流程核對 <code>5 → 4 → 2</code>，並查看留下來的兩個不同連結。採買流程先看兩邊的輸入，再看合併 2 筆、拆分 5 筆。模式設錯也可能執行成功；要以 <code>who</code> 與實際品項確認結果，修正後檢查新的執行時間。</p>
+<h3 id="sec-8">驗收</h3>
+<ul>
+<li class="check"> 正常。五筆股票計算後，第一筆 <code>pct=-2.03</code>，true 2 筆、false 3 筆，能說明門檻包含正負兩個方向。</li>
+<li class="check"> 正常 N。貼入 <code>data-normal.json</code>，用前一日收盤 95 為分母，得到 <code>pct=5.26</code>、走 true。</li>
+<li class="check"> 缺資料 M。貼入 <code>data-missing.json</code>，得到 <code>pct=null</code>、走 false，說出「不知道」與「沒有漲跌」的不同。</li>
+<li class="check"> 重複 D。把 <code>data-dup.json</code> 貼入「新聞陣列」，去掉重複後 1 筆；「挑字詞」0 筆，因為標題不含颱風。</li>
+<li class="check"> 故障 E。把採買「合併」改成 <strong>Combine</strong> → <strong>All Possible Combinations</strong>，確認合併 1 筆、拆分只剩小嵐 3 筆；說明兩邊同名 <code>list</code> 被後面的蓋掉，再改回 <strong>Append</strong> 恢復 5 筆。</li>
+<li class="check"> 變形題。恢復五筆新聞，改比較 <code>title</code>，記下 <code>5 → 3 → 1</code>；寫一句為什麼用連結比標題可靠，最後改回 <code>link</code>。</li>
+</ul>
+<p>每次替換整份測資後重跑，最後恢復原始資料與完成版設定。</p>
+<details><summary id="sec-9">卡關救援</summary><ul>
+<li>If 全部走 false → 看條件裡的門檻與 <code>pct</code> 型別 → 先恢復 <code>&gt;= 3</code>，把 <code>pct</code> 設為 <strong>Number</strong> → 用五筆測資確認 true 2 筆。</li>
+<li>合併後少一邊 → 看模式及兩個輸入口 → 先選 <strong>Append</strong> 並補齊兩路接線 → 確認拆分後阿禾 2 筆、小嵐 3 筆。</li>
+<li>去重沒效果或刪太多 → 看操作與比較欄位 → 先選本次輸入操作並比較 <code>link</code> → 確認五筆新聞變 4 筆，再篩成 2 筆。</li>
+<li>缺資料變成 0% → 看 <code>pct</code> 的有效旗標判斷 → 先恢復主線公式 → 用缺資料測資確認 <code>null</code> 並走 false。</li>
+</ul>
+<p>求助時附 n8n 版本、哪個節點、預期與實際筆數、錯誤訊息原文、已經試過什麼。截圖先遮住金鑰和個資。</p>
+</details><details><summary id="sec-10">官方連結</summary><p>依本地官方文件與實測紀錄整理，查詢日期 2026-11-18。</p>
+<ul>
+<li><a href="https://docs.n8n.io/build/flow-logic/merge-data" target="_blank" rel="noopener noreferrer">合併資料</a><span class="dom">docs.n8n.io</span></li>
+<li><a href="https://docs.n8n.io/build/flow-logic/loop" target="_blank" rel="noopener noreferrer">多筆資料與迴圈</a><span class="dom">docs.n8n.io</span></li>
+</ul>
+</details><nav class="pager" aria-label="前後課程"><a class="prev" href="m2.html"><span>← 上一個</span>M2 資料與 Expression</a><a class="next" href="m4.html"><span>下一個 →</span>M4 API、RSS 與排程</a></nav></article></main><aside class="toc" aria-label="本頁目錄"><div class="t">本頁</div><a href="#sec-1">成果與先修</a><a href="#sec-2">白話觀念</a><a href="#sec-3">素材包</a><a href="#sec-4">主線：漲跌超過門檻才標記</a><a href="#sec-5">小練習①：新聞不重複</a><a href="#sec-6">小練習②：家庭採買合併</a><a href="#sec-7">看懂執行紀錄</a><a href="#sec-8">驗收</a><a href="#sec-9">卡關救援</a><a href="#sec-10">官方連結</a></aside><nav class="bottombar" aria-label="前後課程"><a href="m2.html">← M2 資料與 Expression</a><a href="m4.html">M4 API、RSS 與排程 →</a></nav></body></html>

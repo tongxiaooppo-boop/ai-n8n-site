@@ -1,0 +1,112 @@
+{
+  "name": "M2 小練習① 旅費換算",
+  "nodes": [
+    {
+      "name": "手動",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "name": "央行格式",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "日期",
+              "value": "20261117",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "NTD_USD",
+              "value": "32.85",
+              "type": "string"
+            },
+            {
+              "id": "a3",
+              "name": "budgetTwd",
+              "value": 30000,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "name": "換算",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "date",
+              "value": "={{ $json['日期'].slice(0,4) + '-' + $json['日期'].slice(4,6) + '-' + $json['日期'].slice(6,8) }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "rate",
+              "value": "={{ Number($json.NTD_USD) }}",
+              "type": "number"
+            },
+            {
+              "id": "a3",
+              "name": "usdBudget",
+              "value": "={{ Math.round($json.budgetTwd / Number($json.NTD_USD) * 100) / 100 }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "手動": {
+      "main": [
+        [
+          {
+            "node": "央行格式",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "央行格式": {
+      "main": [
+        [
+          {
+            "node": "換算",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

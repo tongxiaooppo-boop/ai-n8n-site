@@ -1,0 +1,1331 @@
+<!doctype html><html lang="zh-Hant" data-pal="teal"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>M4 API、RSS 與排程｜n8n 生活自動化</title><link rel="stylesheet" href="assets/style.css"><script src="assets/app.js" defer></script></head><body><a class="skip" href="#main">跳到正文</a><header class="topbar"><button type="button" aria-label="打開課表" aria-controls="schedule" aria-expanded="false">☰</button><span>M4 API、RSS 與排程</span></header><nav class="nav" id="schedule" aria-label="課表"><a class="brand" href="index.html">n8n 生活自動化</a><div class="stage">主線（M0–M5 照順序，之後照需要挑）</div><a class="mod" href="m0.html"><b>M0</b><span>準備環境</span></a><a class="mod" href="m1.html"><b>M1</b><span>第一個流程</span></a><a class="mod" href="m2.html"><b>M2</b><span>資料與 Expression</span></a><a class="mod" href="m3.html"><b>M3</b><span>判斷、多筆與合併</span></a><a class="mod cur" href="m4.html" aria-current="page"><b>M4</b><span>API、RSS 與排程</span></a><a class="mod" href="m5.html"><b>M5</b><span>通知、憑證與檔案</span></a><a class="mod" href="m6.html"><b>M6</b><span>錯誤處理與可靠性</span></a><a class="mod" href="m7.html"><b>M7</b><span>Webhook 與子流程</span></a><a class="mod" href="m8.html"><b>M8</b><span>加入 AI（受限用法）</span></a><a class="mod" href="m9.html"><b>M9</b><span>上線與維護</span></a><div class="stage">結業</div><a class="mod" href="final.html"><b>結業專題</b><span>生活題庫</span></a><div class="stage">選修</div><a class="mod" href="opt-a.html"><b>選修 A</b><span>AI Agent</span></a><a class="mod" href="opt-b.html"><b>選修 B</b><span>請 Claude 幫你寫流程</span></a><a class="mod" href="opt-c.html"><b>選修 C</b><span>更多資料來源與工具</span></a><div class="stage">附錄</div><a class="mod" href="version.html"><b>附錄</b><span>版本附頁</span></a></nav><button class="scrim" type="button" aria-label="關閉課表" tabindex="-1" hidden></button><main id="main"><article class="art"><div class="eyebrow">主線（M0–M5 照順序，之後照需要挑）</div><h1>M4｜API、RSS 與排程</h1><div class="meta"><span class="tag">每天早上自動抓股價、匯率、警特報、新聞</span><span class="tag">約 2–3 小時</span><span class="tag">先修：<a href="m3.html">M3</a></span><span class="tag">實測 n8n 2.48.4（2026-11-18）・你的畫面可能略有不同</span></div><h3 id="sec-1">成果與先修</h3>
+<p>讓四條流程每天早上收集股價、匯率、警特報與新聞，並能辨認缺資料與來源故障。
+先完成 M3。已經會取得 API 與 RSS 資料的人可以從模擬來源故障及真正排程的驗收開始。
+不用新帳號，來源免金鑰，主線費用 0 元。股價與匯率只供紀錄與提醒。</p>
+<h3 id="sec-2">白話觀念</h3>
+<p><strong>HTTP Request</strong> 照網址拿資料，回傳 JSON 陣列會自動拆成多個 <strong>Item</strong>，這次不用另接 <strong>Split Out</strong>。狀態碼 200 是成功、404 是找不到、503 是對方暫時壞掉。<strong>RSS Read</strong> 讀新聞與警報的固定格式，一則是一個 Item。<strong>Limit</strong> 限制筆數。<strong>Schedule Trigger</strong> 決定何時啟動；存檔後還要 <strong>Publish</strong> 才會自動跑。<strong>Always Output Data</strong> 讓空結果仍送出一筆，才能寫「沒有警特報」。跨次去重會記住以前處理過的連結，要用正式排程驗證。</p>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">排程 → HTTP Request → Filter／Limit → 整理
+排程 → RSS Read → 整理
+排程 → RSS Read → Limit → Remove Duplicates → 整理</code></pre></div>
+<h3 id="sec-3">素材包</h3>
+<ul>
+<li><a href="files/m4/main-stock-done.json" download>main-stock-done.json</a>：股價收集完成版。</li>
+<li><a href="files/m4/main-fx-done.json" download>main-fx-done.json</a>：匯率收集完成版。</li>
+<li><a href="files/m4/main-warn-done.json" download>main-warn-done.json</a>：警特報狀態完成版。</li>
+<li><a href="files/m4/main-news-done.json" download>main-news-done.json</a>：新聞跨次去重完成版。</li>
+<li><a href="files/m4/ex1-done.json" download>ex1-done.json</a>：出門警報提醒草稿完成版。</li>
+<li><a href="files/m4/ex2-done.json" download>ex2-done.json</a>：發票開獎提醒完成版。</li>
+<li><a href="files/common/mock-source.json" download>mock-source.json</a>：共用模擬來源，用於空 RSS、缺欄位與 503。</li>
+</ul>
+<p>用 <strong>Import from File</strong> 匯入，位置見版本附頁。本課不用憑證；各流程獨立建立，不要把四條主線串成一條。</p>
+<h3 id="sec-4">主線：四條收集流程</h3>
+<p>依序建立四條收集流程，先手動核對資料，再讓排程自行執行。</p>
+<p>準備：匯入模擬來源並 <strong>Publish</strong>。這條流程維持原樣，下面只使用它提供的網址。</p>
+<details class="wf"><summary>模擬來源（common/mock-source.json）</summary><a href="files/common/mock-source.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+ &quot;name&quot;: &quot;模擬來源（教材用，M4／M6）&quot;,
+ &quot;nodes&quot;: [
+  {
+   &quot;name&quot;: &quot;收到請求&quot;,
+   &quot;type&quot;: &quot;n8n-nodes-base.webhook&quot;,
+   &quot;typeVersion&quot;: 2,
+   &quot;position&quot;: [
+    0,
+    0
+   ],
+   &quot;webhookId&quot;: &quot;5e1f0c2a-7b7d-4c55-9a51-0d3f6b2c0a01&quot;,
+   &quot;parameters&quot;: {
+    &quot;path&quot;: &quot;mock&quot;,
+    &quot;httpMethod&quot;: &quot;GET&quot;,
+    &quot;responseMode&quot;: &quot;responseNode&quot;,
+    &quot;options&quot;: {}
+   }
+  },
+  {
+   &quot;name&quot;: &quot;等一下&quot;,
+   &quot;type&quot;: &quot;n8n-nodes-base.wait&quot;,
+   &quot;typeVersion&quot;: 1.1,
+   &quot;position&quot;: [
+    220,
+    0
+   ],
+   &quot;parameters&quot;: {
+    &quot;amount&quot;: &quot;={{ Number($(&#39;收到請求&#39;).item.json.query.delay || 0) }}&quot;,
+    &quot;unit&quot;: &quot;seconds&quot;
+   }
+  },
+  {
+   &quot;name&quot;: &quot;回應&quot;,
+   &quot;type&quot;: &quot;n8n-nodes-base.respondToWebhook&quot;,
+   &quot;typeVersion&quot;: 1.1,
+   &quot;position&quot;: [
+    440,
+    0
+   ],
+   &quot;parameters&quot;: {
+    &quot;respondWith&quot;: &quot;text&quot;,
+    &quot;responseBody&quot;: &quot;={{ $(&#39;收到請求&#39;).item.json.query.kind === &#39;rss_empty&#39; ? &#39;&lt;?xml version=\&quot;1.0\&quot;?&gt;&lt;rss version=\&quot;2.0\&quot;&gt;&lt;channel&gt;&lt;title&gt;empty&lt;/title&gt;&lt;link&gt;http://localhost&lt;/link&gt;&lt;description&gt;empty&lt;/description&gt;&lt;/channel&gt;&lt;/rss&gt;&#39; : JSON.stringify({ ok: true, note: &#39;模擬來源&#39; }) }}&quot;,
+    &quot;options&quot;: {
+     &quot;responseCode&quot;: &quot;={{ Number($(&#39;收到請求&#39;).item.json.query.status || 200) }}&quot;
+    }
+   }
+  }
+ ],
+ &quot;connections&quot;: {
+  &quot;收到請求&quot;: {
+   &quot;main&quot;: [
+    [
+     {
+      &quot;node&quot;: &quot;等一下&quot;,
+      &quot;type&quot;: &quot;main&quot;,
+      &quot;index&quot;: 0
+     }
+    ]
+   ]
+  },
+  &quot;等一下&quot;: {
+   &quot;main&quot;: [
+    [
+     {
+      &quot;node&quot;: &quot;回應&quot;,
+      &quot;type&quot;: &quot;main&quot;,
+      &quot;index&quot;: 0
+     }
+    ]
+   ]
+  }
+ },
+ &quot;settings&quot;: {
+  &quot;executionOrder&quot;: &quot;v1&quot;
+ }
+}</code></pre></div>
+</details><p>四條收集流程的「排程」都用 <strong>Schedule Trigger</strong>，每天 7 點。先確認流程 <strong>Settings</strong> 的 <strong>Timezone</strong> 為 <code>Asia/Taipei</code>，M0 啟動時已設定 <code>GENERIC_TIMEZONE</code>；位置見版本附頁。手動檢查完後按 <strong>Publish</strong>，只存檔不會上線。本機自架時電腦要開著、n8n 要在跑，睡眠或關機期間不會執行；恢復後是否補跑（待查證）。</p>
+<h4>股：收集自選股</h4>
+<p>取得證交所盤後資料，留下台積電與鴻海並整理欄位。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>排程（<strong>Schedule Trigger</strong>）</td>
+<td>每天啟動</td>
+<td>每天 7 點</td>
+</tr>
+<tr>
+<td>抓股價（<strong>HTTP Request</strong>）</td>
+<td>取得股票陣列</td>
+<td><strong>GET</strong>，網址如下</td>
+</tr>
+<tr>
+<td>挑自選股（<strong>Filter</strong>）</td>
+<td>留下兩檔</td>
+<td><code>Code</code> 字串等於 <code>2330</code> 或 <code>2317</code>，<strong>OR</strong></td>
+</tr>
+<tr>
+<td>整理（<strong>Edit Fields (Set)</strong>）</td>
+<td>統一日期與型別</td>
+<td>下方六個欄位，用 <strong>Expression</strong></td>
+</tr>
+</tbody></table>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL</code></pre></div>
+<ol>
+<li><p>建立前兩個節點，設定網址與 <strong>GET</strong>，手動執行檢查來源。
+你應該看到：「抓股價」有 1000 筆以上，含 <code>Date</code>、<code>Code</code>、<code>Name</code>、<code>ClosingPrice</code>、<code>Change</code>；數字原本是字串。</p>
+</li>
+<li><p>接上「挑自選股」，用 <strong>String</strong> 的 <strong>is equal to</strong> 比較 <code>{{ $json.Code }}</code> 與 <code>2330</code>、<code>2317</code>，選 <strong>OR</strong>。
+你應該看到：留下 2 筆，代號是 2330、2317。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？一筆都沒留下時先確認欄名是大寫 <code>Code</code>，比較值是字串，兩條條件用 <strong>OR</strong>。</p>
+</blockquote>
+<ol start="3">
+<li>接上「整理」，依下表新增欄位，選型別並貼入 <strong>Expression</strong>，執行整條流程。
+你應該看到：整理後 2 筆，<code>dataDate</code> 像 <code>2026-11-17</code>，<code>code</code>、<code>name</code> 是字串，有資料時 <code>close</code>、<code>change</code> 是數字。</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>型別</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>dataDate</code></td>
+<td><strong>String</strong></td>
+<td><code>{{ (Number($json.Date.slice(0,3))+1911) + &#39;-&#39; + $json.Date.slice(3,5) + &#39;-&#39; + $json.Date.slice(5,7) }}</code></td>
+</tr>
+<tr>
+<td><code>code</code></td>
+<td><strong>String</strong></td>
+<td><code>{{ $json.Code }}</code></td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td><strong>String</strong></td>
+<td><code>{{ $json.Name }}</code></td>
+</tr>
+<tr>
+<td><code>close</code></td>
+<td><strong>Number</strong></td>
+<td><code>{{ $json.ClosingPrice === &#39;&#39; ? null : Number($json.ClosingPrice) }}</code></td>
+</tr>
+<tr>
+<td><code>change</code></td>
+<td><strong>Number</strong></td>
+<td><code>{{ $json.ClosingPrice === &#39;&#39; ? null : Number($json.Change) }}</code></td>
+</tr>
+<tr>
+<td><code>valid</code></td>
+<td><strong>Boolean</strong></td>
+<td><code>{{ $json.ClosingPrice !== &#39;&#39; }}</code></td>
+</tr>
+</tbody></table>
+<p>沿用 M2 的整理方式：收盤空字串時，<code>close</code>、<code>change</code> 都是 <code>null</code>，<code>valid=false</code>，不能相信來源此時填的漲跌零值。早上 7 點取得的是最近一個交易日資料；一般週一早上看到上週五的資料，遇休市要再往前看。早報要寫資料日期，不寫「昨天收盤」。</p>
+<details class="wf"><summary>完成版（m4/main-stock-done.json）</summary><a href="files/m4/main-stock-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M4 主線 股&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;name&quot;: &quot;排程&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.scheduleTrigger&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        0,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;rule&quot;: {
+          &quot;interval&quot;: [
+            {
+              &quot;triggerAtHour&quot;: 7
+            }
+          ]
+        }
+      }
+    },
+    {
+      &quot;name&quot;: &quot;抓股價&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.httpRequest&quot;,
+      &quot;typeVersion&quot;: 4.2,
+      &quot;position&quot;: [
+        220,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;url&quot;: &quot;https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL&quot;,
+        &quot;options&quot;: {}
+      }
+    },
+    {
+      &quot;name&quot;: &quot;挑自選股&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.filter&quot;,
+      &quot;typeVersion&quot;: 2.2,
+      &quot;position&quot;: [
+        440,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;conditions&quot;: {
+          &quot;options&quot;: {
+            &quot;caseSensitive&quot;: true,
+            &quot;leftValue&quot;: &quot;&quot;,
+            &quot;typeValidation&quot;: &quot;strict&quot;,
+            &quot;version&quot;: 2
+          },
+          &quot;conditions&quot;: [
+            {
+              &quot;id&quot;: &quot;c1&quot;,
+              &quot;leftValue&quot;: &quot;={{ $json.Code }}&quot;,
+              &quot;rightValue&quot;: &quot;2330&quot;,
+              &quot;operator&quot;: {
+                &quot;type&quot;: &quot;string&quot;,
+                &quot;operation&quot;: &quot;equals&quot;
+              }
+            },
+            {
+              &quot;id&quot;: &quot;c2&quot;,
+              &quot;leftValue&quot;: &quot;={{ $json.Code }}&quot;,
+              &quot;rightValue&quot;: &quot;2317&quot;,
+              &quot;operator&quot;: {
+                &quot;type&quot;: &quot;string&quot;,
+                &quot;operation&quot;: &quot;equals&quot;
+              }
+            }
+          ],
+          &quot;combinator&quot;: &quot;or&quot;
+        },
+        &quot;options&quot;: {}
+      }
+    },
+    {
+      &quot;name&quot;: &quot;整理&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        660,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;a1&quot;,
+              &quot;name&quot;: &quot;dataDate&quot;,
+              &quot;value&quot;: &quot;={{ (Number($json.Date.slice(0,3))+1911) + &#39;-&#39; + $json.Date.slice(3,5) + &#39;-&#39; + $json.Date.slice(5,7) }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a2&quot;,
+              &quot;name&quot;: &quot;code&quot;,
+              &quot;value&quot;: &quot;={{ $json.Code }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a3&quot;,
+              &quot;name&quot;: &quot;name&quot;,
+              &quot;value&quot;: &quot;={{ $json.Name }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a4&quot;,
+              &quot;name&quot;: &quot;close&quot;,
+              &quot;value&quot;: &quot;={{ $json.ClosingPrice === &#39;&#39; ? null : Number($json.ClosingPrice) }}&quot;,
+              &quot;type&quot;: &quot;number&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a5&quot;,
+              &quot;name&quot;: &quot;change&quot;,
+              &quot;value&quot;: &quot;={{ $json.ClosingPrice === &#39;&#39; ? null : Number($json.Change) }}&quot;,
+              &quot;type&quot;: &quot;number&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a6&quot;,
+              &quot;name&quot;: &quot;valid&quot;,
+              &quot;value&quot;: &quot;={{ $json.ClosingPrice !== &#39;&#39; }}&quot;,
+              &quot;type&quot;: &quot;boolean&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      }
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;排程&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;抓股價&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;抓股價&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;挑自選股&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;挑自選股&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;整理&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}
+</code></pre></div>
+</details><h4>匯：只取最新一筆</h4>
+<p>從央行歷史資料取最後一筆，轉成日期與數字匯率。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>排程（<strong>Schedule Trigger</strong>）</td>
+<td>每天啟動</td>
+<td>每天 7 點</td>
+</tr>
+<tr>
+<td>抓匯率（<strong>HTTP Request</strong>）</td>
+<td>取得央行歷史資料</td>
+<td><strong>GET</strong>，網址如下</td>
+</tr>
+<tr>
+<td>最新一筆（<strong>Limit</strong>）</td>
+<td>取最後一筆</td>
+<td>筆數 1，<strong>Keep</strong> 選 <strong>Last Items</strong></td>
+</tr>
+<tr>
+<td>整理（<strong>Edit Fields (Set)</strong>）</td>
+<td>整理日期與匯率</td>
+<td>下方兩個欄位</td>
+</tr>
+</tbody></table>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">https://cpx.cbc.gov.tw/api/OpenData/FTDOpenData_Day</code></pre></div>
+<ol>
+<li>建立「排程」與「抓匯率」，設定網址後手動執行，再接上「最新一筆」。<strong>Keep</strong> 的位置見版本附頁。
+你應該看到：來源有 1000 筆以上，為 2008 年起由舊到新的歷史資料；「最新一筆」留下 1 筆。</li>
+</ol>
+<blockquote>
+<p>卡住了？日期還在 2008 年時先把 <strong>Keep</strong> 從 <strong>First Items</strong> 改成 <strong>Last Items</strong>。</p>
+</blockquote>
+<ol start="2">
+<li>接上「整理」，依下表設定 <strong>Expression</strong> 並執行，查看日期與數字型別。
+你應該看到：1 筆，<code>dataDate</code> 像 <code>2026-11-17</code>、<code>usd</code> 是數字；實際日期與匯率依來源更新。</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>型別</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>dataDate</code></td>
+<td><strong>String</strong></td>
+<td><code>{{ $json[&#39;日期&#39;] ? $json[&#39;日期&#39;].slice(0,4) + &#39;-&#39; + $json[&#39;日期&#39;].slice(4,6) + &#39;-&#39; + $json[&#39;日期&#39;].slice(6,8) : null }}</code></td>
+</tr>
+<tr>
+<td><code>usd</code></td>
+<td><strong>Number</strong></td>
+<td><code>{{ $json.NTD_USD ? Number($json.NTD_USD) : null }}</code></td>
+</tr>
+</tbody></table>
+<p>先檢查欄位存在才整理，缺欄位給 <code>null</code>，不讓它變成 0。央行匯率是參考資料，不是銀行換匯的成交價。</p>
+<ol start="3">
+<li><p>暫時把「抓匯率」網址改成 <code>http://localhost:5678/webhook/mock?status=200</code>，重跑，再恢復央行網址。
+你應該看到：來源成功回應，但「抓匯率」只有一個 <code>data</code> 欄位（整段回應被當成文字），沒有 <code>日期</code>、<code>NTD_USD</code>；整理後 <code>dataDate=null</code>、<code>usd=null</code>。這是缺資料，沒有報錯。</p>
+</li>
+<li><p>暫時改用 <code>http://localhost:5678/webhook/mock?status=503</code> 並重跑，記下失敗節點後恢復央行網址。
+你應該看到：「抓匯率」紅色，後面的「最新一筆」與「整理」沒跑。</p>
+</li>
+</ol>
+<p>錯誤訊息為 <code>Service unavailable - try again later or consider setting this node to retry automatically (in the node settings)</code>。錯誤不會被當成資料往下傳，重試留到 M6。</p>
+<details class="wf"><summary>完成版（m4/main-fx-done.json）</summary><a href="files/m4/main-fx-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M4 主線 匯&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;name&quot;: &quot;排程&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.scheduleTrigger&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        0,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;rule&quot;: {
+          &quot;interval&quot;: [
+            {
+              &quot;triggerAtHour&quot;: 7
+            }
+          ]
+        }
+      }
+    },
+    {
+      &quot;name&quot;: &quot;抓匯率&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.httpRequest&quot;,
+      &quot;typeVersion&quot;: 4.2,
+      &quot;position&quot;: [
+        220,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;url&quot;: &quot;https://cpx.cbc.gov.tw/api/OpenData/FTDOpenData_Day&quot;,
+        &quot;options&quot;: {}
+      }
+    },
+    {
+      &quot;name&quot;: &quot;最新一筆&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.limit&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        440,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;maxItems&quot;: 1,
+        &quot;keep&quot;: &quot;lastItems&quot;
+      }
+    },
+    {
+      &quot;name&quot;: &quot;整理&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        660,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;a1&quot;,
+              &quot;name&quot;: &quot;dataDate&quot;,
+              &quot;value&quot;: &quot;={{ $json[&#39;日期&#39;] ? $json[&#39;日期&#39;].slice(0,4) + &#39;-&#39; + $json[&#39;日期&#39;].slice(4,6) + &#39;-&#39; + $json[&#39;日期&#39;].slice(6,8) : null }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a2&quot;,
+              &quot;name&quot;: &quot;usd&quot;,
+              &quot;value&quot;: &quot;={{ $json.NTD_USD ? Number($json.NTD_USD) : null }}&quot;,
+              &quot;type&quot;: &quot;number&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      }
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;排程&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;抓匯率&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;抓匯率&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;最新一筆&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;最新一筆&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;整理&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}
+</code></pre></div>
+</details><h4>警：沒有警特報也有一行狀態</h4>
+<p>讀取氣象署警特報，讓早報能寫出有警報或目前沒有警特報。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>排程（<strong>Schedule Trigger</strong>）</td>
+<td>每天啟動</td>
+<td>每天 7 點</td>
+</tr>
+<tr>
+<td>抓警特報（<strong>RSS Read</strong>）</td>
+<td>讀取警特報</td>
+<td>網址如下；節點 <strong>Settings</strong> 開 <strong>Always Output Data</strong></td>
+</tr>
+<tr>
+<td>整理（<strong>Edit Fields (Set)</strong>）</td>
+<td>寫出狀態</td>
+<td>下方 <code>status</code>、<code>title</code></td>
+</tr>
+</tbody></table>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">https://www.cwa.gov.tw/rss/Data/cwa_warning.xml</code></pre></div>
+<ol>
+<li>建立前三個節點，在「抓警特報」的節點 <strong>Settings</strong> 開啟 <strong>Always Output Data</strong>，依下表設定「整理」。位置見版本附頁。
+你應該看到：「整理」至少 1 筆，<code>status</code> 是 <code>warning</code> 或 <code>none</code>；有警特報時保留來源標題。</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>型別</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>status</code></td>
+<td><strong>String</strong></td>
+<td><code>{{ $json.title ? &#39;warning&#39; : &#39;none&#39; }}</code></td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td><strong>String</strong></td>
+<td><code>{{ $json.title ?? &#39;目前沒有警特報&#39; }}</code></td>
+</tr>
+</tbody></table>
+<ol start="2">
+<li>暫時把來源改成 <code>http://localhost:5678/webhook/mock?kind=rss_empty</code>，重跑，再關閉 <strong>Always Output Data</strong> 重跑比較。
+你應該看到：開啟時空資料 1 筆可整理成 <code>status=&quot;none&quot;</code>；關閉時輸出 0 筆，後面不跑也不報錯。</li>
+</ol>
+<blockquote>
+<p>卡住了？空來源後「整理」沒跑時先到節點 <strong>Settings</strong> 開啟 <strong>Always Output Data</strong>；它不在流程的時區設定裡。</p>
+</blockquote>
+<ol start="3">
+<li>重新開啟 <strong>Always Output Data</strong>，把網址改回氣象署來源後重跑。
+你應該看到：有警報就有 <code>warning</code>，無警報就有 <code>none</code>，兩種都正常。</li>
+</ol>
+<details class="wf"><summary>完成版（m4/main-warn-done.json）</summary><a href="files/m4/main-warn-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M4 主線 警&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;name&quot;: &quot;排程&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.scheduleTrigger&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        0,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;rule&quot;: {
+          &quot;interval&quot;: [
+            {
+              &quot;triggerAtHour&quot;: 7
+            }
+          ]
+        }
+      }
+    },
+    {
+      &quot;name&quot;: &quot;抓警特報&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.rssFeedRead&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        220,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;url&quot;: &quot;https://www.cwa.gov.tw/rss/Data/cwa_warning.xml&quot;,
+        &quot;options&quot;: {}
+      },
+      &quot;alwaysOutputData&quot;: true
+    },
+    {
+      &quot;name&quot;: &quot;整理&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        440,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;a1&quot;,
+              &quot;name&quot;: &quot;status&quot;,
+              &quot;value&quot;: &quot;={{ $json.title ? &#39;warning&#39; : &#39;none&#39; }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a2&quot;,
+              &quot;name&quot;: &quot;title&quot;,
+              &quot;value&quot;: &quot;={{ $json.title ?? &#39;目前沒有警特報&#39; }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      }
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;排程&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;抓警特報&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;抓警特報&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;整理&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}
+</code></pre></div>
+</details><h4>聞：只留下以前沒處理過的新聞</h4>
+<p>從行政院新聞取前五則，再以連結判斷是否處理過。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>排程（<strong>Schedule Trigger</strong>）</td>
+<td>每天啟動</td>
+<td>每天 7 點</td>
+</tr>
+<tr>
+<td>抓新聞（<strong>RSS Read</strong>）</td>
+<td>讀取行政院本院新聞</td>
+<td>網址如下</td>
+</tr>
+<tr>
+<td>取前5則（<strong>Limit</strong>）</td>
+<td>限制則數</td>
+<td>筆數 5，<strong>Keep</strong> 為 <strong>First Items</strong></td>
+</tr>
+<tr>
+<td>新的才留（<strong>Remove Duplicates</strong>）</td>
+<td>跨次比對連結</td>
+<td><strong>Remove Items Processed in Previous Executions</strong>，值 <code>{{ $json.link }}</code></td>
+</tr>
+<tr>
+<td>整理（<strong>Edit Fields (Set)</strong>）</td>
+<td>留下標題、連結與發布時間</td>
+<td>三個欄位都用 <strong>String</strong></td>
+</tr>
+</tbody></table>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">https://www.ey.gov.tw/RSS_Content.aspx?ModuleType=3</code></pre></div>
+<ol>
+<li><p>建立前四個節點並連線，設定網址、前 5 則與跨次去重操作，再手動執行。位置見版本附頁。
+你應該看到：「取前5則」5 筆；全新流程手動測試「新的才留」也是 5 筆。</p>
+</li>
+<li><p>接上「整理」，新增 <code>title</code>＝<code>{{ $json.title }}</code>、<code>link</code>＝<code>{{ $json.link }}</code>、<code>pubDate</code>＝<code>{{ $json.isoDate }}</code>，全部選 <strong>String</strong> 與 <strong>Expression</strong>。
+你應該看到：5 筆，每筆含標題、行政院新聞連結與發布時間；內容依當時來源變動。</p>
+</li>
+<li><p>暫時把排程改成每分鐘並 <strong>Publish</strong>，讓它正式跑兩次，從 <strong>Executions</strong> 比對「新的才留」；測完恢復每天 7 點並再次 <strong>Publish</strong>。
+你應該看到：第一輪留下未處理過的連結，第二輪是 0 筆或只剩新出現的；0 筆時後面的整理不跑。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？手動按幾次都是 5 筆時先確認執行來源。手動執行不會記錄去重歷史，要用 Publish 後的正式排程測。</p>
+</blockquote>
+<p>這個操作記住以前處理過的連結；M3 的本次輸入去重只比眼前這一批，不能代替跨次記憶。</p>
+<details class="wf"><summary>完成版（m4/main-news-done.json）</summary><a href="files/m4/main-news-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M4 主線 聞&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;name&quot;: &quot;排程&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.scheduleTrigger&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        0,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;rule&quot;: {
+          &quot;interval&quot;: [
+            {
+              &quot;triggerAtHour&quot;: 7
+            }
+          ]
+        }
+      }
+    },
+    {
+      &quot;name&quot;: &quot;抓新聞&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.rssFeedRead&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        220,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;url&quot;: &quot;https://www.ey.gov.tw/RSS_Content.aspx?ModuleType=3&quot;,
+        &quot;options&quot;: {}
+      }
+    },
+    {
+      &quot;name&quot;: &quot;取前5則&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.limit&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        440,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;maxItems&quot;: 5
+      }
+    },
+    {
+      &quot;name&quot;: &quot;新的才留&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.removeDuplicates&quot;,
+      &quot;typeVersion&quot;: 2,
+      &quot;position&quot;: [
+        660,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;operation&quot;: &quot;removeItemsSeenInPreviousExecutions&quot;,
+        &quot;dedupeValue&quot;: &quot;={{ $json.link }}&quot;,
+        &quot;options&quot;: {}
+      }
+    },
+    {
+      &quot;name&quot;: &quot;整理&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        880,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;a1&quot;,
+              &quot;name&quot;: &quot;title&quot;,
+              &quot;value&quot;: &quot;={{ $json.title }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a2&quot;,
+              &quot;name&quot;: &quot;link&quot;,
+              &quot;value&quot;: &quot;={{ $json.link }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a3&quot;,
+              &quot;name&quot;: &quot;pubDate&quot;,
+              &quot;value&quot;: &quot;={{ $json.isoDate }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      }
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;排程&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;抓新聞&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;抓新聞&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;取前5則&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;取前5則&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;新的才留&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;新的才留&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;整理&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}
+</code></pre></div>
+</details><h3 id="sec-5">小練習①：出門看警報</h3>
+<p>只在有颱風、豪雨或強風的警特報時產生提醒草稿。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>排程（<strong>Schedule Trigger</strong>）</td>
+<td>每天檢查</td>
+<td>每天 7 點</td>
+</tr>
+<tr>
+<td>抓警特報（<strong>RSS Read</strong>）</td>
+<td>讀取警特報</td>
+<td>氣象署網址；不開 <strong>Always Output Data</strong></td>
+</tr>
+<tr>
+<td>挑關鍵字（<strong>Filter</strong>）</td>
+<td>留下相關警報</td>
+<td><code>title</code> <strong>contains</strong> 颱風／豪雨／強風，<strong>OR</strong></td>
+</tr>
+<tr>
+<td>提醒草稿（<strong>Edit Fields (Set)</strong>）</td>
+<td>組提醒文字</td>
+<td><code>text</code> 與 <code>link</code> 都用 <strong>String</strong></td>
+</tr>
+</tbody></table>
+<ol>
+<li><p>建立前兩個節點，網址填 <code>https://www.cwa.gov.tw/rss/Data/cwa_warning.xml</code>，確認 <strong>Always Output Data</strong> 關閉後執行。
+你應該看到：一則警特報是一個 Item；目前沒有警特報時為 0 筆，後面不跑也不報錯。</p>
+</li>
+<li><p>接上「挑關鍵字」，新增三條 <strong>String</strong> 的 <strong>contains</strong> 條件，左值都是 <code>{{ $json.title }}</code>，右值依序為 <code>颱風</code>、<code>豪雨</code>、<code>強風</code>，組合選 <strong>OR</strong>。
+你應該看到：只有標題含任一關鍵字的資料通過，沒有符合資料時為 0 筆。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？有符合標題卻沒通過時先看是否誤選 <strong>AND</strong>，改用 <strong>OR</strong> 再比對同一次輸入。</p>
+</blockquote>
+<ol start="3">
+<li>接上「提醒草稿」，<code>text</code> 填 <code>{{ &#39;出門注意：&#39; + $json.title }}</code>、<code>link</code> 填 <code>{{ $json.link }}</code>，切換 <strong>Expression</strong> 後重跑。
+你應該看到：有符合警報才有草稿，<code>text</code> 以「出門注意：」開頭並附來源連結；沒有時不產生草稿。</li>
+</ol>
+<p>可暫用 <code>http://localhost:5678/webhook/mock?kind=rss_empty</code> 驗證 0 則路徑，測完改回。主線早報一定要有一行狀態，所以開 <strong>Always Output Data</strong>；這個練習沒警報就不提醒，所以不開。本課只產生草稿。</p>
+<details class="wf"><summary>完成版（m4/ex1-done.json）</summary><a href="files/m4/ex1-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M4 小練習 出門看警報&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;name&quot;: &quot;排程&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.scheduleTrigger&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        0,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;rule&quot;: {
+          &quot;interval&quot;: [
+            {
+              &quot;triggerAtHour&quot;: 7
+            }
+          ]
+        }
+      }
+    },
+    {
+      &quot;name&quot;: &quot;抓警特報&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.rssFeedRead&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        220,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;url&quot;: &quot;https://www.cwa.gov.tw/rss/Data/cwa_warning.xml&quot;,
+        &quot;options&quot;: {}
+      }
+    },
+    {
+      &quot;name&quot;: &quot;挑關鍵字&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.filter&quot;,
+      &quot;typeVersion&quot;: 2.2,
+      &quot;position&quot;: [
+        440,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;conditions&quot;: {
+          &quot;options&quot;: {
+            &quot;caseSensitive&quot;: true,
+            &quot;leftValue&quot;: &quot;&quot;,
+            &quot;typeValidation&quot;: &quot;strict&quot;,
+            &quot;version&quot;: 2
+          },
+          &quot;conditions&quot;: [
+            {
+              &quot;id&quot;: &quot;c0&quot;,
+              &quot;leftValue&quot;: &quot;={{ $json.title }}&quot;,
+              &quot;rightValue&quot;: &quot;颱風&quot;,
+              &quot;operator&quot;: {
+                &quot;type&quot;: &quot;string&quot;,
+                &quot;operation&quot;: &quot;contains&quot;
+              }
+            },
+            {
+              &quot;id&quot;: &quot;c1&quot;,
+              &quot;leftValue&quot;: &quot;={{ $json.title }}&quot;,
+              &quot;rightValue&quot;: &quot;豪雨&quot;,
+              &quot;operator&quot;: {
+                &quot;type&quot;: &quot;string&quot;,
+                &quot;operation&quot;: &quot;contains&quot;
+              }
+            },
+            {
+              &quot;id&quot;: &quot;c2&quot;,
+              &quot;leftValue&quot;: &quot;={{ $json.title }}&quot;,
+              &quot;rightValue&quot;: &quot;強風&quot;,
+              &quot;operator&quot;: {
+                &quot;type&quot;: &quot;string&quot;,
+                &quot;operation&quot;: &quot;contains&quot;
+              }
+            }
+          ],
+          &quot;combinator&quot;: &quot;or&quot;
+        },
+        &quot;options&quot;: {}
+      }
+    },
+    {
+      &quot;name&quot;: &quot;提醒草稿&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        660,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;a1&quot;,
+              &quot;name&quot;: &quot;text&quot;,
+              &quot;value&quot;: &quot;={{ &#39;出門注意：&#39; + $json.title }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a2&quot;,
+              &quot;name&quot;: &quot;link&quot;,
+              &quot;value&quot;: &quot;={{ $json.link }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      }
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;排程&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;抓警特報&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;抓警特報&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;挑關鍵字&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;挑關鍵字&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;提醒草稿&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}
+</code></pre></div>
+</details><h3 id="sec-6">小練習②：發票開獎提醒</h3>
+<p>單數月 25 日傍晚讀最新一期發票 RSS，依公布時間產生提醒文字。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>排程（<strong>Schedule Trigger</strong>）</td>
+<td>指定開獎後檢查時間</td>
+<td><strong>Custom (Cron)</strong>：<code>0 18 25 1,3,5,7,9,11 *</code></td>
+</tr>
+<tr>
+<td>抓發票（<strong>RSS Read</strong>）</td>
+<td>讀取最新期別</td>
+<td><code>https://invoice.etax.nat.gov.tw/invoice.xml</code></td>
+</tr>
+<tr>
+<td>最新一期（<strong>Limit</strong>）</td>
+<td>只取第一則</td>
+<td>筆數 1，<strong>Keep</strong> 選 <strong>First Items</strong></td>
+</tr>
+<tr>
+<td>對獎提醒（<strong>Edit Fields (Set)</strong>）</td>
+<td>判斷是否剛公布</td>
+<td>依下表設定三個欄位</td>
+</tr>
+</tbody></table>
+<ol>
+<li>建立前三個節點，將「排程」設為 <strong>Custom (Cron)</strong> 並填入表中內容，手動檢查 RSS 與第一則資料。位置見版本附頁。
+你應該看到：「最新一期」1 筆，含來源的 <code>title</code>、<code>link</code>、<code>isoDate</code>。</li>
+</ol>
+<p>Cron 的五格依序是「分 時 日 月 星期」；這行代表單數月 25 日 18:00。已實測匯入與 <strong>Publish</strong>，實際到點觸發（待查證）。</p>
+<ol start="2">
+<li>接上「對獎提醒」，依下表新增欄位，選型別並切換 <strong>Expression</strong>。
+你應該看到：<code>period</code> 是來源期別字串、<code>fresh</code> 是布林值，<code>text</code> 有開獎提醒或待更新文字。</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>型別</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>period</code></td>
+<td><strong>String</strong></td>
+<td><code>{{ $json.title }}</code></td>
+</tr>
+<tr>
+<td><code>fresh</code></td>
+<td><strong>Boolean</strong></td>
+<td><code>{{ $now.diff(DateTime.fromISO($json.isoDate), &#39;days&#39;).days &lt; 3 }}</code></td>
+</tr>
+<tr>
+<td><code>text</code></td>
+<td><strong>String</strong></td>
+<td><code>{{ $now.diff(DateTime.fromISO($json.isoDate), &#39;days&#39;).days &lt; 3 ? &#39;發票 &#39; + $json.title + &#39; 開獎了：&#39; + $json.link : &#39;最新一期還是 &#39; + $json.title + &#39;，新一期可能還沒公布&#39; }}</code></td>
+</tr>
+</tbody></table>
+<p><code>DateTime</code> 是 n8n 內建日期工具，這裡用來算距離公布幾天。RSS 第一則是最新一期；公布不到 3 天視為剛開獎，超過就說官網可能還沒更新，只說待更新，不編造新一期號碼。本課不做自動對獎。</p>
+<blockquote>
+<p>卡住了？看起來仍是上一期時先查看來源標題與 <code>isoDate</code>，不要自己把期別換成想像的新一期。</p>
+</blockquote>
+<ol start="3">
+<li>執行整條流程，核對三個欄位與來源，再確認時區後 <strong>Publish</strong>。
+你應該看到：1 筆，期別是來源格式（例如 <code>115年 07~08月</code>），<code>fresh</code> 沒有引號，提醒保留來源期別。</li>
+</ol>
+<details class="wf"><summary>完成版（m4/ex2-done.json）</summary><a href="files/m4/ex2-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M4 小練習 發票開獎提醒&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;name&quot;: &quot;排程&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.scheduleTrigger&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        0,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;rule&quot;: {
+          &quot;interval&quot;: [
+            {
+              &quot;field&quot;: &quot;cronExpression&quot;,
+              &quot;expression&quot;: &quot;0 18 25 1,3,5,7,9,11 *&quot;
+            }
+          ]
+        }
+      }
+    },
+    {
+      &quot;name&quot;: &quot;抓發票&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.rssFeedRead&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        220,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;url&quot;: &quot;https://invoice.etax.nat.gov.tw/invoice.xml&quot;,
+        &quot;options&quot;: {}
+      }
+    },
+    {
+      &quot;name&quot;: &quot;最新一期&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.limit&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        440,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;maxItems&quot;: 1
+      }
+    },
+    {
+      &quot;name&quot;: &quot;對獎提醒&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        660,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;a1&quot;,
+              &quot;name&quot;: &quot;period&quot;,
+              &quot;value&quot;: &quot;={{ $json.title }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a2&quot;,
+              &quot;name&quot;: &quot;fresh&quot;,
+              &quot;value&quot;: &quot;={{ $now.diff(DateTime.fromISO($json.isoDate), &#39;days&#39;).days &lt; 3 }}&quot;,
+              &quot;type&quot;: &quot;boolean&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a3&quot;,
+              &quot;name&quot;: &quot;text&quot;,
+              &quot;value&quot;: &quot;={{ $now.diff(DateTime.fromISO($json.isoDate), &#39;days&#39;).days &lt; 3 ? &#39;發票 &#39; + $json.title + &#39; 開獎了：&#39; + $json.link : &#39;最新一期還是 &#39; + $json.title + &#39;，新一期可能還沒公布&#39; }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      }
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;排程&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;抓發票&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;抓發票&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;最新一期&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;最新一期&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;對獎提醒&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}
+</code></pre></div>
+</details><h3 id="sec-7">看懂執行紀錄</h3>
+<p>打開 <strong>Executions</strong> 檢查執行時間與啟動方式，分辨手動測試與排程自行啟動，位置見版本附頁。交出一次排程自己跑出的紀錄，不能拿手動執行代替；發票 Cron 是否實際到點觸發仍待查證。</p>
+<p>股價看來源 1000 筆以上、篩選 2 筆與整理 2 筆，逐筆檢查日期與型別。匯率看來源多筆、限制後 1 筆及整理後 1 筆。警特報看 <code>status</code>，空來源仍有 <code>none</code> 才符合早報需求。新聞要比較兩次正式排程的連結與去重筆數，0 筆後沒跑整理是正常結果。</p>
+<p>503 測試要記錄「抓匯率」的紅色錯誤與原文，再確認後面沒有執行。200 缺欄位則是成功執行但值為 <code>null</code>，兩者不同；不能只看綠燈判斷資料完整。</p>
+<h3 id="sec-8">驗收</h3>
+<ul>
+<li class="check"> 正常 N。四條主線各自取得真實來源；股價 2 筆、匯率 1 筆，核對來源資料日期，新聞有標題與連結；沒有警特報時 <code>status=none</code> 也正常。</li>
+<li class="check"> 正常排程。確認 <strong>Timezone</strong> 為 <code>Asia/Taipei</code>，流程已 <strong>Publish</strong>，交出至少一次排程自行執行的紀錄與時間。</li>
+<li class="check"> 缺資料 M。匯率來源暫換 <code>http://localhost:5678/webhook/mock?status=200</code>，確認 <code>dataDate</code>、<code>usd</code> 都是 <code>null</code>，不是 0，也不是故障。</li>
+<li class="check"> 空 RSS。主線警特報暫換 <code>http://localhost:5678/webhook/mock?kind=rss_empty</code>；開啟 <strong>Always Output Data</strong> 時得到 <code>none</code>，關閉時後面不跑也不報錯；測完主線重新開啟。</li>
+<li class="check"> 重複 D。新聞 <strong>Publish</strong> 後讓排程跑兩次，第二次「新的才留」變少，沒有新連結時是 0 筆；解釋手動執行為何無法建立歷史。</li>
+<li class="check"> 故障 E。匯率來源暫換 <code>http://localhost:5678/webhook/mock?status=503</code>，確認「抓匯率」紅色、整理沒跑，沒有把錯誤當成匯率。</li>
+<li class="check"> 恢復。把所有模擬網址改回各自真實來源，新聞測試排程恢復每天 7 點並重新 <strong>Publish</strong>。</li>
+<li class="check"> 變形題。複製「匯」流程改成每天 8 點；在整理後加欄位節點並保留其他欄位，以 <strong>Number</strong> 新增 <code>usdBudget</code>：<code>{{ $json.usd &gt; 0 ? Math.round(30000 / $json.usd * 100) / 100 : null }}</code>。可換自己的台幣預算，並寫一句「這不是銀行換匯價」。</li>
+</ul>
+<details><summary id="sec-9">卡關救援</summary><ul>
+<li>時間到沒跑 → 看 <strong>Publish</strong> 狀態、流程時區及 <strong>Executions</strong> → 先確認 <code>Asia/Taipei</code>、電腦沒睡眠、n8n 正在跑 → 等下一次排程並確認有正式執行紀錄；錯過是否補跑（待查證）。</li>
+<li>匯率有 4,000 多筆或日期是 2008 年 → 看「最新一筆」的 <strong>Limit</strong> 與 <strong>Keep</strong> → 先設 1 筆、<strong>Last Items</strong> → 確認整理只剩 1 筆且日期對應來源最後一筆。</li>
+<li>警特報後面都沒跑 → 看 RSS 筆數與節點 <strong>Settings</strong> → 主線先開 <strong>Always Output Data</strong> → 用空 RSS 確認 <code>none</code>；出門提醒練習不開，0 則不提醒是正常的。</li>
+<li>新聞每次全部出現 → 看紀錄是否手動執行及去重操作 → 先選跨次操作，以正式排程跑兩次 → 確認第二輪只剩新的連結或 0 筆。</li>
+<li>模擬來源回 404 → 看模擬來源是否已 <strong>Publish</strong> → 先發布、等幾秒再試 → 確認回預期的 200 或 503；指令發布有實測延遲，編輯器按 <strong>Publish</strong> 是否立即生效（待查證）。</li>
+<li>證交所日期不是今天 → 看來源 <code>Date</code> 與交易日 → 先確認假日或來源尚未更新 → 核對整理保留來源日期，不自行改成今天。</li>
+<li>來源回應很慢 → 看失敗節點與錯誤原文 → 先確認網址與來源狀態，可用 <code>http://localhost:5678/webhook/mock?delay=3</code> 比較等待 3 秒的情況 → 確認收到回應；逾時設定在 M6 再教。</li>
+</ul>
+<p>求助時附 n8n 版本、哪個節點、執行時間與啟動方式、錯誤訊息原文、已經試過什麼。截圖先遮住金鑰和個資。</p>
+</details><details><summary id="sec-10">官方連結</summary><p>依本地官方文件與實測紀錄整理，查詢日期 2026-11-18。</p>
+<ul>
+<li><a href="https://docs.n8n.io/build/code-in-n8n/cookbook/http-request-node" target="_blank" rel="noopener noreferrer">HTTP Request 用途</a><span class="dom">docs.n8n.io</span></li>
+<li><a href="https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL" target="_blank" rel="noopener noreferrer">證交所盤後個股資料</a><span class="dom">openapi.twse.com.tw</span></li>
+<li><a href="https://cpx.cbc.gov.tw/api/OpenData/FTDOpenData_Day" target="_blank" rel="noopener noreferrer">央行匯率資料</a><span class="dom">cpx.cbc.gov.tw</span></li>
+<li><a href="https://www.cwa.gov.tw/rss/Data/cwa_warning.xml" target="_blank" rel="noopener noreferrer">氣象署警特報 RSS</a><span class="dom">www.cwa.gov.tw</span></li>
+<li><a href="https://www.ey.gov.tw/RSS_Content.aspx?ModuleType=3" target="_blank" rel="noopener noreferrer">行政院本院新聞 RSS</a><span class="dom">www.ey.gov.tw</span></li>
+<li><a href="https://invoice.etax.nat.gov.tw/invoice.xml" target="_blank" rel="noopener noreferrer">統一發票中獎 RSS</a><span class="dom">invoice.etax.nat.gov.tw</span></li>
+</ul>
+</details><nav class="pager" aria-label="前後課程"><a class="prev" href="m3.html"><span>← 上一個</span>M3 判斷、多筆與合併</a><a class="next" href="m5.html"><span>下一個 →</span>M5 通知、憑證與檔案</a></nav></article></main><aside class="toc" aria-label="本頁目錄"><div class="t">本頁</div><a href="#sec-1">成果與先修</a><a href="#sec-2">白話觀念</a><a href="#sec-3">素材包</a><a href="#sec-4">主線：四條收集流程</a><a href="#sec-5">小練習①：出門看警報</a><a href="#sec-6">小練習②：發票開獎提醒</a><a href="#sec-7">看懂執行紀錄</a><a href="#sec-8">驗收</a><a href="#sec-9">卡關救援</a><a href="#sec-10">官方連結</a></aside><nav class="bottombar" aria-label="前後課程"><a href="m3.html">← M3 判斷、多筆與合併</a><a href="m5.html">M5 通知、憑證與檔案 →</a></nav></body></html>

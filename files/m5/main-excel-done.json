@@ -1,0 +1,164 @@
+{
+  "name": "M5 主線 每日Excel",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7,
+              "triggerAtMinute": 10
+            }
+          ]
+        }
+      },
+      "name": "排程",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "fileSelector": "/home/node/.n8n-files/snap/{stock,fx}.csv",
+        "options": {}
+      },
+      "name": "讀快照",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "csv",
+        "options": {
+          "enableBOM": true
+        }
+      },
+      "name": "解開CSV",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0",
+              "name": "value",
+              "value": "={{ $json.value ? Number($json.value) : null }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {},
+        "includeOtherFields": true
+      },
+      "name": "轉數字",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {}
+      },
+      "name": "轉成Excel",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/home/node/.n8n-files/daily/{{ $now.toFormat('yyyy-MM-dd') }}.xlsx",
+        "options": {}
+      },
+      "name": "寫檔",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "排程": {
+      "main": [
+        [
+          {
+            "node": "讀快照",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "讀快照": {
+      "main": [
+        [
+          {
+            "node": "解開CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "解開CSV": {
+      "main": [
+        [
+          {
+            "node": "轉數字",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "轉數字": {
+      "main": [
+        [
+          {
+            "node": "轉成Excel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "轉成Excel": {
+      "main": [
+        [
+          {
+            "node": "寫檔",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

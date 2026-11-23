@@ -1,0 +1,165 @@
+{
+  "name": "M2 小練習② 家用支出整理",
+  "nodes": [
+    {
+      "name": "手動",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "name": "支出陣列",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\"rows\": [{\"date\": \"2026/11/15\", \"item\": \"衛生紙\", \"amount\": \"189\"}, {\"date\": \"2026/11/16\", \"item\": \"洗衣精\", \"amount\": \"\"}, {\"date\": \"2026/11/17\", \"item\": \"牛奶\", \"amount\": \"95\"}]}",
+        "options": {}
+      }
+    },
+    {
+      "name": "拆成多筆",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "fieldToSplitOut": "rows",
+        "options": {}
+      }
+    },
+    {
+      "name": "整理",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "date",
+              "value": "={{ $json.date.replaceAll('/', '-') }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "item",
+              "value": "={{ $json.item }}",
+              "type": "string"
+            },
+            {
+              "id": "a3",
+              "name": "amount",
+              "value": "={{ $json.amount === '' ? null : Number($json.amount) }}",
+              "type": "number"
+            },
+            {
+              "id": "a4",
+              "name": "ok",
+              "value": "={{ $json.amount !== '' }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "name": "有金額嗎",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "手動": {
+      "main": [
+        [
+          {
+            "node": "支出陣列",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "支出陣列": {
+      "main": [
+        [
+          {
+            "node": "拆成多筆",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "拆成多筆": {
+      "main": [
+        [
+          {
+            "node": "整理",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "整理": {
+      "main": [
+        [
+          {
+            "node": "有金額嗎",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

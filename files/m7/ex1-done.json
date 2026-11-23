@@ -1,0 +1,165 @@
+{
+  "name": "M7 小練習① 家庭提醒入口",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "m7-family",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "收到提醒",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "webhookId": "m7-family",
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c0",
+              "leftValue": "={{ !!$json.body.title && !!$json.body.when }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "欄位齊嗎",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0",
+              "name": "title",
+              "value": "={{ $json.body.title }}",
+              "type": "string"
+            },
+            {
+              "id": "f1",
+              "name": "when",
+              "value": "={{ $json.body.when }}",
+              "type": "string"
+            },
+            {
+              "id": "f2",
+              "name": "status",
+              "value": "draft",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "整理草稿",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, draft: $json } }}",
+        "options": {}
+      },
+      "name": "回覆成功",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: false, text: '要有 title（提醒什麼）和 when（什麼時候）' } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "name": "回覆缺欄位",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        660,
+        200
+      ]
+    }
+  ],
+  "connections": {
+    "收到提醒": {
+      "main": [
+        [
+          {
+            "node": "欄位齊嗎",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "欄位齊嗎": {
+      "main": [
+        [
+          {
+            "node": "整理草稿",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "回覆缺欄位",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "整理草稿": {
+      "main": [
+        [
+          {
+            "node": "回覆成功",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1,0 +1,149 @@
+{
+  "name": "M8 主線 新聞三行摘要",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "手動執行",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "fileSelector": "/home/node/.n8n-files/snap/news.csv",
+        "options": {}
+      },
+      "name": "讀新聞快照",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "csv",
+        "options": {
+          "enableBOM": true
+        }
+      },
+      "name": "解開CSV",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "label"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "合併標題",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "titles": "={{ [...new Set($json.label)].slice(0, 3) }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "titles",
+              "displayName": "titles",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "array"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "name": "呼叫摘要",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        880,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "手動執行": {
+      "main": [
+        [
+          {
+            "node": "讀新聞快照",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "讀新聞快照": {
+      "main": [
+        [
+          {
+            "node": "解開CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "解開CSV": {
+      "main": [
+        [
+          {
+            "node": "合併標題",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "合併標題": {
+      "main": [
+        [
+          {
+            "node": "呼叫摘要",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

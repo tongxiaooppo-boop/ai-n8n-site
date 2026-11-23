@@ -1,0 +1,81 @@
+{
+  "name": "M6 錯誤流程",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "錯誤觸發",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0",
+              "name": "text",
+              "value": "=⚠️ 流程失敗：{{ $json.workflow.name }}\n節點：{{ $json.execution.lastNodeExecuted }}\n訊息：{{ $json.execution.error.message }}\n時間：{{ $now.toFormat('MM-dd HH:mm') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "整理錯誤",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "name": "傳到Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        440,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "錯誤觸發": {
+      "main": [
+        [
+          {
+            "node": "整理錯誤",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "整理錯誤": {
+      "main": [
+        [
+          {
+            "node": "傳到Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

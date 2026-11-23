@@ -1,0 +1,160 @@
+<!doctype html><html lang="zh-Hant" data-pal="teal"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>附錄 版本附頁｜n8n 生活自動化</title><link rel="stylesheet" href="assets/style.css"><script src="assets/app.js" defer></script></head><body><a class="skip" href="#main">跳到正文</a><header class="topbar"><button type="button" aria-label="打開課表" aria-controls="schedule" aria-expanded="false">☰</button><span>附錄 版本附頁</span></header><nav class="nav" id="schedule" aria-label="課表"><a class="brand" href="index.html">n8n 生活自動化</a><div class="stage">主線（M0–M5 照順序，之後照需要挑）</div><a class="mod" href="m0.html"><b>M0</b><span>準備環境</span></a><a class="mod" href="m1.html"><b>M1</b><span>第一個流程</span></a><a class="mod" href="m2.html"><b>M2</b><span>資料與 Expression</span></a><a class="mod" href="m3.html"><b>M3</b><span>判斷、多筆與合併</span></a><a class="mod" href="m4.html"><b>M4</b><span>API、RSS 與排程</span></a><a class="mod" href="m5.html"><b>M5</b><span>通知、憑證與檔案</span></a><a class="mod" href="m6.html"><b>M6</b><span>錯誤處理與可靠性</span></a><a class="mod" href="m7.html"><b>M7</b><span>Webhook 與子流程</span></a><a class="mod" href="m8.html"><b>M8</b><span>加入 AI（受限用法）</span></a><a class="mod" href="m9.html"><b>M9</b><span>上線與維護</span></a><div class="stage">結業</div><a class="mod" href="final.html"><b>結業專題</b><span>生活題庫</span></a><div class="stage">選修</div><a class="mod" href="opt-a.html"><b>選修 A</b><span>AI Agent</span></a><a class="mod" href="opt-b.html"><b>選修 B</b><span>請 Claude 幫你寫流程</span></a><a class="mod" href="opt-c.html"><b>選修 C</b><span>更多資料來源與工具</span></a><div class="stage">附錄</div><a class="mod cur" href="version.html" aria-current="page"><b>附錄</b><span>版本附頁</span></a></nav><button class="scrim" type="button" aria-label="關閉課表" tabindex="-1" hidden></button><main id="main"><article class="art"><div class="eyebrow">附錄</div><h1>附錄｜版本附頁</h1><div class="meta"><span class="tag">各模組用到的按鈕與節點名稱，標明實測版本</span><span class="tag">實測 n8n 2.48.4（2026-11-18）・你的畫面可能略有不同</span></div><p>2026-11-18 在 Windows 11、Node 24 環境實測 n8n 2.48.4；Docker 版尚未實測。
+以下列出各模組要搜尋的節點與正文使用的英文按鈕名稱，按鈕實際位置均為（待查證）。</p>
+<h3 id="sec-1">M0</h3>
+<p>節點面板搜尋 <strong>Manual Trigger</strong>（手動觸發）、<strong>Edit Fields (Set)</strong>（填寫與整理欄位）。</p>
+<ul>
+<li><strong>Import from File</strong> 用於匯入流程，實際位置（待查證）。</li>
+<li><strong>Execute workflow</strong> 用於執行整條流程，實際位置（待查證）。</li>
+<li><strong>Executions</strong> 用於查看執行紀錄，實際位置（待查證）。</li>
+<li>內建範例名稱與入口（待查證），正文以「打開任一個內建範例」操作。</li>
+<li>Docker 版尚未實測，啟動與執行畫面（待查證）。Windows 安裝 Docker Desktop 需 WSL2。</li>
+<li>npx 備案已實測，使用 Node.js 24 LTS，Node 26 安裝失敗。啟動警告容器外執行已棄用，未來版本會要求 Docker。</li>
+<li>時區使用 <code>GENERIC_TIMEZONE=Asia/Taipei</code>。Docker 指令另設 <code>TZ=Asia/Taipei</code>。Docker 資料留在 <code>n8n_data</code>，npx 資料在家目錄 <code>.n8n</code>。</li>
+</ul>
+<h3 id="sec-2">M1</h3>
+<p>節點面板搜尋 <strong>Manual Trigger</strong> 與 <strong>Edit Fields (Set)</strong>。</p>
+<ul>
+<li><strong>Import from File</strong>、<strong>Execute workflow</strong>、<strong>Executions</strong> 實際位置（待查證）。</li>
+<li><strong>Add Field</strong> 用於新增欄位，實際位置（待查證）。</li>
+<li><strong>Expression</strong> 用於將值切換成運算式，實際位置（待查證）。</li>
+<li><strong>String</strong> 與 <strong>Number</strong> 是欄位型別選項，實際位置（待查證）。</li>
+<li><strong>Pin data</strong> 用於釘選測試資料，釘選與解除釘選控制的實際位置（待查證）。</li>
+</ul>
+<h3 id="sec-3">M2</h3>
+<p>節點面板搜尋 <strong>Manual Trigger</strong>、<strong>Edit Fields (Set)</strong>、<strong>Split Out</strong>、<strong>Filter</strong> 與 <strong>If</strong>。
+素材採用 Manual Trigger v1、Edit Fields v3.4、Split Out v1、Filter v2.2 與 If v2.2。</p>
+<ul>
+<li><strong>Import from File</strong>、<strong>Execute workflow</strong>、<strong>Executions</strong> 實際位置（待查證）。</li>
+<li><strong>Mode</strong>、<strong>JSON</strong> 與 <strong>JSON Output</strong> 用於填入陣列測資，實際位置（待查證）。</li>
+<li><strong>Fields To Split Out</strong> 用於指定陣列欄名，實際位置（待查證）。</li>
+<li><strong>String</strong>、<strong>is equal to</strong> 與 <strong>OR</strong> 用於設定自選代號條件，實際位置（待查證）。</li>
+<li><strong>Add Field</strong>、<strong>Expression</strong> 與 <strong>String</strong>、<strong>Number</strong>、<strong>Boolean</strong> 型別選項，實際位置（待查證）。</li>
+<li><strong>is true</strong> 用於判斷 <code>ok</code>，true 與 false 輸出分支的實際位置（待查證）。</li>
+<li><strong>JSON</strong> 輸出檢視的實際位置（待查證）。</li>
+</ul>
+<h3 id="sec-4">M3</h3>
+<p>節點面板搜尋 <strong>Manual Trigger</strong>（手動啟動）、<strong>Edit Fields (Set)</strong>（填資料與計算）、<strong>Split Out</strong>（拆陣列）、<strong>If</strong>（分成兩路）、<strong>Filter</strong>（留下符合資料）、<strong>Remove Duplicates</strong>（去重）、<strong>Merge</strong>（合併兩路）。
+素材沿用 M2 的節點版本，新增 Remove Duplicates v2、Merge v3.2。</p>
+<ul>
+<li><strong>Import from File</strong>、<strong>Execute workflow</strong>、<strong>Executions</strong>、輸出 <strong>JSON</strong> 檢視的實際位置（待查證）。</li>
+<li><strong>Mode</strong>、<strong>JSON</strong>、<strong>JSON Output</strong>、<strong>Fields To Split Out</strong> 的實際位置（待查證）。</li>
+<li><strong>Add Field</strong>、<strong>Expression</strong>、<strong>String</strong>、<strong>Number</strong>、<strong>Boolean</strong> 與 <strong>is true</strong>、<strong>contains</strong> 選項的實際位置（待查證）。</li>
+<li><strong>Include Other Input Fields</strong> 用於保留其他輸入欄位，實際位置（待查證）。</li>
+<li><strong>Remove Items Repeated Within Current Input</strong> 比較這次輸入、<strong>Remove Items Processed in Previous Executions</strong> 比較歷史紀錄、<strong>Clear Deduplication History</strong> 清除去重歷史；三個操作與比較欄位設定的實際位置（待查證）。</li>
+<li><strong>Merge</strong> 的 <strong>Append</strong> 前後接起資料，<strong>Combine</strong> 組合資料；<strong>All Possible Combinations</strong> 用於故障情境，實際位置（待查證）。</li>
+<li><strong>Input 1</strong>、<strong>Input 2</strong> 是兩個輸入口，對應素材連線索引 0、1，實際位置（待查證）。</li>
+</ul>
+<h3 id="sec-5">M4</h3>
+<p>節點面板搜尋 <strong>Schedule Trigger</strong>（到點啟動）、<strong>HTTP Request</strong>（依網址取資料）、<strong>RSS Read</strong>（讀新聞與警報）、<strong>Limit</strong>（限制筆數）、<strong>Filter</strong>（篩選）、<strong>Remove Duplicates</strong>（跨次去重）、<strong>Edit Fields (Set)</strong>（整理欄位）。
+素材使用 Schedule Trigger v1.2、HTTP Request v4.2、RSS Read v1.2、Limit v1；其餘沿用 M3 版本。</p>
+<ul>
+<li><strong>Import from File</strong>、<strong>Execute workflow</strong>、輸出 <strong>JSON</strong> 檢視的實際位置（待查證）。</li>
+<li><strong>Schedule Trigger</strong> 每天觸發的時間設定與 <strong>Custom (Cron)</strong> 輸入欄位，實際位置（待查證）。發票 Cron 已實測匯入與 Publish，實際到點觸發（待查證）。</li>
+<li><strong>HTTP Request</strong> 的 <strong>GET</strong>、網址輸入與 <strong>RSS Read</strong> 網址輸入的實際位置（待查證）。</li>
+<li><strong>Always Output Data</strong> 在節點 <strong>Settings</strong>，讓 0 則結果仍輸出空 Item；實際位置（待查證）。</li>
+<li>流程 <strong>Settings</strong> 的 <strong>Timezone</strong> 用於檢查 <code>Asia/Taipei</code>，實際位置（待查證），不要和節點 Settings 混用。</li>
+<li><strong>Publish</strong> 用於發布流程，實際位置（待查證）；編輯器按下後是否立即生效（待查證）。指令發布模擬來源後需等幾秒已實測。</li>
+<li><strong>Executions</strong> 用於檢查執行時間與啟動方式；分辨手動執行與排程執行的欄位、標記及實際位置（待查證）。</li>
+<li><strong>Limit</strong> 的 <strong>Keep</strong> 選 <strong>First Items</strong> 取前幾筆、<strong>Last Items</strong> 取最後幾筆，筆數欄位與選項實際位置（待查證）。</li>
+<li><strong>Remove Items Processed in Previous Executions</strong> 與連結值設定、<strong>String</strong> 的 <strong>contains</strong>、<strong>OR</strong>、<strong>Add Field</strong>、<strong>Expression</strong>、型別選項的實際位置（待查證）。</li>
+<li>電腦睡眠或 n8n 關閉後錯過的排程是否補跑（待查證）。</li>
+</ul>
+<h3 id="sec-6">M5</h3>
+<p>節點面板搜尋 <strong>Execute Workflow Trigger</strong>（子流程入口）、<strong>Execute Sub-workflow</strong>（呼叫子流程；拉進畫布後預設名稱是 Execute Workflow）、<strong>Read/Write Files from Disk</strong>（讀寫本機檔案）、<strong>Convert to File</strong>（資料轉成 CSV／XLSX 檔）、<strong>Extract from File</strong>（檔案轉回資料）、<strong>Aggregate</strong>（多筆收成一筆）、<strong>Telegram</strong>（傳訊息）、<strong>Google Sheets</strong>（試算表）；LINE 用 <strong>HTTP Request</strong>，憑證用 Header Auth。
+素材使用 Execute Workflow Trigger v1.1、Execute Workflow v1.2、Read/Write Files from Disk v1、Convert to File v1.1、Extract from File v1、Aggregate v1、Telegram v1.2、Google Sheets v4.7；其餘沿用 M4 版本。</p>
+<ul>
+<li><strong>Execute Workflow Trigger</strong> 的 <strong>Accept all data</strong> 用於收下呼叫端全部資料，實際位置（待查證）。</li>
+<li><strong>Execute Sub-workflow</strong> 選流程的清單與「M5 快照寫入」選項，實際位置（待查證）。</li>
+<li><strong>Read/Write Files from Disk</strong> 的 <strong>Read</strong>、<strong>Write</strong> 與路徑欄位，實際位置（待查證）。</li>
+<li><strong>Convert to File</strong> 的 <strong>CSV</strong>、<strong>XLSX</strong> 格式選項，實際位置（待查證）。</li>
+<li><strong>Extract from File</strong> 的 <strong>Exclude Byte Order Mark (BOM)</strong>，實際位置（待查證）。</li>
+<li><strong>Aggregate</strong> 的 <strong>All Item Data</strong>，實際位置（待查證）。</li>
+<li><strong>Telegram</strong> 的 <strong>Append n8n Attribution</strong> 與 chat ID 欄位，實際位置（待查證）。</li>
+<li><strong>Credentials</strong> 新增位置與 <strong>Telegram API</strong>、<strong>Header Auth</strong> 憑證類型，實際位置（待查證）。</li>
+<li><strong>HTTP Request</strong> 選 Header Auth 憑證的位置，實際位置（待查證）。</li>
+<li><strong>Google Sheets</strong> 的 <strong>Append Row</strong>，以及 <strong>Sign in with Google</strong> 與 <strong>OAuth Redirect URL</strong> 的位置，實際位置（待查證）。</li>
+<li><strong>Schedule Trigger</strong> 加第二個時間的位置，實際位置（待查證）。</li>
+<li><strong>Publish</strong> 後已發布標記與流程列表的顯示位置，實際位置（待查證）。</li>
+<li><strong>Import from File</strong>、<strong>Executions</strong> 沿用前面模組，實際位置（待查證）。</li>
+<li>Docker 掛載 <code>.n8n-files</code> 的實際效果、容器是否自動建資料夾（待查證）；Windows 不會自動建子資料夾已實測。</li>
+</ul>
+<h3 id="sec-7">M6</h3>
+<p>節點面板搜尋 <strong>HTTP Request</strong>（呼叫來源）、<strong>Error Trigger</strong>（錯誤流程入口）、<strong>Stop And Error</strong>（讓執行故意失敗）、<strong>If</strong>（依條件分兩路）、<strong>Edit Fields (Set)</strong>、<strong>Telegram</strong>、<strong>Limit</strong>、<strong>Schedule Trigger</strong>。
+素材使用 HTTP Request v4.2、Error Trigger v1、Stop And Error v1、If v2.2、Edit Fields v3.4、Telegram v1.2、Limit v1、Schedule Trigger v1.2。</p>
+<ul>
+<li><strong>HTTP Request</strong> 的 <strong>Options</strong> → <strong>Timeout</strong>（毫秒），實際位置（待查證）。</li>
+<li><strong>HTTP Request</strong> 節點 <strong>Settings</strong> 的 <strong>Retry On Fail</strong>、<strong>Max Tries</strong>、<strong>Wait Between Tries</strong>，實際位置（待查證）。</li>
+<li>流程 <strong>Workflow Settings</strong> 的 <strong>Error Workflow</strong>，實際位置（待查證）。</li>
+<li><strong>Error Trigger</strong> 的搜尋名稱與輸出欄位 <code>workflow</code>、<code>execution</code>，實際位置（待查證）。</li>
+<li><strong>Stop And Error</strong> 的錯誤訊息欄位，實際位置（待查證）。</li>
+<li><strong>If</strong> 的 <strong>exists</strong> 條件，實際位置（待查證）。</li>
+<li><strong>Publish</strong>、<strong>Unpublish</strong> 按鈕，實際位置（待查證）。</li>
+<li><strong>Import from File</strong>、<strong>Executions</strong>、<strong>Telegram API</strong> 憑證沿用前面模組，實際位置（待查證）。</li>
+</ul>
+<h3 id="sec-8">M7</h3>
+<p>節點面板搜尋 <strong>Webhook</strong>（流程的門鈴）、<strong>Respond to Webhook</strong>（把結果回給呼叫端）、<strong>Execute Workflow Trigger</strong>（子流程入口；拉進畫布後預設名稱是 When Executed by Another Workflow）、<strong>Execute Sub-workflow</strong>（呼叫子流程；拉進畫布後預設名稱是 Execute Workflow）、<strong>Telegram Trigger</strong>（收 Bot 新訊息）、<strong>Telegram</strong>、<strong>HTTP Request</strong>、<strong>If</strong>、<strong>Filter</strong>、<strong>Edit Fields (Set)</strong>。
+素材使用 Webhook v2.2、Respond to Webhook v1.5、Execute Workflow Trigger v1.1、Execute Sub-workflow v1.2、Telegram Trigger v1.2、Telegram v1.2、HTTP Request v4.2、If v2.2、Filter v2.2、Edit Fields v3.4。</p>
+<ul>
+<li><strong>Webhook</strong> 的 <strong>Test URL</strong>／<strong>Production URL</strong> 切換，實際位置（待查證）。</li>
+<li><strong>Webhook</strong> 的聽取測試按鈕名稱與位置（待查證）。</li>
+<li><strong>Webhook</strong> 的 <strong>HTTP Method</strong>、<strong>Path</strong>，實際位置（待查證）。</li>
+<li><strong>Webhook</strong> 的 <strong>Authentication</strong> → <strong>Header Auth</strong>，實際位置（待查證）。</li>
+<li><strong>Webhook</strong> 的 <strong>Respond</strong> → <strong>Using &#39;Respond to Webhook&#39; Node</strong>，實際位置（待查證）。</li>
+<li><strong>Respond to Webhook</strong> 的 <strong>Respond With</strong> → <strong>JSON</strong>、<strong>Response Code</strong>，實際位置（待查證）。</li>
+<li><strong>Execute Workflow Trigger</strong> 的輸入方式（定義輸入欄位、JSON 範例、<strong>Accept all data</strong>），實際位置（待查證）。</li>
+<li><strong>Execute Sub-workflow</strong> 的 <strong>Workflow Inputs</strong>，實際位置（待查證）。</li>
+<li><strong>Header Auth</strong> 憑證的 <strong>Name</strong>、<strong>Value</strong>，實際位置（待查證）。</li>
+<li><strong>Telegram Trigger</strong> 的 <strong>Updates</strong>，實際位置（待查證）。</li>
+<li><code>WEBHOOK_URL</code> 環境變數的設定方式與重開 n8n 後的實際效果（待查證）。</li>
+<li><strong>Publish</strong>、<strong>Import from File</strong>、<strong>Executions</strong>、<strong>Always Output Data</strong>、<strong>Telegram API</strong> 憑證沿用前面模組，實際位置（待查證）。</li>
+</ul>
+<h3 id="sec-9">M8</h3>
+<p>節點面板搜尋 <strong>Basic LLM Chain</strong>（把提示送出、收回回答的鏈）、<strong>Google Gemini Chat Model</strong>（回答的模型）、<strong>Structured Output Parser</strong>（規定回答格式）、<strong>Execute Workflow Trigger</strong>、<strong>Execute Sub-workflow</strong>、<strong>Read/Write Files from Disk</strong>、<strong>Extract from File</strong>、<strong>Aggregate</strong>、<strong>If</strong>、<strong>Edit Fields (Set)</strong>。
+素材使用 Basic LLM Chain v1.9、Google Gemini Chat Model v1.2、Structured Output Parser v1.3、Execute Workflow Trigger v1.1、Execute Sub-workflow v1.2、Read/Write Files from Disk v1、Extract from File v1、Aggregate v1、If v2.2、Edit Fields v3.4。</p>
+<ul>
+<li><strong>Basic LLM Chain</strong> 的 <strong>Source for Prompt</strong>（選 <strong>Define below</strong>）、<strong>Prompt</strong>、<strong>Require Specific Output Format</strong>，實際位置（待查證）。</li>
+<li><strong>Basic LLM Chain</strong> 的 <strong>Chat Messages</strong>／<strong>System Message</strong> 位置，實際位置（待查證）。</li>
+<li><strong>Google Gemini Chat Model</strong>、<strong>Structured Output Parser</strong> 接到 <strong>Basic LLM Chain</strong> 下方的 <strong>Chat Model</strong>、<strong>Output Parser</strong> 插槽的方式，實際位置（待查證）。</li>
+<li><strong>Google Gemini Chat Model</strong> 的 <strong>Model</strong> 選單與 <strong>Options</strong> → <strong>Sampling Temperature</strong>，實際位置（待查證）。</li>
+<li><strong>Structured Output Parser</strong> 的 <strong>Schema Type</strong>（<strong>Generate From JSON Example</strong>）與 <strong>Auto-Fix Format</strong>（本教材不開：它會再呼叫一次模型、多用額度），實際位置（待查證）。</li>
+<li><strong>Google Gemini(PaLM) API</strong> 憑證的 <strong>Host</strong>、<strong>API Key</strong>，實際位置（待查證）。</li>
+<li><strong>Google AI Studio</strong> 建立 API 金鑰的位置，實際位置（待查證）。</li>
+<li><strong>Import from File</strong>、<strong>Publish</strong>、<strong>Executions</strong>、<strong>Credentials</strong> 沿用前面模組，實際位置（待查證）。</li>
+</ul>
+<h3 id="sec-10">M9</h3>
+<p>節點面板搜尋 <strong>Manual Trigger</strong>、<strong>Read/Write Files from Disk</strong>（讀本機檔案）、<strong>Extract from File</strong>（檔案轉回資料）；早報沿用 M5 的節點。
+素材使用 Manual Trigger v1、Read/Write Files from Disk v1、Extract from File v1。實測版本 2.48.4，升級測試 2.48.7。</p>
+<ul>
+<li><strong>Overview</strong> 裡看流程是不是 <strong>Published</strong> 的位置，實際位置（待查證）。</li>
+<li>流程 <strong>Workflow Settings</strong> 的 <strong>Error Workflow</strong>，實際位置（待查證）。</li>
+<li>從編輯器匯出單一流程（<strong>Download</strong>）與匯入（<strong>Import from File</strong>）的位置，實際位置（待查證）。</li>
+<li>第一次開新的 n8n 時建立擁有者帳號的畫面，實際畫面（待查證）。</li>
+<li><strong>Executions</strong> 的篩選（狀態、流程），實際位置（待查證）。</li>
+<li>指令（2.48.4 實測可用）：<code>export:workflow --backup</code>、<code>export:credentials --backup</code>、<code>import:workflow --separate --input</code>、<code>import:credentials --separate --input</code>、<code>unpublish:workflow --all</code>。<code>update:workflow --active</code> 已棄用。</li>
+<li>環境變數：<code>N8N_USER_FOLDER</code>、<code>N8N_ENCRYPTION_KEY</code>、<code>N8N_PORT</code>、<code>N8N_RUNNERS_BROKER_PORT</code>。</li>
+<li>Docker 版的備份、還原與升級指令尚未實測（待查證）。</li>
+</ul>
+<h3 id="sec-11">選修</h3>
+<p>節點面板搜尋 <strong>AI Agent</strong>（自己決定要不要用工具的 AI）、<strong>Simple Memory</strong>（短期記憶）、<strong>Code Tool</strong>（畫面上叫 <strong>Custom Code Tool</strong>，給 Agent 用的小工具）、<strong>Chat Trigger</strong>（聊天視窗入口）、<strong>HTML</strong>（用 <strong>Extract HTML Content</strong> 擷取網頁內容）、<strong>Code</strong>（寫一小段程式）；另用到 <strong>Google Gemini Chat Model</strong>、<strong>Schedule Trigger</strong>、<strong>HTTP Request</strong>、<strong>Edit Fields (Set)</strong>、<strong>If</strong>、<strong>Telegram</strong>、<strong>Limit</strong>。
+素材使用 AI Agent v3.1、Google Gemini Chat Model v1.2、Simple Memory v1.4、Custom Code Tool v1.3、Chat Trigger v1.4、HTML v1.2、Code v2；其餘沿用前面模組。實測版本 2.48.4（選修 B 的 MCP 實測用另一個資料夾的副本）。以下按鈕與選項實際位置均為（待查證）。</p>
+<ul>
+<li><strong>AI Agent</strong> 下方掛 <strong>Chat Model</strong>、<strong>Memory</strong>、<strong>Tool</strong> 的插槽位置與接法，實際位置（待查證）。</li>
+<li><strong>AI Agent</strong> 的 <strong>Prompt</strong>（<strong>Define below</strong>）、<strong>System Message</strong>、<strong>Max Iterations</strong>、<strong>Return Intermediate Steps</strong> 在 <strong>Options</strong> 裡的位置，實際位置（待查證）。</li>
+<li><strong>Simple Memory</strong> 的 <strong>Session ID</strong> 選項（從聊天視窗來、自訂）與 <strong>Context Window Length</strong>，實際位置（待查證）。</li>
+<li><strong>Custom Code Tool</strong> 的名稱與說明欄位；工具節點名稱要用英文（例如 <code>search_books</code>），因為實測取中文名時送給模型的工具名稱會變成「_」，模型分不出是哪個工具。</li>
+<li><strong>Chat Trigger</strong> 的聊天視窗按鈕（在編輯器裡開啟聊天），實際位置（待查證）。</li>
+<li><strong>HTML</strong> 的 <strong>Extract HTML Content</strong>、<strong>CSS Selector</strong>、<strong>Return Array</strong>、<strong>Return Value</strong>（<strong>Attribute</strong>），實際位置（待查證）。</li>
+<li><strong>Code</strong> 節點的程式編輯區與 <strong>JavaScript</strong> 選項，實際位置（待查證）。</li>
+<li><strong>Settings &gt; Instance-level MCP</strong>：<strong>Enable MCP access</strong>、<strong>Connect a client</strong>、<strong>Server URL</strong>、MCP 金鑰與 <strong>Revoke access</strong>，實際位置與按鈕畫面（待查證）。伺服器網址格式 <code>http://localhost:&lt;埠&gt;/mcp-server/http</code>，要帶 <code>Authorization: Bearer &lt;MCP 金鑰&gt;</code>。</li>
+<li>選修 B 副本用 <code>N8N_USER_FOLDER</code>、<code>N8N_PORT=5688</code>、<code>N8N_RUNNERS_BROKER_PORT=5689</code>；第一次開要建立擁有者帳號，畫面（待查證）。</li>
+<li><strong>Import from File</strong>、<strong>Publish</strong>、<strong>Overview</strong>、<strong>Executions</strong>、<strong>Credentials</strong> 沿用前面模組，實際位置（待查證）。</li>
+</ul>
+<details><summary id="sec-12">官方連結</summary><p>依本地官方文件及備課紀錄整理，查詢日期 2026-11-18。</p>
+<ul>
+<li><a href="https://docs.n8n.io/get-started/build-your-first-workflow" target="_blank" rel="noopener noreferrer">n8n 第一個流程</a><span class="dom">docs.n8n.io</span></li>
+<li><a href="https://docs.n8n.io/get-started/key-concept-glossary" target="_blank" rel="noopener noreferrer">n8n 名詞表</a><span class="dom">docs.n8n.io</span></li>
+<li><a href="https://docs.n8n.io/build/flow-logic/split-with-conditionals" target="_blank" rel="noopener noreferrer">條件分支</a><span class="dom">docs.n8n.io</span></li>
+<li><a href="https://docs.docker.com" target="_blank" rel="noopener noreferrer">Docker 文件</a><span class="dom">docs.docker.com</span></li>
+<li><a href="https://nodejs.org" target="_blank" rel="noopener noreferrer">Node.js</a><span class="dom">nodejs.org</span></li>
+</ul>
+</details><nav class="pager" aria-label="前後課程"><a class="prev" href="opt-c.html"><span>← 上一個</span>選修 C 更多資料來源與工具</a></nav></article></main><aside class="toc" aria-label="本頁目錄"><div class="t">本頁</div><a href="#sec-1">M0</a><a href="#sec-2">M1</a><a href="#sec-3">M2</a><a href="#sec-4">M3</a><a href="#sec-5">M4</a><a href="#sec-6">M5</a><a href="#sec-7">M6</a><a href="#sec-8">M7</a><a href="#sec-9">M8</a><a href="#sec-10">M9</a><a href="#sec-11">選修</a><a href="#sec-12">官方連結</a></aside><nav class="bottombar" aria-label="前後課程"><a href="opt-c.html">← 選修 C 更多資料來源與工具</a></nav></body></html>

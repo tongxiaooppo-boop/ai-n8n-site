@@ -1,0 +1,811 @@
+<!doctype html><html lang="zh-Hant" data-pal="teal"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>M2 資料與 Expression｜n8n 生活自動化</title><link rel="stylesheet" href="assets/style.css"><script src="assets/app.js" defer></script></head><body><a class="skip" href="#main">跳到正文</a><header class="topbar"><button type="button" aria-label="打開課表" aria-controls="schedule" aria-expanded="false">☰</button><span>M2 資料與 Expression</span></header><nav class="nav" id="schedule" aria-label="課表"><a class="brand" href="index.html">n8n 生活自動化</a><div class="stage">主線（M0–M5 照順序，之後照需要挑）</div><a class="mod" href="m0.html"><b>M0</b><span>準備環境</span></a><a class="mod" href="m1.html"><b>M1</b><span>第一個流程</span></a><a class="mod cur" href="m2.html" aria-current="page"><b>M2</b><span>資料與 Expression</span></a><a class="mod" href="m3.html"><b>M3</b><span>判斷、多筆與合併</span></a><a class="mod" href="m4.html"><b>M4</b><span>API、RSS 與排程</span></a><a class="mod" href="m5.html"><b>M5</b><span>通知、憑證與檔案</span></a><a class="mod" href="m6.html"><b>M6</b><span>錯誤處理與可靠性</span></a><a class="mod" href="m7.html"><b>M7</b><span>Webhook 與子流程</span></a><a class="mod" href="m8.html"><b>M8</b><span>加入 AI（受限用法）</span></a><a class="mod" href="m9.html"><b>M9</b><span>上線與維護</span></a><div class="stage">結業</div><a class="mod" href="final.html"><b>結業專題</b><span>生活題庫</span></a><div class="stage">選修</div><a class="mod" href="opt-a.html"><b>選修 A</b><span>AI Agent</span></a><a class="mod" href="opt-b.html"><b>選修 B</b><span>請 Claude 幫你寫流程</span></a><a class="mod" href="opt-c.html"><b>選修 C</b><span>更多資料來源與工具</span></a><div class="stage">附錄</div><a class="mod" href="version.html"><b>附錄</b><span>版本附頁</span></a></nav><button class="scrim" type="button" aria-label="關閉課表" tabindex="-1" hidden></button><main id="main"><article class="art"><div class="eyebrow">主線（M0–M5 照順序，之後照需要挑）</div><h1>M2｜資料與 Expression</h1><div class="meta"><span class="tag">從全部股票資料挑出自選股，日期和數字都轉好</span><span class="tag">約 2 小時</span><span class="tag">先修：<a href="m1.html">M1</a></span><span class="tag">實測 n8n 2.48.4（2026-11-18）・你的畫面可能略有不同</span></div><h3 id="sec-1">成果與先修</h3>
+<p>從股票測資挑出自選股，把民國日期與字串數字轉成可用的欄位。
+先完成 M1。已經會使用 <strong>Expression</strong> 與多筆資料的人可以從驗收的缺資料與重複情境開始。
+不用新帳號，主線費用 0 元。使用本頁假想股票測資，金額供紀錄與提醒使用。</p>
+<h3 id="sec-2">白話觀念</h3>
+<p>一筆資料是一個 <strong>Item</strong>。一個 Item 裡的陣列可以裝很多筆，先用 <strong>Split Out</strong> 把陣列拆開，後續節點才會逐筆處理。<strong>Filter</strong> 讓符合條件的資料通過。<strong>If</strong> 依條件把資料交到 true 或 false 分支。字串 <code>&quot;2170.00&quot;</code> 要用 <code>Number(...)</code> 轉成數字才能計算，代號 <code>&quot;2330&quot;</code> 保留 <strong>String</strong>。<strong>Expression</strong> 的 <code>$json</code> 代表目前這筆資料。缺值以 <code>null</code> 表示，0 則代表真的有數值零。</p>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">手動 → 測資陣列（1 Item，data 內 4 筆）→ Split Out（4 Items）→ Filter（2 Items）→ 整理（2 Items）</code></pre></div>
+<h3 id="sec-3">素材包</h3>
+<ul>
+<li><a href="files/m2/main-start.json" download>main-start.json</a> 放好手動與四筆測資陣列。</li>
+<li><a href="files/m2/main-done.json" download>main-done.json</a> 是挑出自選股完成版。</li>
+<li><a href="files/m2/ex1-done.json" download>ex1-done.json</a> 是旅費換算完成版。</li>
+<li><a href="files/m2/ex2-done.json" download>ex2-done.json</a> 是家用支出整理完成版。</li>
+<li><a href="files/m2/data-normal.json" download>data-normal.json</a> 含兩筆自選股正常資料。</li>
+<li><a href="files/m2/data-missing.json" download>data-missing.json</a> 含 2330 收盤價空字串的資料。</li>
+<li><a href="files/m2/data-dup.json" download>data-dup.json</a> 含兩筆相同的 2330 資料。</li>
+</ul>
+<p>流程檔用 <strong>Import from File</strong> 匯入，位置見版本附頁。三份 <code>data-</code> 測資檔請開啟後複製全部內容，貼到「測資陣列」的 <strong>JSON Output</strong>，這個欄位用來填入整份 JSON。</p>
+<h3 id="sec-4">主線：挑出自選股</h3>
+<p>把四筆股票測資拆開，挑出 2330 與 2317，再整理日期、數字與有效旗標。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>手動（<strong>Manual Trigger</strong>）</td>
+<td>啟動流程</td>
+<td>手動執行</td>
+</tr>
+<tr>
+<td>測資陣列（<strong>Edit Fields (Set)</strong>）</td>
+<td>放入原始資料</td>
+<td><strong>Mode</strong> 選 <strong>JSON</strong>，使用起始版的 <code>{&quot;data&quot;:[…]}</code></td>
+</tr>
+<tr>
+<td>拆成多筆（<strong>Split Out</strong>）</td>
+<td>陣列轉多個 Item</td>
+<td><strong>Fields To Split Out</strong> 填 <code>data</code></td>
+</tr>
+<tr>
+<td>挑自選股（<strong>Filter</strong>）</td>
+<td>留下兩檔</td>
+<td><code>$json.Code</code> 的字串值等於 <code>2330</code> 或 <code>2317</code>，條件用 <strong>OR</strong></td>
+</tr>
+<tr>
+<td>整理（<strong>Edit Fields (Set)</strong>）</td>
+<td>轉日期與數字</td>
+<td>依下方六個欄位設定，值用 <strong>Expression</strong></td>
+</tr>
+</tbody></table>
+<details class="wf"><summary>起始版（m2/main-start.json）</summary><a href="files/m2/main-start.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M2 主線 起始版&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;name&quot;: &quot;手動&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.manualTrigger&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        0,
+        0
+      ],
+      &quot;parameters&quot;: {}
+    },
+    {
+      &quot;name&quot;: &quot;測資陣列&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        220,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;raw&quot;,
+        &quot;jsonOutput&quot;: &quot;{\&quot;data\&quot;: [{\&quot;Date\&quot;: \&quot;1151117\&quot;, \&quot;Code\&quot;: \&quot;2330\&quot;, \&quot;Name\&quot;: \&quot;假想甲\&quot;, \&quot;ClosingPrice\&quot;: \&quot;2170.00\&quot;, \&quot;Change\&quot;: \&quot;-45.0000\&quot;}, {\&quot;Date\&quot;: \&quot;1151117\&quot;, \&quot;Code\&quot;: \&quot;2317\&quot;, \&quot;Name\&quot;: \&quot;假想乙\&quot;, \&quot;ClosingPrice\&quot;: \&quot;219.00\&quot;, \&quot;Change\&quot;: \&quot;0.5000\&quot;}, {\&quot;Date\&quot;: \&quot;1151117\&quot;, \&quot;Code\&quot;: \&quot;9999\&quot;, \&quot;Name\&quot;: \&quot;假想丙\&quot;, \&quot;ClosingPrice\&quot;: \&quot;\&quot;, \&quot;Change\&quot;: \&quot;0.0000\&quot;}, {\&quot;Date\&quot;: \&quot;1151117\&quot;, \&quot;Code\&quot;: \&quot;1101\&quot;, \&quot;Name\&quot;: \&quot;假想丁\&quot;, \&quot;ClosingPrice\&quot;: \&quot;30.00\&quot;, \&quot;Change\&quot;: \&quot;1.0000\&quot;}]}&quot;,
+        &quot;options&quot;: {}
+      }
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;手動&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;測資陣列&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}
+</code></pre></div>
+</details><ol>
+<li><p>匯入起始版，打開「測資陣列」並執行。核對每筆含 <code>Date</code>、<code>Code</code>、<code>Name</code>、<code>ClosingPrice</code>、<code>Change</code>。
+你應該看到：輸出 1 個 Item，<code>data</code> 內有 2330、2317、9999、1101 四筆資料。</p>
+</li>
+<li><p>接上 <strong>Split Out</strong>，命名「拆成多筆」，將 <strong>Fields To Split Out</strong> 設為 <code>data</code>，再執行整條流程。位置見版本附頁。
+你應該看到：「拆成多筆」輸出 4 個 Items，第一筆 <code>Code</code> 為字串 <code>2330</code>。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？仍只有 1 筆且裡面有陣列時先確認拆分欄位填的是 <code>data</code>，再查看新執行結果。</p>
+</blockquote>
+<ol start="3">
+<li>接上 <strong>Filter</strong>，命名「挑自選股」，用兩個 <strong>String</strong> 的 <strong>is equal to</strong> 條件比較 <code>{{ $json.Code }}</code> 與 <code>2330</code>、<code>2317</code>，組合選 <strong>OR</strong>。
+你應該看到：「挑自選股」輸出 2 筆，代號依序為 2330、2317。</li>
+</ol>
+<blockquote>
+<p>卡住了？沒有資料通過時先確認比較值採用字串型別，兩個條件使用 <strong>OR</strong>。</p>
+</blockquote>
+<ol start="4">
+<li><p>接上 <strong>Edit Fields (Set)</strong>，命名「整理」，按 <strong>Add Field</strong> 逐一新增下表欄位，分別選型別並將值切換 <strong>Expression</strong>。位置見版本附頁。</p>
+<table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>型別</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>dataDate</code></td>
+<td><strong>String</strong></td>
+<td><code>{{ (Number($json.Date.slice(0,3))+1911) + &#39;-&#39; + $json.Date.slice(3,5) + &#39;-&#39; + $json.Date.slice(5,7) }}</code></td>
+</tr>
+<tr>
+<td><code>code</code></td>
+<td><strong>String</strong></td>
+<td><code>{{ $json.Code }}</code></td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td><strong>String</strong></td>
+<td><code>{{ $json.Name }}</code></td>
+</tr>
+<tr>
+<td><code>close</code></td>
+<td><strong>Number</strong></td>
+<td><code>{{ $json.ClosingPrice === &#39;&#39; ? null : Number($json.ClosingPrice) }}</code></td>
+</tr>
+<tr>
+<td><code>change</code></td>
+<td><strong>Number</strong></td>
+<td><code>{{ $json.ClosingPrice === &#39;&#39; ? null : Number($json.Change) }}</code></td>
+</tr>
+<tr>
+<td><code>valid</code></td>
+<td><strong>Boolean</strong></td>
+<td><code>{{ $json.ClosingPrice !== &#39;&#39; }}</code></td>
+</tr>
+</tbody></table>
+<p><code>slice</code> 取出日期的一段，前三碼 <code>115</code> 加 1911 變成西元年 2026。<code>條件 ? A : B</code> 的意思是「條件成立就用 A，不成立就用 B」：收盤價是空字串就給 <code>null</code>，不是空字串才用 <code>Number(...)</code> 轉成數字。收盤價空白時，來源的 <code>Change</code> 可能填 <code>0.0000</code>，此時 <code>close</code> 與 <code>change</code> 都設為 <code>null</code>，<code>valid</code> 為 false。</p>
+<p>你應該看到：第一筆預覽日期為 <code>2026-11-17</code>，代號仍是 <code>2330</code>。</p>
+</li>
+<li><p>執行整條流程，逐筆查看「整理」的 <strong>JSON</strong> 輸出與型別。
+你應該看到：2 筆，第一筆為 <code>dataDate=&quot;2026-11-17&quot;</code>、<code>code=&quot;2330&quot;</code>、<code>name=&quot;假想甲&quot;</code>、<code>close=2170</code>、<code>change=-45</code>、<code>valid=true</code>。</p>
+</li>
+</ol>
+<p>第二筆應為假想乙，<code>code=&quot;2317&quot;</code>、<code>close=219</code>、<code>change=0.5</code>。JSON 中字串有引號，數字與布林值可直接辨認。缺資料驗收時，把測資檔的全部內容貼進「測資陣列」後重跑。</p>
+<details class="wf"><summary>完成版（m2/main-done.json）</summary><a href="files/m2/main-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M2 主線 挑出自選股&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;name&quot;: &quot;手動&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.manualTrigger&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        0,
+        0
+      ],
+      &quot;parameters&quot;: {}
+    },
+    {
+      &quot;name&quot;: &quot;測資陣列&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        220,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;raw&quot;,
+        &quot;jsonOutput&quot;: &quot;{\&quot;data\&quot;: [{\&quot;Date\&quot;: \&quot;1151117\&quot;, \&quot;Code\&quot;: \&quot;2330\&quot;, \&quot;Name\&quot;: \&quot;假想甲\&quot;, \&quot;ClosingPrice\&quot;: \&quot;2170.00\&quot;, \&quot;Change\&quot;: \&quot;-45.0000\&quot;}, {\&quot;Date\&quot;: \&quot;1151117\&quot;, \&quot;Code\&quot;: \&quot;2317\&quot;, \&quot;Name\&quot;: \&quot;假想乙\&quot;, \&quot;ClosingPrice\&quot;: \&quot;219.00\&quot;, \&quot;Change\&quot;: \&quot;0.5000\&quot;}, {\&quot;Date\&quot;: \&quot;1151117\&quot;, \&quot;Code\&quot;: \&quot;9999\&quot;, \&quot;Name\&quot;: \&quot;假想丙\&quot;, \&quot;ClosingPrice\&quot;: \&quot;\&quot;, \&quot;Change\&quot;: \&quot;0.0000\&quot;}, {\&quot;Date\&quot;: \&quot;1151117\&quot;, \&quot;Code\&quot;: \&quot;1101\&quot;, \&quot;Name\&quot;: \&quot;假想丁\&quot;, \&quot;ClosingPrice\&quot;: \&quot;30.00\&quot;, \&quot;Change\&quot;: \&quot;1.0000\&quot;}]}&quot;,
+        &quot;options&quot;: {}
+      }
+    },
+    {
+      &quot;name&quot;: &quot;拆成多筆&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.splitOut&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        440,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;fieldToSplitOut&quot;: &quot;data&quot;,
+        &quot;options&quot;: {}
+      }
+    },
+    {
+      &quot;name&quot;: &quot;挑自選股&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.filter&quot;,
+      &quot;typeVersion&quot;: 2.2,
+      &quot;position&quot;: [
+        660,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;conditions&quot;: {
+          &quot;options&quot;: {
+            &quot;caseSensitive&quot;: true,
+            &quot;leftValue&quot;: &quot;&quot;,
+            &quot;typeValidation&quot;: &quot;strict&quot;,
+            &quot;version&quot;: 2
+          },
+          &quot;conditions&quot;: [
+            {
+              &quot;id&quot;: &quot;c1&quot;,
+              &quot;leftValue&quot;: &quot;={{ $json.Code }}&quot;,
+              &quot;rightValue&quot;: &quot;2330&quot;,
+              &quot;operator&quot;: {
+                &quot;type&quot;: &quot;string&quot;,
+                &quot;operation&quot;: &quot;equals&quot;
+              }
+            },
+            {
+              &quot;id&quot;: &quot;c2&quot;,
+              &quot;leftValue&quot;: &quot;={{ $json.Code }}&quot;,
+              &quot;rightValue&quot;: &quot;2317&quot;,
+              &quot;operator&quot;: {
+                &quot;type&quot;: &quot;string&quot;,
+                &quot;operation&quot;: &quot;equals&quot;
+              }
+            }
+          ],
+          &quot;combinator&quot;: &quot;or&quot;
+        },
+        &quot;options&quot;: {}
+      }
+    },
+    {
+      &quot;name&quot;: &quot;整理&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        880,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;a1&quot;,
+              &quot;name&quot;: &quot;dataDate&quot;,
+              &quot;value&quot;: &quot;={{ (Number($json.Date.slice(0,3))+1911) + &#39;-&#39; + $json.Date.slice(3,5) + &#39;-&#39; + $json.Date.slice(5,7) }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a2&quot;,
+              &quot;name&quot;: &quot;code&quot;,
+              &quot;value&quot;: &quot;={{ $json.Code }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a3&quot;,
+              &quot;name&quot;: &quot;name&quot;,
+              &quot;value&quot;: &quot;={{ $json.Name }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a4&quot;,
+              &quot;name&quot;: &quot;close&quot;,
+              &quot;value&quot;: &quot;={{ $json.ClosingPrice === &#39;&#39; ? null : Number($json.ClosingPrice) }}&quot;,
+              &quot;type&quot;: &quot;number&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a5&quot;,
+              &quot;name&quot;: &quot;change&quot;,
+              &quot;value&quot;: &quot;={{ $json.ClosingPrice === &#39;&#39; ? null : Number($json.Change) }}&quot;,
+              &quot;type&quot;: &quot;number&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a6&quot;,
+              &quot;name&quot;: &quot;valid&quot;,
+              &quot;value&quot;: &quot;={{ $json.ClosingPrice !== &#39;&#39; }}&quot;,
+              &quot;type&quot;: &quot;boolean&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      }
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;手動&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;測資陣列&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;測資陣列&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;拆成多筆&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;拆成多筆&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;挑自選股&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;挑自選股&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;整理&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}
+</code></pre></div>
+</details><h3 id="sec-5">小練習①：旅費換算</h3>
+<p>把央行格式的日期與匯率字串整理好，計算 30000 元可換算的美元預算。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>手動（<strong>Manual Trigger</strong>）</td>
+<td>啟動流程</td>
+<td>手動執行</td>
+</tr>
+<tr>
+<td>央行格式（<strong>Edit Fields (Set)</strong>）</td>
+<td>提供測資</td>
+<td><code>日期</code> 為字串 <code>20261117</code>、<code>NTD_USD</code> 為字串 <code>32.85</code>、<code>budgetTwd</code> 為數字 30000</td>
+</tr>
+<tr>
+<td>換算（<strong>Edit Fields (Set)</strong>）</td>
+<td>整理並換算</td>
+<td><code>date</code> 用 <strong>String</strong>，<code>rate</code>、<code>usdBudget</code> 用 <strong>Number</strong></td>
+</tr>
+</tbody></table>
+<ol>
+<li><p>建立新流程，依表加入三個節點並連線，填好「央行格式」後執行。
+你應該看到：來源 1 筆，日期與匯率為字串，預算為數字 30000。</p>
+</li>
+<li><p>在「換算」新增下表三個欄位，各自選型別並將值切換 <strong>Expression</strong>。</p>
+<table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>型別</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>date</code></td>
+<td><strong>String</strong></td>
+<td><code>{{ $json[&#39;日期&#39;].slice(0,4) + &#39;-&#39; + $json[&#39;日期&#39;].slice(4,6) + &#39;-&#39; + $json[&#39;日期&#39;].slice(6,8) }}</code></td>
+</tr>
+<tr>
+<td><code>rate</code></td>
+<td><strong>Number</strong></td>
+<td><code>{{ Number($json.NTD_USD) }}</code></td>
+</tr>
+<tr>
+<td><code>usdBudget</code></td>
+<td><strong>Number</strong></td>
+<td><code>{{ Math.round($json.budgetTwd / Number($json.NTD_USD) * 100) / 100 }}</code></td>
+</tr>
+</tbody></table>
+<p>中文欄位名稱在本課使用方括號寫成 <code>$json[&#39;日期&#39;]</code>。匯率先轉數字，預算除以匯率後乘 100、四捨五入、再除以 100，保留到小數 2 位。</p>
+<p>你應該看到：日期預覽為 <code>2026-11-17</code>，美元預算為 913.24。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？日期取不到時先核對來源欄名「日期」與方括號裡的引號，預算算錯時先檢查 <code>NTD_USD</code>。</p>
+</blockquote>
+<ol start="3">
+<li>執行整條流程，打開「換算」查看 <strong>JSON</strong> 輸出。
+你應該看到：1 筆，<code>date=&quot;2026-11-17&quot;</code>、<code>rate=32.85</code>、<code>usdBudget=913.24</code>。</li>
+</ol>
+<details class="wf"><summary>完成版（m2/ex1-done.json）</summary><a href="files/m2/ex1-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M2 小練習① 旅費換算&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;name&quot;: &quot;手動&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.manualTrigger&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        0,
+        0
+      ],
+      &quot;parameters&quot;: {}
+    },
+    {
+      &quot;name&quot;: &quot;央行格式&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        220,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;a1&quot;,
+              &quot;name&quot;: &quot;日期&quot;,
+              &quot;value&quot;: &quot;20261117&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a2&quot;,
+              &quot;name&quot;: &quot;NTD_USD&quot;,
+              &quot;value&quot;: &quot;32.85&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a3&quot;,
+              &quot;name&quot;: &quot;budgetTwd&quot;,
+              &quot;value&quot;: 30000,
+              &quot;type&quot;: &quot;number&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      }
+    },
+    {
+      &quot;name&quot;: &quot;換算&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        440,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;a1&quot;,
+              &quot;name&quot;: &quot;date&quot;,
+              &quot;value&quot;: &quot;={{ $json[&#39;日期&#39;].slice(0,4) + &#39;-&#39; + $json[&#39;日期&#39;].slice(4,6) + &#39;-&#39; + $json[&#39;日期&#39;].slice(6,8) }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a2&quot;,
+              &quot;name&quot;: &quot;rate&quot;,
+              &quot;value&quot;: &quot;={{ Number($json.NTD_USD) }}&quot;,
+              &quot;type&quot;: &quot;number&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a3&quot;,
+              &quot;name&quot;: &quot;usdBudget&quot;,
+              &quot;value&quot;: &quot;={{ Math.round($json.budgetTwd / Number($json.NTD_USD) * 100) / 100 }}&quot;,
+              &quot;type&quot;: &quot;number&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      }
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;手動&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;央行格式&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;央行格式&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;換算&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}
+</code></pre></div>
+</details><h3 id="sec-6">小練習②：家用支出整理</h3>
+<p>拆開支出陣列，整理日期與金額，把缺金額的支出送到待補分支。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>手動（<strong>Manual Trigger</strong>）</td>
+<td>啟動流程</td>
+<td>手動執行</td>
+</tr>
+<tr>
+<td>支出陣列（<strong>Edit Fields (Set)</strong>）</td>
+<td>提供三筆支出</td>
+<td><strong>Mode</strong> 選 <strong>JSON</strong>，內容見下方</td>
+</tr>
+<tr>
+<td>拆成多筆（<strong>Split Out</strong>）</td>
+<td>拆開陣列</td>
+<td><strong>Fields To Split Out</strong> 填 <code>rows</code></td>
+</tr>
+<tr>
+<td>整理（<strong>Edit Fields (Set)</strong>）</td>
+<td>統一日期與金額</td>
+<td>四個欄位依下表設定</td>
+</tr>
+<tr>
+<td>有金額嗎（<strong>If</strong>）</td>
+<td>分成有效與待補</td>
+<td><code>{{ $json.ok }}</code> 選 <strong>Boolean</strong> 的 <strong>is true</strong></td>
+</tr>
+</tbody></table>
+<ol>
+<li>建立前兩個節點，在「支出陣列」的 <strong>JSON Output</strong> 填入下方內容，執行一次。
+你應該看到：1 個 Item 的 <code>rows</code> 內有三筆支出。</li>
+</ol>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{&quot;rows&quot;:[{&quot;date&quot;:&quot;2026/11/15&quot;,&quot;item&quot;:&quot;衛生紙&quot;,&quot;amount&quot;:&quot;189&quot;},{&quot;date&quot;:&quot;2026/11/16&quot;,&quot;item&quot;:&quot;洗衣精&quot;,&quot;amount&quot;:&quot;&quot;},{&quot;date&quot;:&quot;2026/11/17&quot;,&quot;item&quot;:&quot;牛奶&quot;,&quot;amount&quot;:&quot;95&quot;}]}</code></pre></div>
+<ol start="2">
+<li><p>接上「拆成多筆」並填 <code>rows</code>，再接「整理」，按下表新增欄位，值切換 <strong>Expression</strong>。</p>
+<table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>型別</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>date</code></td>
+<td><strong>String</strong></td>
+<td><code>{{ $json.date.replaceAll(&#39;/&#39;, &#39;-&#39;) }}</code></td>
+</tr>
+<tr>
+<td><code>item</code></td>
+<td><strong>String</strong></td>
+<td><code>{{ $json.item }}</code></td>
+</tr>
+<tr>
+<td><code>amount</code></td>
+<td><strong>Number</strong></td>
+<td><code>{{ $json.amount === &#39;&#39; ? null : Number($json.amount) }}</code></td>
+</tr>
+<tr>
+<td><code>ok</code></td>
+<td><strong>Boolean</strong></td>
+<td><code>{{ $json.amount !== &#39;&#39; }}</code></td>
+</tr>
+</tbody></table>
+<p>你應該看到：「整理」有 3 筆，第一筆為 <code>date=&quot;2026-11-15&quot;</code>、<code>item=&quot;衛生紙&quot;</code>、<code>amount=189</code>、<code>ok=true</code>。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？洗衣精金額變 0 時先檢查 <code>amount</code> 是否先判斷空字串，再做 <code>Number(...)</code> 轉換。</p>
+</blockquote>
+<ol start="3">
+<li>接上「有金額嗎」，設定 <code>ok</code> 為真的條件，再執行整條流程，分別查看 true 與 false 分支。
+你應該看到：true 2 筆，false 1 筆，false 的洗衣精 <code>amount=null</code>、<code>ok=false</code>。</li>
+</ol>
+<details class="wf"><summary>完成版（m2/ex2-done.json）</summary><a href="files/m2/ex2-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M2 小練習② 家用支出整理&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;name&quot;: &quot;手動&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.manualTrigger&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        0,
+        0
+      ],
+      &quot;parameters&quot;: {}
+    },
+    {
+      &quot;name&quot;: &quot;支出陣列&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        220,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;raw&quot;,
+        &quot;jsonOutput&quot;: &quot;{\&quot;rows\&quot;: [{\&quot;date\&quot;: \&quot;2026/11/15\&quot;, \&quot;item\&quot;: \&quot;衛生紙\&quot;, \&quot;amount\&quot;: \&quot;189\&quot;}, {\&quot;date\&quot;: \&quot;2026/11/16\&quot;, \&quot;item\&quot;: \&quot;洗衣精\&quot;, \&quot;amount\&quot;: \&quot;\&quot;}, {\&quot;date\&quot;: \&quot;2026/11/17\&quot;, \&quot;item\&quot;: \&quot;牛奶\&quot;, \&quot;amount\&quot;: \&quot;95\&quot;}]}&quot;,
+        &quot;options&quot;: {}
+      }
+    },
+    {
+      &quot;name&quot;: &quot;拆成多筆&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.splitOut&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        440,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;fieldToSplitOut&quot;: &quot;rows&quot;,
+        &quot;options&quot;: {}
+      }
+    },
+    {
+      &quot;name&quot;: &quot;整理&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        660,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;a1&quot;,
+              &quot;name&quot;: &quot;date&quot;,
+              &quot;value&quot;: &quot;={{ $json.date.replaceAll(&#39;/&#39;, &#39;-&#39;) }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a2&quot;,
+              &quot;name&quot;: &quot;item&quot;,
+              &quot;value&quot;: &quot;={{ $json.item }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a3&quot;,
+              &quot;name&quot;: &quot;amount&quot;,
+              &quot;value&quot;: &quot;={{ $json.amount === &#39;&#39; ? null : Number($json.amount) }}&quot;,
+              &quot;type&quot;: &quot;number&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a4&quot;,
+              &quot;name&quot;: &quot;ok&quot;,
+              &quot;value&quot;: &quot;={{ $json.amount !== &#39;&#39; }}&quot;,
+              &quot;type&quot;: &quot;boolean&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      }
+    },
+    {
+      &quot;name&quot;: &quot;有金額嗎&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.if&quot;,
+      &quot;typeVersion&quot;: 2.2,
+      &quot;position&quot;: [
+        880,
+        0
+      ],
+      &quot;parameters&quot;: {
+        &quot;conditions&quot;: {
+          &quot;options&quot;: {
+            &quot;caseSensitive&quot;: true,
+            &quot;leftValue&quot;: &quot;&quot;,
+            &quot;typeValidation&quot;: &quot;strict&quot;,
+            &quot;version&quot;: 2
+          },
+          &quot;conditions&quot;: [
+            {
+              &quot;id&quot;: &quot;c1&quot;,
+              &quot;leftValue&quot;: &quot;={{ $json.ok }}&quot;,
+              &quot;rightValue&quot;: &quot;&quot;,
+              &quot;operator&quot;: {
+                &quot;type&quot;: &quot;boolean&quot;,
+                &quot;operation&quot;: &quot;true&quot;,
+                &quot;singleValue&quot;: true
+              }
+            }
+          ],
+          &quot;combinator&quot;: &quot;and&quot;
+        },
+        &quot;options&quot;: {}
+      }
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;手動&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;支出陣列&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;支出陣列&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;拆成多筆&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;拆成多筆&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;整理&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;整理&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;有金額嗎&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}
+</code></pre></div>
+</details><h3 id="sec-7">看懂執行紀錄</h3>
+<p>打開 <strong>Executions</strong> 選最新一次，沿主線記下筆數 <code>1 → 1 → 4 → 2 → 2</code>。位置見版本附頁。
+打開「整理」的第二個 Item，確認代號是 2317，避免每筆都誤取第一筆。切到 <strong>JSON</strong> 查看 <code>code</code> 保持字串、<code>close</code> 與 <code>change</code> 為數字、<code>valid</code> 為布林值。</p>
+<p>測試缺資料時，查看「測資陣列」的空字串一路如何變成 <code>null</code>。故障時記錄失敗節點與欄位，修正後查看新的執行時間。家用支出流程要分別檢查 true 與 false 的筆數及洗衣精的空值。</p>
+<h3 id="sec-8">驗收</h3>
+<ul>
+<li class="check"> 正常。主線四筆原始資料拆成 4 個 Items，篩成 2 筆，第一筆日期 <code>2026-11-17</code>、代號字串 <code>2330</code>、價格數字 2170、漲跌數字 -45、<code>valid=true</code>。</li>
+<li class="check"> 正常測資。貼入 <code>data-normal.json</code>，確認拆分與整理都為 2 筆，第二筆代號 2317，並解釋陣列如何變多個 Items。</li>
+<li class="check"> 缺資料。貼入 <code>data-missing.json</code>，確認 1 筆 <code>valid=false</code>，<code>close=null</code>、<code>change=null</code>，兩個缺值都沒有變成 0。</li>
+<li class="check"> 重複。貼入 <code>data-dup.json</code>，確認同一次執行整理後仍有兩筆 2330，M3 才處理去重。</li>
+<li class="check"> 故障。恢復完成版設定，刪掉「整理」中 <code>dataDate</code> 運算式最後的右大括號，執行後找到出錯的節點與欄位，再補回括號重跑成功。</li>
+<li class="check"> 小練習。旅費結果為 913.24，家用支出整理 3 筆，If true 2 筆、false 1 筆，洗衣精金額為 <code>null</code>。</li>
+<li class="check"> 變形題。回到四筆主線測資，改選兩檔自己的代號，在測資中準備對應資料，再增加一個需要的欄位並寫一句理由，確認每筆結果與型別。</li>
+</ul>
+<p>各情境分開測，切換時替換整份測資並重跑，最後恢復四筆主線資料。</p>
+<details><summary id="sec-9">卡關救援</summary><ul>
+<li>每筆都變成同一檔 → 查看「整理」的 <strong>Expression</strong> 是否固定引用 <code>$(&#39;測資陣列&#39;).first()</code> → 先改用 <code>$json</code> 取得目前 Item → 查看第二個 Item，確認代號為 2317。</li>
+<li>Filter 一筆都沒出來 → 查看條件型別與輸入 <code>Code</code> → 先改用字串 <code>2330</code>、<code>2317</code> 並選 <strong>OR</strong> → 確認四筆測資會留下 2 筆。</li>
+<li><code>close</code> 算完仍是文字 → 查看「整理」的欄位型別 → 先選 <strong>Number</strong> 並保留轉數字運算式 → 從 <strong>JSON</strong> 確認值為數字 2170。</li>
+<li>缺收盤價卻出現 0 → 查看 <code>close</code>、<code>change</code> 與 <code>valid</code> → 先照主線補上收盤價空字串判斷 → 用缺資料測資確認兩個值為 <code>null</code>、旗標為 false。</li>
+<li>運算式錯誤 → 查看失敗節點與欄位錯誤原文 → 先核對大括號、引號與欄位拼字 → 重跑並核對筆數與實際欄位。</li>
+</ul>
+<p>求助時附 n8n 版本、預期與實際結果、哪個節點、錯誤訊息原文、已經試過什麼。截圖先遮住金鑰和個資。</p>
+</details><details><summary id="sec-10">官方連結</summary><p>依本地官方文件與實測紀錄整理，查詢日期 2026-11-18。</p>
+<ul>
+<li><a href="https://docs.n8n.io/get-started/key-concept-glossary" target="_blank" rel="noopener noreferrer">n8n 名詞表</a><span class="dom">docs.n8n.io</span></li>
+<li><a href="https://docs.n8n.io/build/flow-logic/split-with-conditionals" target="_blank" rel="noopener noreferrer">條件分支</a><span class="dom">docs.n8n.io</span></li>
+<li><a href="https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL" target="_blank" rel="noopener noreferrer">證交所盤後個股資料格式</a><span class="dom">openapi.twse.com.tw</span></li>
+<li><a href="https://cpx.cbc.gov.tw/api/OpenData/FTDOpenData_Day" target="_blank" rel="noopener noreferrer">央行匯率資料格式</a><span class="dom">cpx.cbc.gov.tw</span></li>
+</ul>
+</details><nav class="pager" aria-label="前後課程"><a class="prev" href="m1.html"><span>← 上一個</span>M1 第一個流程</a><a class="next" href="m3.html"><span>下一個 →</span>M3 判斷、多筆與合併</a></nav></article></main><aside class="toc" aria-label="本頁目錄"><div class="t">本頁</div><a href="#sec-1">成果與先修</a><a href="#sec-2">白話觀念</a><a href="#sec-3">素材包</a><a href="#sec-4">主線：挑出自選股</a><a href="#sec-5">小練習①：旅費換算</a><a href="#sec-6">小練習②：家用支出整理</a><a href="#sec-7">看懂執行紀錄</a><a href="#sec-8">驗收</a><a href="#sec-9">卡關救援</a><a href="#sec-10">官方連結</a></aside><nav class="bottombar" aria-label="前後課程"><a href="m1.html">← M1 第一個流程</a><a href="m3.html">M3 判斷、多筆與合併 →</a></nav></body></html>

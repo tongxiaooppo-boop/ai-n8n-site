@@ -1,0 +1,315 @@
+<!doctype html><html lang="zh-Hant" data-pal="teal"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>選修 B 請 Claude 幫你寫流程｜n8n 生活自動化</title><link rel="stylesheet" href="assets/style.css"><script src="assets/app.js" defer></script></head><body><a class="skip" href="#main">跳到正文</a><header class="topbar"><button type="button" aria-label="打開課表" aria-controls="schedule" aria-expanded="false">☰</button><span>選修 B 請 Claude 幫你寫流程</span></header><nav class="nav" id="schedule" aria-label="課表"><a class="brand" href="index.html">n8n 生活自動化</a><div class="stage">主線（M0–M5 照順序，之後照需要挑）</div><a class="mod" href="m0.html"><b>M0</b><span>準備環境</span></a><a class="mod" href="m1.html"><b>M1</b><span>第一個流程</span></a><a class="mod" href="m2.html"><b>M2</b><span>資料與 Expression</span></a><a class="mod" href="m3.html"><b>M3</b><span>判斷、多筆與合併</span></a><a class="mod" href="m4.html"><b>M4</b><span>API、RSS 與排程</span></a><a class="mod" href="m5.html"><b>M5</b><span>通知、憑證與檔案</span></a><a class="mod" href="m6.html"><b>M6</b><span>錯誤處理與可靠性</span></a><a class="mod" href="m7.html"><b>M7</b><span>Webhook 與子流程</span></a><a class="mod" href="m8.html"><b>M8</b><span>加入 AI（受限用法）</span></a><a class="mod" href="m9.html"><b>M9</b><span>上線與維護</span></a><div class="stage">結業</div><a class="mod" href="final.html"><b>結業專題</b><span>生活題庫</span></a><div class="stage">選修</div><a class="mod" href="opt-a.html"><b>選修 A</b><span>AI Agent</span></a><a class="mod cur" href="opt-b.html" aria-current="page"><b>選修 B</b><span>請 Claude 幫你寫流程</span></a><a class="mod" href="opt-c.html"><b>選修 C</b><span>更多資料來源與工具</span></a><div class="stage">附錄</div><a class="mod" href="version.html"><b>附錄</b><span>版本附頁</span></a></nav><button class="scrim" type="button" aria-label="關閉課表" tabindex="-1" hidden></button><main id="main"><article class="art"><div class="eyebrow">選修</div><h1>選修 B｜請 Claude 幫你寫流程</h1><div class="meta"><span class="tag">透過 n8n 內建 MCP 讓 AI 寫出補貨提醒流程，自己驗收</span><span class="tag">約 2 小時</span><span class="tag">先修：<a href="m8.html">M8</a></span><span class="tag">實測 n8n 2.48.4（2026-11-18）・你的畫面可能略有不同</span></div><h3 id="sec-1">成果與先修</h3>
+<p>讓 AI 在你的<strong>副本</strong> n8n 裡幫你做出一條「補貨提醒」流程，然後<strong>由你自己驗收</strong>：逐個節點說得出用途、改一次門檻、修一次錯、確認沒有被 Publish。
+先修 M8（會用 <strong>Execute workflow</strong>、看 <strong>Executions</strong>）；M9 第 3 段的「隔離還原」做過會更順，因為這裡開副本的做法一樣。
+要準備的帳號：n8n 這端不用新帳號。要有一個「能接 MCP 的 AI 用戶端」（例如 Claude Desktop 或 Claude Code）；哪個方案能用、要不要付費，<strong>待查證</strong>。沒有也沒關係，第 2 段有免費退路。
+費用：n8n 這端 0 元（實測沒有要授權或付費的檢查）；AI 用戶端的費用待查證。時間約 2 小時。</p>
+<h3 id="sec-2">白話觀念</h3>
+<ol>
+<li><strong>MCP 一句話</strong>：一種讓 AI 用戶端「連到別的程式、用它提供的工具」的通用接法。連上 n8n 之後，AI 就能搜尋、建立、驗證、執行你的流程。</li>
+<li><strong>n8n 內建 MCP</strong>：n8n 2.48.4 自架版本身就有 MCP 伺服器（官方叫 Instance-level MCP），在 <strong>Settings &gt; Instance-level MCP</strong> 打開（位置見版本附頁，按鈕畫面待查證）。實測連上後，伺服器名稱是「n8n MCP Server」，有 60 多個工具，包含搜尋流程、建立流程、驗證流程、執行流程、<strong>Publish</strong>／<strong>Unpublish</strong>、封存流程、列出憑證。</li>
+<li><strong>為什麼不用第三方 n8n-mcp</strong>：內建的是官方做的，跟著 n8n 版本更新，不用多裝一個第三方套件。</li>
+<li><strong>範圍</strong>：官方說 MCP 預設只看得到「有開放給 MCP」的流程（搜尋除外），而且<strong>所有連上來的 AI 用戶端看到的範圍都一樣</strong>，沒辦法對不同的 AI 分別設權限。</li>
+</ol>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">AI 用戶端 ──(MCP 金鑰)──▶ http://localhost:5688/mcp-server/http ──▶ 副本 n8n
+                                                                    └─ 建立流程／驗證／執行（你只驗收）</code></pre></div>
+<h3 id="sec-3">安全規則（先讀）</h3>
+<blockquote>
+<p>⚠️ <strong>先讀這五條再動手。</strong> AI 透過 MCP，能<strong>建立、執行、Publish、封存</strong>你的流程，也看得到你有哪些<strong>憑證</strong>（名稱）。</p>
+</blockquote>
+<ol>
+<li><strong>只在副本打開 MCP</strong>：用另一個資料夾（<code>N8N_USER_FOLDER</code>）、另一個埠（<code>N8N_PORT=5688</code>、<code>N8N_RUNNERS_BROKER_PORT=5689</code>）開一個全新的 n8n，<strong>正式版不要開</strong>。</li>
+<li><strong>副本裡不放真的 Telegram 或 Google 憑證</strong>。這一課只做假資料的流程，用不到憑證。</li>
+<li><strong>跟 AI 說清楚不准 Publish</strong>；做完自己到 <strong>Overview</strong> 檢查沒有任何流程被 Publish。</li>
+<li><strong>MCP 金鑰當密碼保管</strong>：不貼給別人、截圖要遮住；用完回到 Instance-level MCP 關掉，或撤銷（<strong>Revoke access</strong>）。</li>
+<li><strong>副本第一次開要建立擁有者帳號</strong>（M9 學過，畫面待查證）。</li>
+</ol>
+<h3 id="sec-4">第 1 段：開副本、打開 MCP</h3>
+<ol>
+<li><p>開一個<strong>新的</strong> PowerShell 視窗，設環境變數並啟動：</p>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-powershell">$env:N8N_USER_FOLDER=&quot;C:\n8n-mcp-lab&quot;
+$env:N8N_PORT=&quot;5688&quot;
+$env:N8N_RUNNERS_BROKER_PORT=&quot;5689&quot;
+npx n8n start</code></pre></div>
+<p>你應該看到：n8n 啟動；這個視窗之後的 n8n 都用 <code>C:\n8n-mcp-lab</code> 當家。做法跟 M9 第 3 段一樣，正式版（5678）可以同時開著。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？「n8n Task Broker&#39;s port 5679 is already in use」：沒設 <code>N8N_RUNNERS_BROKER_PORT</code>，被正式版占走了。兩個埠都改好再啟動。</p>
+</blockquote>
+<ol start="2">
+<li><p>打開 <code>http://localhost:5688</code>，建立擁有者帳號（畫面待查證）。
+你應該看到：一個全新的、空的 n8n：沒有你正式版的流程，也沒有憑證。</p>
+</li>
+<li><p>到 <strong>Settings &gt; Instance-level MCP</strong>，打開 <strong>Enable MCP access</strong>，建立或取得 MCP 用的金鑰（位置與按鈕畫面待查證，見版本附頁）。把金鑰先複製起來，只放在你自己的記事本，不要貼進對話或流程。
+你應該看到：MCP 已啟用，頁面上有 <strong>Server URL</strong> 和金鑰。伺服器網址長得像 <code>http://localhost:5688/mcp-server/http</code>。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？網址別填成編輯器網址（<code>http://localhost:5688</code>）。MCP 的網址要加 <code>/mcp-server/http</code>，而且要帶 <code>Authorization: Bearer &lt;MCP 金鑰&gt;</code>。</p>
+</blockquote>
+<h3 id="sec-5">第 2 段：連上 AI（或用免費退路）</h3>
+<h4>做法 A：連上能接 MCP 的 AI 用戶端</h4>
+<p>用戶端的畫面與費用都待查證；以下是官方 MCP client examples 頁的寫法。</p>
+<ul>
+<li><p><strong>Claude Desktop（用 API 金鑰）</strong>：在 <code>claude_desktop_config.json</code> 加一段 <code>mcpServers</code>，借 <code>supergateway</code> 把本機網址轉接過去：</p>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;mcpServers&quot;: {
+    &quot;n8n-mcp&quot;: {
+      &quot;command&quot;: &quot;npx&quot;,
+      &quot;args&quot;: [
+        &quot;-y&quot;, &quot;supergateway&quot;,
+        &quot;--streamableHttp&quot;, &quot;http://localhost:5688/mcp-server/http&quot;,
+        &quot;--header&quot;, &quot;Authorization:Bearer &lt;MCP 金鑰&gt;&quot;
+      ]
+    }
+  }
+}</code></pre></div>
+<p>官方另有一種「Add custom connector」，要填公開網址；本機 localhost 能不能用待查證，教材用上面這種 API 金鑰的做法。</p>
+</li>
+<li><p><strong>Claude Code</strong>：</p>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-sh">claude mcp add --transport http n8n-mcp http://localhost:5688/mcp-server/http --header &quot;Authorization: Bearer &lt;MCP 金鑰&gt;&quot;</code></pre></div>
+</li>
+<li><p>官方還列了 Gemini CLI、Codex、Cursor、VS Code 等，教材只列名字，不逐一示範。</p>
+</li>
+<li><p>Claude 哪個方案能用 MCP、要不要付費：<strong>待查證</strong>。</p>
+</li>
+</ul>
+<p>你應該看到：AI 用戶端列出「n8n MCP Server」，能看到一批工具。請 AI 先「列出你能用的 n8n 工具」，確認有連上。</p>
+<h4>做法 B（免費退路）：沒有能接 MCP 的 AI</h4>
+<p>不用 MCP 也能做完整課：</p>
+<ol>
+<li>把 <a href="files/b/prompt-restock.txt" download>prompt-restock.txt</a> 的全文貼給<strong>任何免費聊天 AI</strong>，請它回一份 n8n workflow JSON。</li>
+<li>把回答存成 <code>restock.json</code>（只留 JSON，把前後的說明文字刪掉）。</li>
+<li>在副本用 <strong>Import from File</strong> 匯入。
+你應該看到：匯入成功、出現 4 個節點的流程（或接近 4 個；AI 做得不對，就是下一段要驗收的重點）。</li>
+</ol>
+<p>後面的<strong>自己驗收完全一樣</strong>。</p>
+<h3 id="sec-6">第 3 段：請 AI 做補貨提醒</h3>
+<p>把 <a href="files/b/prompt-restock.txt" download>prompt-restock.txt</a> 的內容貼給 AI（做法 B 已經做過這步）。重點是它裡面寫了：只放 4 個節點、節點用中文名、不要通知／寄信／寫檔／HTTP Request、不用任何憑證、<strong>不要 Publish</strong>、做完說明每個節點在做什麼，還列了你接下來要測的四種情況。</p>
+<ol>
+<li><p>貼上需求，讓 AI 在副本建立流程。
+你應該看到：AI 回報建立成功。（實測整條路是：AI 用 MCP 送出流程程式 → 驗證「valid，4 個節點」→ 建立成功 → 執行。）</p>
+</li>
+<li><p>回到副本的 n8n 編輯器，打開 <strong>Overview</strong> 找到新流程，點進去。
+你應該看到：4 個節點，名稱是中文，沒有通知、寄信、寫檔、HTTP Request；<strong>沒有被 Publish</strong>。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？流程多了不該有的節點（例如 Telegram）：這是 AI 沒照限制做。把限制再貼一次請它修，或自己刪掉；<strong>不要</strong>因為它「有功能」就留著。</p>
+<p>卡住了？流程被 Publish 了：馬上到 Overview 把它 <strong>Unpublish</strong>，再重讀安全規則第 3 條。</p>
+</blockquote>
+<ol start="3">
+<li>按 <strong>Execute workflow</strong>（手動執行）。
+你應該看到（N）：假庫存 1 筆；「低於門檻？」走 true；補貨草稿 1 筆，內容「衛生紙 剩 2，低於 3，記得補貨」。</li>
+</ol>
+<p><strong>對照答案</strong>：<a href="files/b/main-done.json" download>main-done.json</a>，4 個節點。你的流程不用一字不差，但邏輯要一樣。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>手動執行（<strong>Manual Trigger</strong>）</td>
+<td>手動啟動</td>
+<td>不用設定</td>
+</tr>
+<tr>
+<td>假庫存（<strong>Edit Fields (Set)</strong>）</td>
+<td>放一筆假資料</td>
+<td><strong>JSON</strong> 模式：<code>{&quot;item&quot;:&quot;衛生紙&quot;,&quot;qty&quot;:2,&quot;min&quot;:3}</code></td>
+</tr>
+<tr>
+<td>低於門檻？（<strong>If</strong>）</td>
+<td>判斷要不要提醒</td>
+<td><code>qty</code> 小於 <code>min</code>（Number，嚴格型別）</td>
+</tr>
+<tr>
+<td>補貨草稿（<strong>Edit Fields (Set)</strong>）</td>
+<td>產生一行草稿</td>
+<td>欄位 <code>draft</code>：<code>&lt;品名&gt; 剩 &lt;數量&gt;，低於 &lt;門檻&gt;，記得補貨</code></td>
+</tr>
+</tbody></table>
+<details class="wf"><summary>對照答案（b/main-done.json）</summary><a href="files/b/main-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;選修 B 補貨提醒（對照答案）&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;parameters&quot;: {},
+      &quot;name&quot;: &quot;手動執行&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.manualTrigger&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        0,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;raw&quot;,
+        &quot;jsonOutput&quot;: &quot;{\n  \&quot;item\&quot;: \&quot;衛生紙\&quot;,\n  \&quot;qty\&quot;: 2,\n  \&quot;min\&quot;: 3\n}&quot;,
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;假庫存&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        220,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;conditions&quot;: {
+          &quot;options&quot;: {
+            &quot;caseSensitive&quot;: true,
+            &quot;leftValue&quot;: &quot;&quot;,
+            &quot;typeValidation&quot;: &quot;strict&quot;,
+            &quot;version&quot;: 2
+          },
+          &quot;conditions&quot;: [
+            {
+              &quot;id&quot;: &quot;c0&quot;,
+              &quot;leftValue&quot;: &quot;={{ $json.qty }}&quot;,
+              &quot;rightValue&quot;: &quot;={{ $json.min }}&quot;,
+              &quot;operator&quot;: {
+                &quot;type&quot;: &quot;number&quot;,
+                &quot;operation&quot;: &quot;lt&quot;
+              }
+            }
+          ],
+          &quot;combinator&quot;: &quot;and&quot;
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;低於門檻？&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.if&quot;,
+      &quot;typeVersion&quot;: 2.2,
+      &quot;position&quot;: [
+        440,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;f0&quot;,
+              &quot;name&quot;: &quot;draft&quot;,
+              &quot;value&quot;: &quot;={{ $json.item }} 剩 {{ $json.qty }}，低於 {{ $json.min }}，記得補貨&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;補貨草稿&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        660,
+        0
+      ]
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;手動執行&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;假庫存&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;假庫存&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;低於門檻？&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;低於門檻？&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;補貨草稿&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}</code></pre></div>
+</details><h3 id="sec-7">第 4 段：自己驗收</h3>
+<p><strong>匯入或建立成功、有綠燈，都不算通過。</strong> 照順序做這四種情境，每次都記下 <strong>Executions</strong> 裡看到的筆數與草稿：</p>
+<ol>
+<li><p><strong>N（正常）</strong>：衛生紙 2、門檻 3。
+你應該看到：走 true，1 筆；草稿「衛生紙 剩 2，低於 3，記得補貨」。</p>
+</li>
+<li><p><strong>剛好等於</strong>：把假庫存的 <code>qty</code> 改成 3（門檻也是 3）。
+你應該看到：走 false，1 筆；<strong>沒有草稿</strong>。「低於」不含等於。想讓「剛好等於」也提醒，要把 If 改成「小於或等於」，這是改需求一次。</p>
+</li>
+<li><p><strong>M（缺資料）</strong>：把 <code>qty</code> 那一行整個拿掉。
+你應該看到：<strong>不會報錯</strong>，走 false，沒有草稿。</p>
+</li>
+<li><p><strong>打錯欄位</strong>：把 If 裡的 <code>$json.qty</code> 打成 <code>$json.qyt</code>。
+你應該看到：<strong>也不會報錯</strong>，走 false，沒有草稿。</p>
+</li>
+</ol>
+<blockquote>
+<p><strong>兩個「安靜地不提醒」要特別小心。</strong> 缺資料和打錯字都不會紅燈，只是沒通知；只看綠燈會以為一切正常。修法跟結業範例同一招：在 If 加一個「<code>qty</code> 存在（<strong>exists</strong>）」的條件，而且每種情境都要<strong>親自跑</strong>，不能相信 AI 說「我測過了」。</p>
+</blockquote>
+<ol start="5">
+<li><p><strong>修一次錯</strong>：用第 4 點的錯誤，把 <code>$json.qyt</code> 改回 <code>$json.qty</code>，再跑 N。
+你應該看到：回到走 true、1 筆、有草稿。</p>
+</li>
+<li><p><strong>檢查沒有 Publish</strong>：到 <strong>Overview</strong>。
+你應該看到：這條流程不是 Published 狀態（Published 標記位置見版本附頁）。</p>
+</li>
+<li><p><strong>收尾</strong>：到 Instance-level MCP 關掉 <strong>Enable MCP access</strong> 或撤銷金鑰（<strong>Revoke access</strong>，位置待查證），再關掉副本的 PowerShell 視窗。
+你應該看到：AI 用戶端再也連不上。</p>
+</li>
+</ol>
+<h3 id="sec-8">驗收</h3>
+<ul>
+<li class="check"> 正常 N。2／3 走 true，1 筆，草稿「衛生紙 剩 2，低於 3，記得補貨」。</li>
+<li class="check"> 邊界。3／3 走 false，沒有草稿；說得出「低於」為什麼不含等於。</li>
+<li class="check"> 缺資料。拿掉 <code>qty</code>，走 false，沒有草稿；說得出為什麼沒報錯卻是個風險。</li>
+<li class="check"> 打錯欄位。<code>$json.qyt</code> 同樣走 false；改回 <code>qty</code> 後恢復。</li>
+<li class="check"> 每個節點都說得出用途；能不看 AI 的說明，講清楚 If 在比什麼。</li>
+<li class="check"> 改一次門檻（例如 <code>min</code> 改成 5），重跑 N，結果跟著變。</li>
+<li class="check"> 沒被 Publish；MCP 已關掉或撤銷；副本裡沒有真憑證。</li>
+<li class="check"> 變形題。加一個「<code>qty</code> 存在」的條件到 If，再跑缺資料，確認走 false 的原因是你設計的，不是意外；並想想要不要讓它通知你「資料缺」。（不附素材，自己改。）</li>
+</ul>
+<details><summary id="sec-9">卡關救援</summary><ul>
+<li>連不上 MCP（連線被拒或 404，實際訊息待查證）→ 看網址 → 填成了編輯器網址，漏了 <code>/mcp-server/http</code>，或埠不是 5688 → 改成 <code>http://localhost:5688/mcp-server/http</code> 再試 → 請 AI 列出工具確認。</li>
+<li>401 或沒有權限（實際訊息待查證）→ 看金鑰 → 金鑰貼錯、少了 <code>Bearer </code>，或已經撤銷 → 重新取得金鑰、照格式 <code>Authorization: Bearer &lt;MCP 金鑰&gt;</code> → 重連確認。</li>
+<li>AI 看不到我的流程 → 看流程有沒有開放給 MCP（官方說 MCP 預設只看得到有開放的流程，搜尋除外）→ 在副本裡把要用的流程開放（位置待查證）→ 再請 AI 搜尋一次。</li>
+<li>副本啟動說 5679 被占用 → 看有沒有設 <code>N8N_RUNNERS_BROKER_PORT</code> → 兩個埠都改成 5688、5689 → 重新啟動確認。</li>
+<li>AI 給的 JSON 匯不進去 → 看是不是混進了說明文字或程式碼框的符號 → 只留 JSON 本體再存檔 → 重匯入確認有 4 個節點。</li>
+<li>流程被 AI Publish 了 → 到 <strong>Overview</strong> → 立刻 <strong>Unpublish</strong> → 確認狀態；之後再請 AI 重讀「不准 Publish」。</li>
+<li>打算用到真憑證 → 停 → 副本一律不放真憑證，這課的流程用不到。</li>
+</ul>
+<p>求助時附 n8n 版本、使用哪個 AI 用戶端、哪個步驟、錯誤訊息原文、已經試過什麼。截圖和貼文字前，先遮住 MCP 金鑰與個資。</p>
+</details><details><summary id="sec-10">官方連結</summary><p>查詢日期 2026-11-21。</p>
+<ul>
+<li><a href="https://docs.n8n.io/advanced-ai/accessing-n8n-mcp-server/" target="_blank" rel="noopener noreferrer">Connect to n8n MCP server</a><span class="dom">docs.n8n.io</span></li>
+<li><a href="https://docs.n8n.io/build/integrate-ai/mcp-servers/" target="_blank" rel="noopener noreferrer">MCP servers</a><span class="dom">docs.n8n.io</span></li>
+<li><a href="https://docs.n8n.io/advanced-ai/" target="_blank" rel="noopener noreferrer">Integrate AI 總覽</a><span class="dom">docs.n8n.io</span></li>
+</ul>
+</details><nav class="pager" aria-label="前後課程"><a class="prev" href="opt-a.html"><span>← 上一個</span>選修 A AI Agent</a><a class="next" href="opt-c.html"><span>下一個 →</span>選修 C 更多資料來源與工具</a></nav></article></main><aside class="toc" aria-label="本頁目錄"><div class="t">本頁</div><a href="#sec-1">成果與先修</a><a href="#sec-2">白話觀念</a><a href="#sec-3">安全規則（先讀）</a><a href="#sec-4">第 1 段：開副本、打開 MCP</a><a href="#sec-5">第 2 段：連上 AI（或用免費退路）</a><a href="#sec-6">第 3 段：請 AI 做補貨提醒</a><a href="#sec-7">第 4 段：自己驗收</a><a href="#sec-8">驗收</a><a href="#sec-9">卡關救援</a><a href="#sec-10">官方連結</a></aside><nav class="bottombar" aria-label="前後課程"><a href="opt-a.html">← 選修 A AI Agent</a><a href="opt-c.html">選修 C 更多資料來源與工具 →</a></nav></body></html>

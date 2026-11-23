@@ -1,0 +1,77 @@
+{
+ "name": "模擬來源（教材用，M4／M6）",
+ "nodes": [
+  {
+   "name": "收到請求",
+   "type": "n8n-nodes-base.webhook",
+   "typeVersion": 2,
+   "position": [
+    0,
+    0
+   ],
+   "webhookId": "5e1f0c2a-7b7d-4c55-9a51-0d3f6b2c0a01",
+   "parameters": {
+    "path": "mock",
+    "httpMethod": "GET",
+    "responseMode": "responseNode",
+    "options": {}
+   }
+  },
+  {
+   "name": "等一下",
+   "type": "n8n-nodes-base.wait",
+   "typeVersion": 1.1,
+   "position": [
+    220,
+    0
+   ],
+   "parameters": {
+    "amount": "={{ Number($('收到請求').item.json.query.delay || 0) }}",
+    "unit": "seconds"
+   }
+  },
+  {
+   "name": "回應",
+   "type": "n8n-nodes-base.respondToWebhook",
+   "typeVersion": 1.1,
+   "position": [
+    440,
+    0
+   ],
+   "parameters": {
+    "respondWith": "text",
+    "responseBody": "={{ $('收到請求').item.json.query.kind === 'rss_empty' ? '<?xml version=\"1.0\"?><rss version=\"2.0\"><channel><title>empty</title><link>http://localhost</link><description>empty</description></channel></rss>' : JSON.stringify({ ok: true, note: '模擬來源' }) }}",
+    "options": {
+     "responseCode": "={{ Number($('收到請求').item.json.query.status || 200) }}"
+    }
+   }
+  }
+ ],
+ "connections": {
+  "收到請求": {
+   "main": [
+    [
+     {
+      "node": "等一下",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "等一下": {
+   "main": [
+    [
+     {
+      "node": "回應",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ },
+ "settings": {
+  "executionOrder": "v1"
+ }
+}

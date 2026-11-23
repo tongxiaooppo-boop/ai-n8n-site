@@ -1,0 +1,122 @@
+{
+  "name": "M4 小練習 發票開獎提醒",
+  "nodes": [
+    {
+      "name": "排程",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 18 25 1,3,5,7,9,11 *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "抓發票",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "url": "https://invoice.etax.nat.gov.tw/invoice.xml",
+        "options": {}
+      }
+    },
+    {
+      "name": "最新一期",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "maxItems": 1
+      }
+    },
+    {
+      "name": "對獎提醒",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "period",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "fresh",
+              "value": "={{ $now.diff(DateTime.fromISO($json.isoDate), 'days').days < 3 }}",
+              "type": "boolean"
+            },
+            {
+              "id": "a3",
+              "name": "text",
+              "value": "={{ $now.diff(DateTime.fromISO($json.isoDate), 'days').days < 3 ? '發票 ' + $json.title + ' 開獎了：' + $json.link : '最新一期還是 ' + $json.title + '，新一期可能還沒公布' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "排程": {
+      "main": [
+        [
+          {
+            "node": "抓發票",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "抓發票": {
+      "main": [
+        [
+          {
+            "node": "最新一期",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "最新一期": {
+      "main": [
+        [
+          {
+            "node": "對獎提醒",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1,0 +1,167 @@
+{
+  "name": "M5 主線 聞",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "name": "排程",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.ey.gov.tw/RSS_Content.aspx?ModuleType=3",
+        "options": {}
+      },
+      "name": "抓新聞",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "maxItems": 3
+      },
+      "name": "取前3則",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0",
+              "name": "kind",
+              "value": "news",
+              "type": "string"
+            },
+            {
+              "id": "f1",
+              "name": "label",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "f2",
+              "name": "value",
+              "value": "={{ null }}",
+              "type": "number"
+            },
+            {
+              "id": "f3",
+              "name": "dataDate",
+              "value": "={{ $json.isoDate ? $json.isoDate.slice(0,10) : null }}",
+              "type": "string"
+            },
+            {
+              "id": "f4",
+              "name": "status",
+              "value": "ok",
+              "type": "string"
+            },
+            {
+              "id": "f5",
+              "name": "fetchedAt",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "整理",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "options": {}
+      },
+      "name": "存快照",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        880,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "排程": {
+      "main": [
+        [
+          {
+            "node": "抓新聞",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "抓新聞": {
+      "main": [
+        [
+          {
+            "node": "取前3則",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "取前3則": {
+      "main": [
+        [
+          {
+            "node": "整理",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "整理": {
+      "main": [
+        [
+          {
+            "node": "存快照",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

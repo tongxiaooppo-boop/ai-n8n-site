@@ -1,0 +1,1908 @@
+<!doctype html><html lang="zh-Hant" data-pal="teal"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>M5 通知、憑證與檔案｜n8n 生活自動化</title><link rel="stylesheet" href="assets/style.css"><script src="assets/app.js" defer></script></head><body><a class="skip" href="#main">跳到正文</a><header class="topbar"><button type="button" aria-label="打開課表" aria-controls="schedule" aria-expanded="false">☰</button><span>M5 通知、憑證與檔案</span></header><nav class="nav" id="schedule" aria-label="課表"><a class="brand" href="index.html">n8n 生活自動化</a><div class="stage">主線（M0–M5 照順序，之後照需要挑）</div><a class="mod" href="m0.html"><b>M0</b><span>準備環境</span></a><a class="mod" href="m1.html"><b>M1</b><span>第一個流程</span></a><a class="mod" href="m2.html"><b>M2</b><span>資料與 Expression</span></a><a class="mod" href="m3.html"><b>M3</b><span>判斷、多筆與合併</span></a><a class="mod" href="m4.html"><b>M4</b><span>API、RSS 與排程</span></a><a class="mod cur" href="m5.html" aria-current="page"><b>M5</b><span>通知、憑證與檔案</span></a><a class="mod" href="m6.html"><b>M6</b><span>錯誤處理與可靠性</span></a><a class="mod" href="m7.html"><b>M7</b><span>Webhook 與子流程</span></a><a class="mod" href="m8.html"><b>M8</b><span>加入 AI（受限用法）</span></a><a class="mod" href="m9.html"><b>M9</b><span>上線與維護</span></a><div class="stage">結業</div><a class="mod" href="final.html"><b>結業專題</b><span>生活題庫</span></a><div class="stage">選修</div><a class="mod" href="opt-a.html"><b>選修 A</b><span>AI Agent</span></a><a class="mod" href="opt-b.html"><b>選修 B</b><span>請 Claude 幫你寫流程</span></a><a class="mod" href="opt-c.html"><b>選修 C</b><span>更多資料來源與工具</span></a><div class="stage">附錄</div><a class="mod" href="version.html"><b>附錄</b><span>版本附頁</span></a></nav><button class="scrim" type="button" aria-label="關閉課表" tabindex="-1" hidden></button><main id="main"><article class="art"><div class="eyebrow">主線（M0–M5 照順序，之後照需要挑）</div><h1>M5｜通知、憑證與檔案</h1><div class="meta"><span class="tag">早報傳到 Telegram，數字記進 Excel</span><span class="tag">約 3 小時</span><span class="tag">先修：<a href="m4.html">M4</a></span><span class="tag">實測 n8n 2.48.4（2026-11-18）・你的畫面可能略有不同</span></div><h3 id="sec-1">成果與先修</h3>
+<p>每天早上手機收到一則「生活早報」（Telegram），當天的股價與匯率另存成一個 Excel 檔。
+先完成 M4。已經有 Telegram Bot 與 Bot token 的人可以從「第 1 段」開始；已經會用憑證與子流程的人可以快速帶過第 1–3 段，但四條收集流程都要執行過，<code>snap</code> 裡有快照檔，第 4 段才讀得到。
+要準備 Telegram 帳號（手機號碼註冊，免費）；小練習②二選一，LINE 路線要 LINE 帳號，Google 關卡要 Google 帳號。主線費用 0 元；LINE 免費方案的推播則數與是否要綁信用卡以你的後台顯示為準（待查證）。時間約 3 小時，主線約 2.5 小時，支線另計。股價與匯率只供紀錄與提醒。</p>
+<h3 id="sec-2">白話觀念</h3>
+<p><strong>Credential（憑證）</strong> 像把鑰匙放進 n8n 的保險箱，流程只寫「用哪一把」；匯出或分享流程 JSON 不會帶出鑰匙，所以匯入素材後要自己選憑證。Bot token、LINE token 只能貼在 Credential，不准貼進流程欄位、截圖或聊天訊息；外洩就到原平台重新發一把。<strong>子流程</strong> 是寫一次、讓很多流程呼叫的小流程；本課只教「呼叫寫好的」，要先 <strong>Publish</strong> 才能被呼叫。<strong>快照檔</strong> 是每條收集流程把結果存成的一個 CSV（同名覆蓋，只留最新），早報和 Excel 再去讀；某條來源壞了，其他照常，早報也能標出哪一行是舊的。n8n 只准讀寫 <code>.n8n-files</code> 資料夾（Docker 容器裡是 <code>/home/node/.n8n-files</code>，Windows 是 <code>C:\Users\&lt;你&gt;\.n8n-files</code>），超出範圍會報「Access to the file is not allowed.」。</p>
+<p>主線沒有一條長流程，而是 7 條小流程分工：</p>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">股、匯、警、聞（7:00）→ 存快照（呼叫子流程）→ snap/stock.csv、fx.csv…
+每日 Excel（7:10）：讀 stock、fx 快照 → 轉數字 → 存成 daily/日期.xlsx
+早報（7:10）：讀全部快照 → 合成一筆 → Telegram</code></pre></div>
+<h3 id="sec-3">素材包</h3>
+<ul>
+<li><a href="files/m5/sub-snapshot-done.json" download>sub-snapshot-done.json</a>：快照寫入子流程（3 節點）。</li>
+<li><a href="files/m5/main-stock-done.json" download>main-stock-done.json</a>：「股」收集流程，已改成存快照。</li>
+<li><a href="files/m5/main-fx-done.json" download>main-fx-done.json</a>：「匯」收集流程，已改成存快照。</li>
+<li><a href="files/m5/main-warn-done.json" download>main-warn-done.json</a>：「警」收集流程，已改成存快照。</li>
+<li><a href="files/m5/main-news-done.json" download>main-news-done.json</a>：「聞」收集流程，取前 3 則並存快照。</li>
+<li><a href="files/m5/main-excel-done.json" download>main-excel-done.json</a>：每日 Excel 流程。</li>
+<li><a href="files/m5/main-report-done.json" download>main-report-done.json</a>：早報傳到 Telegram 的流程。</li>
+<li><a href="files/m5/ex1-done.json" download>ex1-done.json</a>：吃藥時間提醒（Telegram）。</li>
+<li><a href="files/m5/ex2-line-done.json" download>ex2-line-done.json</a>：推播到 LINE（LINE 路線）。</li>
+<li><a href="files/m5/ex2-google-done.json" download>ex2-google-done.json</a>：寫進 Google 試算表（Google 關卡）。</li>
+<li><a href="files/m5/data-old-fx.csv" download>data-old-fx.csv</a>：舊的匯率快照，驗收「舊資料」用。</li>
+</ul>
+<p>用 <strong>Import from File</strong> 匯入，位置見版本附頁。匯入後要自己選憑證；有呼叫子流程的流程，要在「存快照」重新選子流程（素材裡是空的）。</p>
+<h3 id="sec-4">主線：早報傳到 Telegram、數字記進 Excel</h3>
+<p>先做準備，再依序完成五小段：快照寫入子流程、改「匯」、匯入股警聞、每日 Excel、早報。</p>
+<h4>準備：資料夾與 Telegram</h4>
+<ol>
+<li><p>建資料夾：在 <code>C:\Users\&lt;你&gt;\.n8n-files</code> 底下建 <code>snap</code>、<code>daily</code> 兩個資料夾。實測：Windows 上 n8n <strong>不會自動建子資料夾</strong>，沒建會報「The file or directory does not exist」。
+你應該看到：<code>.n8n-files</code> 底下有 <code>snap</code>、<code>daily</code> 兩個空資料夾。</p>
+</li>
+<li><p>用 Docker 的人，要讓容器看得到這個資料夾：關掉 n8n，把 M0 的 <code>docker run</code> 指令加上一段 <code>-v</code>（PowerShell 寫法）後重新啟動。不掛載的話，檔案會寫在容器裡，Windows 資料夾看不到。</p>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-sh">docker run -it --rm --name n8n -p 5678:5678 -e GENERIC_TIMEZONE=Asia/Taipei -e TZ=Asia/Taipei -v n8n_data:/home/node/.n8n -v &quot;$env:USERPROFILE\.n8n-files:/home/node/.n8n-files&quot; docker.n8n.io/n8nio/n8n</code></pre></div>
+<p>你應該看到：n8n 正常啟動，之後寫出的檔案會出現在 Windows 的 <code>.n8n-files\snap</code>。本機沒有 Docker，掛載的實際效果與容器是否自動建資料夾（待查證）。</p>
+</li>
+<li><p>用 npx 的人：素材裡的路徑是 Docker 的 <code>/home/node/.n8n-files/...</code>，要換成 <code>C:/Users/&lt;你&gt;/.n8n-files/...</code>。要改的節點：子流程「寫檔」、每日 Excel 的「讀快照」「寫檔」、早報「讀快照」、Google 分頁「讀快照」。
+你應該看到：這五個節點的路徑都以你自己的 <code>C:/Users/&lt;你&gt;/.n8n-files/</code> 開頭。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？報「Access to the file is not allowed.」先確認路徑在 <code>.n8n-files</code> 裡，npx 使用者確認有換掉路徑。</p>
+</blockquote>
+<ol start="4">
+<li>第一次用 Telegram：<ul>
+<li>手機裝 Telegram App（免費，手機號碼註冊）。</li>
+<li>找官方的 <strong>@BotFather</strong>，傳 <code>/newbot</code>，照提示取名，拿到 <strong>Bot token</strong>。</li>
+<li>在 Telegram 找到自己的 Bot，按 <strong>Start</strong>。沒先開對話，Bot 不能傳訊息給你。</li>
+<li>取得自己的 <strong>chat ID</strong>：瀏覽器開 <code>https://api.telegram.org/bot&lt;你的 Bot Token&gt;/getUpdates</code>，在回應裡找 <code>&quot;chat&quot;:{&quot;id&quot;:數字</code>。這個網址含 token，看完關掉，不要分享。</li>
+<li>在 n8n 新增 <strong>Telegram API</strong> 憑證，貼上 token，位置見版本附頁。
+你應該看到：n8n 的憑證清單多了一把 Telegram 憑證，你手上有一個 chat ID（數字）。App 畫面與 getUpdates 回空的原因（待查證）。</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？getUpdates 回應是空的時先確認你已經對自己的 Bot 按過 <strong>Start</strong> 並傳過一句話；仍是空的原因（待查證）。</p>
+</blockquote>
+<h4>第 1 段：匯入快照寫入子流程</h4>
+<p>這個子流程負責把收到的資料存成一個 CSV 檔，之後四條收集流程都呼叫它。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>子流程入口（<strong>Execute Workflow Trigger</strong>）</td>
+<td>收下呼叫端交來的全部資料</td>
+<td>輸入選 <strong>Accept all data</strong></td>
+</tr>
+<tr>
+<td>轉成CSV（<strong>Convert to File</strong>）</td>
+<td>把多筆資料變成一個 CSV 檔</td>
+<td>格式 <strong>CSV</strong>，會自動加 BOM，Excel 開中文不亂碼</td>
+</tr>
+<tr>
+<td>寫檔（<strong>Read/Write Files from Disk</strong>）</td>
+<td>寫到快照資料夾</td>
+<td><strong>Write</strong>，路徑如下</td>
+</tr>
+</tbody></table>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">/home/node/.n8n-files/snap/{{ $(&#39;子流程入口&#39;).first().json.kind }}.csv</code></pre></div>
+<ol>
+<li><p>匯入 <code>sub-snapshot-done.json</code>，確認三個節點與上表一致。
+你應該看到：3 個節點依序連線；npx 使用者已換成自己的路徑。</p>
+</li>
+<li><p>看懂檔名那一行：為什麼不寫 <code>$json.kind</code>？實測：資料<strong>轉成檔案之後，原本的欄位就不在 <code>$json</code> 裡了</strong>，寫 <code>$json.kind</code> 會得到一個沒有名字的 <code>.csv</code>。所以要「回頭拿前面節點的資料」：<code>$(&#39;子流程入口&#39;).first().json.kind</code> 是去「子流程入口」拿第一筆的 <code>kind</code>。</p>
+</li>
+<li><p>按 <strong>Publish</strong>，不用按執行，它要等別人呼叫。Publish 後要等幾秒才生效。
+你應該看到：流程列表裡它顯示已發布，位置見版本附頁。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？之後呼叫時報「Workflow is not active and cannot be executed.」，先確認有 <strong>Publish</strong>，剛發布就等幾秒再跑。</p>
+</blockquote>
+<details class="wf"><summary>快照寫入子流程（m5/sub-snapshot-done.json）</summary><a href="files/m5/sub-snapshot-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M5 快照寫入&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;parameters&quot;: {
+        &quot;inputSource&quot;: &quot;passthrough&quot;
+      },
+      &quot;name&quot;: &quot;子流程入口&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.executeWorkflowTrigger&quot;,
+      &quot;typeVersion&quot;: 1.1,
+      &quot;position&quot;: [
+        0,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;operation&quot;: &quot;csv&quot;,
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;轉成CSV&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.convertToFile&quot;,
+      &quot;typeVersion&quot;: 1.1,
+      &quot;position&quot;: [
+        220,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;operation&quot;: &quot;write&quot;,
+        &quot;fileName&quot;: &quot;=/home/node/.n8n-files/snap/{{ $(&#39;子流程入口&#39;).first().json.kind }}.csv&quot;,
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;寫檔&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.readWriteFile&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        440,
+        0
+      ]
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;子流程入口&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;轉成CSV&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;轉成CSV&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;寫檔&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}</code></pre></div>
+</details><h4>第 2 段：把「匯」改成存快照</h4>
+<p>從 M4 的「匯」流程開始自己動手改，<code>main-fx-done.json</code> 當對照。「整理」改成 6 個快照欄位，最後加一個「存快照」。共 5 個節點：排程 → 抓匯率 → 最新一筆 → 整理 → 存快照。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>排程（<strong>Schedule Trigger</strong>）</td>
+<td>每天啟動</td>
+<td>每天 7 點</td>
+</tr>
+<tr>
+<td>抓匯率（<strong>HTTP Request</strong>）</td>
+<td>取得央行歷史資料</td>
+<td>沿用 M4</td>
+</tr>
+<tr>
+<td>最新一筆（<strong>Limit</strong>）</td>
+<td>取最後一筆</td>
+<td>筆數 1，<strong>Last Items</strong></td>
+</tr>
+<tr>
+<td>整理（<strong>Edit Fields (Set)</strong>）</td>
+<td>整理成 6 個快照欄位</td>
+<td>下方欄位表</td>
+</tr>
+<tr>
+<td>存快照（<strong>Execute Sub-workflow</strong>）</td>
+<td>呼叫子流程存檔</td>
+<td>從清單選「M5 快照寫入」，搜尋名稱見版本附頁</td>
+</tr>
+</tbody></table>
+<p>四條收集流程共用同一組快照欄位：</p>
+<table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>型別</th>
+<th>意思</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>kind</code></td>
+<td><strong>String</strong></td>
+<td>哪一種：<code>stock</code>、<code>fx</code>、<code>warn</code>、<code>news</code>，也是檔名</td>
+</tr>
+<tr>
+<td><code>label</code></td>
+<td><strong>String</strong></td>
+<td>早報上顯示的名字</td>
+</tr>
+<tr>
+<td><code>value</code></td>
+<td><strong>Number</strong></td>
+<td>數字（股價、匯率）；沒有數字的來源是 <code>null</code></td>
+</tr>
+<tr>
+<td><code>dataDate</code></td>
+<td><strong>String</strong></td>
+<td><strong>資料日期</strong>，不是抓取日期</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td><strong>String</strong></td>
+<td><code>ok</code>、<code>missing</code>（資料不足）、<code>warning</code>／<code>none</code>（有沒有警特報）</td>
+</tr>
+<tr>
+<td><code>fetchedAt</code></td>
+<td><strong>String</strong></td>
+<td>抓取時間，早報用它判斷是不是舊資料</td>
+</tr>
+</tbody></table>
+<p>「匯」的六個欄位 Expression：</p>
+<table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>kind</code></td>
+<td><code>fx</code></td>
+</tr>
+<tr>
+<td><code>label</code></td>
+<td><code>美元</code></td>
+</tr>
+<tr>
+<td><code>value</code></td>
+<td><code>{{ $json.NTD_USD ? Number($json.NTD_USD) : null }}</code></td>
+</tr>
+<tr>
+<td><code>dataDate</code></td>
+<td><code>{{ $json[&#39;日期&#39;] ? $json[&#39;日期&#39;].slice(0,4) + &#39;-&#39; + $json[&#39;日期&#39;].slice(4,6) + &#39;-&#39; + $json[&#39;日期&#39;].slice(6,8) : null }}</code></td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td><code>{{ $json.NTD_USD ? &#39;ok&#39; : &#39;missing&#39; }}</code></td>
+</tr>
+<tr>
+<td><code>fetchedAt</code></td>
+<td><code>{{ $now.toISO() }}</code></td>
+</tr>
+</tbody></table>
+<p>缺資料時 <code>value</code> 是 <code>null</code>、<code>status</code> 是 <code>missing</code>，<strong>不寫 0</strong>（沿用 M2–M4）。</p>
+<ol>
+<li>把「整理」改成上面六個欄位，後面接「存快照」，在「存快照」選「M5 快照寫入」。執行整條流程。
+你應該看到：「存快照」1 筆，<code>fileName</code> 結尾是 <code>/snap/fx.csv</code>；用記事本打開 <code>snap\fx.csv</code>：第一行是欄名，第二行是美元那一筆。</li>
+</ol>
+<blockquote>
+<p>卡住了？「存快照」沒有子流程可選，或執行報找不到流程：先確認快照寫入子流程已 <strong>Publish</strong>，再回「存快照」重新選一次。</p>
+</blockquote>
+<details class="wf"><summary>「匯」完成版（m5/main-fx-done.json）</summary><a href="files/m5/main-fx-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M5 主線 匯&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;parameters&quot;: {
+        &quot;rule&quot;: {
+          &quot;interval&quot;: [
+            {
+              &quot;triggerAtHour&quot;: 7
+            }
+          ]
+        }
+      },
+      &quot;name&quot;: &quot;排程&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.scheduleTrigger&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        0,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;url&quot;: &quot;https://cpx.cbc.gov.tw/api/OpenData/FTDOpenData_Day&quot;,
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;抓匯率&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.httpRequest&quot;,
+      &quot;typeVersion&quot;: 4.2,
+      &quot;position&quot;: [
+        220,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;maxItems&quot;: 1,
+        &quot;keep&quot;: &quot;lastItems&quot;
+      },
+      &quot;name&quot;: &quot;最新一筆&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.limit&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        440,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;f0&quot;,
+              &quot;name&quot;: &quot;kind&quot;,
+              &quot;value&quot;: &quot;fx&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f1&quot;,
+              &quot;name&quot;: &quot;label&quot;,
+              &quot;value&quot;: &quot;美元&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f2&quot;,
+              &quot;name&quot;: &quot;value&quot;,
+              &quot;value&quot;: &quot;={{ $json.NTD_USD ? Number($json.NTD_USD) : null }}&quot;,
+              &quot;type&quot;: &quot;number&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f3&quot;,
+              &quot;name&quot;: &quot;dataDate&quot;,
+              &quot;value&quot;: &quot;={{ $json[&#39;日期&#39;] ? $json[&#39;日期&#39;].slice(0,4) + &#39;-&#39; + $json[&#39;日期&#39;].slice(4,6) + &#39;-&#39; + $json[&#39;日期&#39;].slice(6,8) : null }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f4&quot;,
+              &quot;name&quot;: &quot;status&quot;,
+              &quot;value&quot;: &quot;={{ $json.NTD_USD ? &#39;ok&#39; : &#39;missing&#39; }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f5&quot;,
+              &quot;name&quot;: &quot;fetchedAt&quot;,
+              &quot;value&quot;: &quot;={{ $now.toISO() }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;整理&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        660,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;workflowId&quot;: {
+          &quot;__rl&quot;: true,
+          &quot;value&quot;: &quot;&quot;,
+          &quot;mode&quot;: &quot;list&quot;
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;存快照&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.executeWorkflow&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        880,
+        0
+      ]
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;排程&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;抓匯率&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;抓匯率&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;最新一筆&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;最新一筆&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;整理&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;整理&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;存快照&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}</code></pre></div>
+</details><h4>第 3 段：匯入股、警、聞三條</h4>
+<p>三條都是 M4 的流程換上快照欄位加存快照：股 5 節點、警 4 節點、聞 5 節點。匯入後每條的「存快照」都要<strong>重新選「M5 快照寫入」</strong>。</p>
+<p>三條的 <code>kind</code> 分別是 <code>stock</code>、<code>warn</code>、<code>news</code>，<code>value</code> 欄位在警、聞是 <code>{{ null }}</code>，其他欄位照下表：</p>
+<table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>股</th>
+<th>警</th>
+<th>聞</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>label</code></td>
+<td><code>{{ $json.Name + &#39; 收盤&#39; }}</code></td>
+<td><code>{{ $json.title ?? &#39;目前沒有警特報&#39; }}</code></td>
+<td><code>{{ $json.title }}</code></td>
+</tr>
+<tr>
+<td><code>value</code></td>
+<td><code>{{ $json.ClosingPrice === &#39;&#39; ? null : Number($json.ClosingPrice) }}</code></td>
+<td><code>{{ null }}</code></td>
+<td><code>{{ null }}</code></td>
+</tr>
+<tr>
+<td><code>dataDate</code></td>
+<td><code>{{ (Number($json.Date.slice(0,3)) + 1911) + &#39;-&#39; + $json.Date.slice(3,5) + &#39;-&#39; + $json.Date.slice(5,7) }}</code></td>
+<td><code>{{ $json.isoDate ? $json.isoDate.slice(0,10) : null }}</code></td>
+<td><code>{{ $json.isoDate ? $json.isoDate.slice(0,10) : null }}</code></td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td><code>{{ $json.ClosingPrice === &#39;&#39; ? &#39;missing&#39; : &#39;ok&#39; }}</code></td>
+<td><code>{{ $json.title ? &#39;warning&#39; : &#39;none&#39; }}</code></td>
+<td><code>ok</code></td>
+</tr>
+<tr>
+<td><code>fetchedAt</code></td>
+<td><code>{{ $now.toISO() }}</code></td>
+<td><code>{{ $now.toISO() }}</code></td>
+<td><code>{{ $now.toISO() }}</code></td>
+</tr>
+</tbody></table>
+<p>跟 M4 不同的地方：</p>
+<ul>
+<li>「股」的「挑自選股」素材寫成一個條件 <code>{{ [&#39;2330&#39;,&#39;2317&#39;].includes($json.Code) }}</code> 為 true，效果和 M4 的兩條 <strong>OR</strong> 相同。</li>
+<li>「聞」改成「取前3則」（<strong>Limit</strong>），<strong>拿掉跨次去重</strong>。理由：早報每天列最新 3 則頭條就好；M4 的「新的才留」適合「有新的才通知」，用在快照會讓沒新聞的日子留著舊檔。M8 的 AI 摘要也是 3 則。</li>
+<li>「警」的「抓警特報」保留 M4 的 <strong>Always Output Data</strong>，沒有警特報也要有一行狀態。</li>
+</ul>
+<ol>
+<li><p>匯入 <code>main-stock-done.json</code>、<code>main-warn-done.json</code>、<code>main-news-done.json</code>，各自在「存快照」選「M5 快照寫入」。
+你應該看到：三條流程的「存快照」都沒有紅色警示。</p>
+</li>
+<li><p>三條各執行一次。
+你應該看到：<code>snap</code> 資料夾裡有 <code>fx.csv</code>、<code>news.csv</code>、<code>stock.csv</code>、<code>warn.csv</code> 四個檔；股的「整理」2 筆、聞的「整理」3 筆、警至少 1 筆（沒有警特報時是「目前沒有警特報」）。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？<code>snap</code> 裡出現一個叫 <code>.csv</code> 的檔，是子流程「寫檔」路徑用了 <code>$json.kind</code>，改回第 1 段的寫法。</p>
+</blockquote>
+<details class="wf"><summary>「股」完成版（m5/main-stock-done.json）</summary><a href="files/m5/main-stock-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M5 主線 股&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;parameters&quot;: {
+        &quot;rule&quot;: {
+          &quot;interval&quot;: [
+            {
+              &quot;triggerAtHour&quot;: 7
+            }
+          ]
+        }
+      },
+      &quot;name&quot;: &quot;排程&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.scheduleTrigger&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        0,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;url&quot;: &quot;https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL&quot;,
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;抓股價&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.httpRequest&quot;,
+      &quot;typeVersion&quot;: 4.2,
+      &quot;position&quot;: [
+        220,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;conditions&quot;: {
+          &quot;options&quot;: {
+            &quot;caseSensitive&quot;: true,
+            &quot;leftValue&quot;: &quot;&quot;,
+            &quot;typeValidation&quot;: &quot;loose&quot;,
+            &quot;version&quot;: 2
+          },
+          &quot;conditions&quot;: [
+            {
+              &quot;id&quot;: &quot;c0&quot;,
+              &quot;leftValue&quot;: &quot;={{ [&#39;2330&#39;,&#39;2317&#39;].includes($json.Code) }}&quot;,
+              &quot;rightValue&quot;: &quot;&quot;,
+              &quot;operator&quot;: {
+                &quot;type&quot;: &quot;boolean&quot;,
+                &quot;operation&quot;: &quot;true&quot;,
+                &quot;singleValue&quot;: true
+              }
+            }
+          ],
+          &quot;combinator&quot;: &quot;and&quot;
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;挑自選股&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.filter&quot;,
+      &quot;typeVersion&quot;: 2.2,
+      &quot;position&quot;: [
+        440,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;f0&quot;,
+              &quot;name&quot;: &quot;kind&quot;,
+              &quot;value&quot;: &quot;stock&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f1&quot;,
+              &quot;name&quot;: &quot;label&quot;,
+              &quot;value&quot;: &quot;={{ $json.Name + &#39; 收盤&#39; }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f2&quot;,
+              &quot;name&quot;: &quot;value&quot;,
+              &quot;value&quot;: &quot;={{ $json.ClosingPrice === &#39;&#39; ? null : Number($json.ClosingPrice) }}&quot;,
+              &quot;type&quot;: &quot;number&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f3&quot;,
+              &quot;name&quot;: &quot;dataDate&quot;,
+              &quot;value&quot;: &quot;={{ (Number($json.Date.slice(0,3)) + 1911) + &#39;-&#39; + $json.Date.slice(3,5) + &#39;-&#39; + $json.Date.slice(5,7) }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f4&quot;,
+              &quot;name&quot;: &quot;status&quot;,
+              &quot;value&quot;: &quot;={{ $json.ClosingPrice === &#39;&#39; ? &#39;missing&#39; : &#39;ok&#39; }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f5&quot;,
+              &quot;name&quot;: &quot;fetchedAt&quot;,
+              &quot;value&quot;: &quot;={{ $now.toISO() }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;整理&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        660,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;workflowId&quot;: {
+          &quot;__rl&quot;: true,
+          &quot;value&quot;: &quot;&quot;,
+          &quot;mode&quot;: &quot;list&quot;
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;存快照&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.executeWorkflow&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        880,
+        0
+      ]
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;排程&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;抓股價&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;抓股價&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;挑自選股&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;挑自選股&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;整理&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;整理&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;存快照&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}</code></pre></div>
+</details><details class="wf"><summary>「警」完成版（m5/main-warn-done.json）</summary><a href="files/m5/main-warn-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M5 主線 警&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;parameters&quot;: {
+        &quot;rule&quot;: {
+          &quot;interval&quot;: [
+            {
+              &quot;triggerAtHour&quot;: 7
+            }
+          ]
+        }
+      },
+      &quot;name&quot;: &quot;排程&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.scheduleTrigger&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        0,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;url&quot;: &quot;https://www.cwa.gov.tw/rss/Data/cwa_warning.xml&quot;,
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;抓警特報&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.rssFeedRead&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;alwaysOutputData&quot;: true,
+      &quot;position&quot;: [
+        220,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;f0&quot;,
+              &quot;name&quot;: &quot;kind&quot;,
+              &quot;value&quot;: &quot;warn&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f1&quot;,
+              &quot;name&quot;: &quot;label&quot;,
+              &quot;value&quot;: &quot;={{ $json.title ?? &#39;目前沒有警特報&#39; }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f2&quot;,
+              &quot;name&quot;: &quot;value&quot;,
+              &quot;value&quot;: &quot;={{ null }}&quot;,
+              &quot;type&quot;: &quot;number&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f3&quot;,
+              &quot;name&quot;: &quot;dataDate&quot;,
+              &quot;value&quot;: &quot;={{ $json.isoDate ? $json.isoDate.slice(0,10) : null }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f4&quot;,
+              &quot;name&quot;: &quot;status&quot;,
+              &quot;value&quot;: &quot;={{ $json.title ? &#39;warning&#39; : &#39;none&#39; }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f5&quot;,
+              &quot;name&quot;: &quot;fetchedAt&quot;,
+              &quot;value&quot;: &quot;={{ $now.toISO() }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;整理&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        440,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;workflowId&quot;: {
+          &quot;__rl&quot;: true,
+          &quot;value&quot;: &quot;&quot;,
+          &quot;mode&quot;: &quot;list&quot;
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;存快照&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.executeWorkflow&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        660,
+        0
+      ]
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;排程&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;抓警特報&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;抓警特報&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;整理&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;整理&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;存快照&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}</code></pre></div>
+</details><details class="wf"><summary>「聞」完成版（m5/main-news-done.json）</summary><a href="files/m5/main-news-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M5 主線 聞&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;parameters&quot;: {
+        &quot;rule&quot;: {
+          &quot;interval&quot;: [
+            {
+              &quot;triggerAtHour&quot;: 7
+            }
+          ]
+        }
+      },
+      &quot;name&quot;: &quot;排程&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.scheduleTrigger&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        0,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;url&quot;: &quot;https://www.ey.gov.tw/RSS_Content.aspx?ModuleType=3&quot;,
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;抓新聞&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.rssFeedRead&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        220,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;maxItems&quot;: 3
+      },
+      &quot;name&quot;: &quot;取前3則&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.limit&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        440,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;f0&quot;,
+              &quot;name&quot;: &quot;kind&quot;,
+              &quot;value&quot;: &quot;news&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f1&quot;,
+              &quot;name&quot;: &quot;label&quot;,
+              &quot;value&quot;: &quot;={{ $json.title }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f2&quot;,
+              &quot;name&quot;: &quot;value&quot;,
+              &quot;value&quot;: &quot;={{ null }}&quot;,
+              &quot;type&quot;: &quot;number&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f3&quot;,
+              &quot;name&quot;: &quot;dataDate&quot;,
+              &quot;value&quot;: &quot;={{ $json.isoDate ? $json.isoDate.slice(0,10) : null }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f4&quot;,
+              &quot;name&quot;: &quot;status&quot;,
+              &quot;value&quot;: &quot;ok&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f5&quot;,
+              &quot;name&quot;: &quot;fetchedAt&quot;,
+              &quot;value&quot;: &quot;={{ $now.toISO() }}&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;整理&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        660,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;workflowId&quot;: {
+          &quot;__rl&quot;: true,
+          &quot;value&quot;: &quot;&quot;,
+          &quot;mode&quot;: &quot;list&quot;
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;存快照&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.executeWorkflow&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        880,
+        0
+      ]
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;排程&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;抓新聞&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;抓新聞&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;取前3則&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;取前3則&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;整理&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;整理&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;存快照&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}</code></pre></div>
+</details><h4>第 4 段：每日 Excel（進階）</h4>
+<p>讀股價與匯率快照，轉成數字後存成一個以日期命名的 Excel 檔。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>排程（<strong>Schedule Trigger</strong>）</td>
+<td>等收集流程先寫完</td>
+<td>每天 <strong>7:10</strong></td>
+</tr>
+<tr>
+<td>讀快照（<strong>Read/Write Files from Disk</strong>）</td>
+<td>讀兩個快照檔</td>
+<td><strong>Read</strong>，路徑 <code>/home/node/.n8n-files/snap/{stock,fx}.csv</code></td>
+</tr>
+<tr>
+<td>解開CSV（<strong>Extract from File</strong>）</td>
+<td>CSV 變回多筆資料</td>
+<td>格式 <strong>CSV</strong>，打開 <strong>Exclude Byte Order Mark (BOM)</strong></td>
+</tr>
+<tr>
+<td>轉數字（<strong>Edit Fields (Set)</strong>）</td>
+<td>把 <code>value</code> 轉成數字</td>
+<td>保留其他欄位，<code>value</code>＝<code>{{ $json.value ? Number($json.value) : null }}</code></td>
+</tr>
+<tr>
+<td>轉成Excel（<strong>Convert to File</strong>）</td>
+<td>做成 Excel 檔</td>
+<td>格式 <strong>XLSX</strong></td>
+</tr>
+<tr>
+<td>寫檔（<strong>Read/Write Files from Disk</strong>）</td>
+<td>存到 <code>daily</code></td>
+<td><strong>Write</strong>，路徑如下</td>
+</tr>
+</tbody></table>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">/home/node/.n8n-files/daily/{{ $now.toFormat(&#39;yyyy-MM-dd&#39;) }}.xlsx</code></pre></div>
+<p>這條比平常多 1 個節點，因為 <strong>CSV 讀回來全部是文字</strong>，不轉的話 Excel 裡的數字是文字、不能加總。路徑裡的 <code>{stock,fx}</code> 是「只讀這兩個檔」，警、聞沒有數字。</p>
+<p>為什麼不寫 <code>$json.value === &#39;&#39;</code> 判斷空值？實測：CSV 的空格子讀回來是「<strong>沒有這個欄位</strong>」而不是空字串，這樣寫會變成 <code>NaN</code> 報錯。</p>
+<p>一天一個檔，同一天重跑會覆蓋同名檔。<strong>不要用寫檔的 Append 選項累積</strong>：實測會重複寫表頭。</p>
+<ol>
+<li><p>匯入 <code>main-excel-done.json</code>，確認「解開CSV」已打開 <strong>Exclude Byte Order Mark (BOM)</strong>，位置見版本附頁。
+你應該看到：6 個節點依序連線，排程是 7:10。</p>
+</li>
+<li><p>執行整條流程。
+你應該看到：讀快照 2 筆（兩個檔）、解開CSV 3 筆（股 2＋匯 1）、轉數字 3 筆且 <code>value</code> 是數字、寫檔 1 筆。</p>
+</li>
+<li><p>用 Excel 打開 <code>daily\</code> 裡今天的檔。
+你應該看到：<code>value</code> 那欄靠右對齊、可以加總。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？轉數字報「&#39;value&#39; expects a number but we got &#39;NaN&#39;」，是用了 <code>=== &#39;&#39;</code> 判斷，改成素材的寫法；Excel 裡數字靠左，是少了「轉數字」。</p>
+</blockquote>
+<details class="wf"><summary>每日 Excel 完成版（m5/main-excel-done.json）</summary><a href="files/m5/main-excel-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M5 主線 每日Excel&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;parameters&quot;: {
+        &quot;rule&quot;: {
+          &quot;interval&quot;: [
+            {
+              &quot;triggerAtHour&quot;: 7,
+              &quot;triggerAtMinute&quot;: 10
+            }
+          ]
+        }
+      },
+      &quot;name&quot;: &quot;排程&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.scheduleTrigger&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        0,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;operation&quot;: &quot;read&quot;,
+        &quot;fileSelector&quot;: &quot;/home/node/.n8n-files/snap/{stock,fx}.csv&quot;,
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;讀快照&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.readWriteFile&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        220,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;operation&quot;: &quot;csv&quot;,
+        &quot;options&quot;: {
+          &quot;enableBOM&quot;: true
+        }
+      },
+      &quot;name&quot;: &quot;解開CSV&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.extractFromFile&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        440,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;f0&quot;,
+              &quot;name&quot;: &quot;value&quot;,
+              &quot;value&quot;: &quot;={{ $json.value ? Number($json.value) : null }}&quot;,
+              &quot;type&quot;: &quot;number&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {},
+        &quot;includeOtherFields&quot;: true
+      },
+      &quot;name&quot;: &quot;轉數字&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        660,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;operation&quot;: &quot;xlsx&quot;,
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;轉成Excel&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.convertToFile&quot;,
+      &quot;typeVersion&quot;: 1.1,
+      &quot;position&quot;: [
+        880,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;operation&quot;: &quot;write&quot;,
+        &quot;fileName&quot;: &quot;=/home/node/.n8n-files/daily/{{ $now.toFormat(&#39;yyyy-MM-dd&#39;) }}.xlsx&quot;,
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;寫檔&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.readWriteFile&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        1100,
+        0
+      ]
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;排程&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;讀快照&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;讀快照&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;解開CSV&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;解開CSV&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;轉數字&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;轉數字&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;轉成Excel&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;轉成Excel&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;寫檔&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}</code></pre></div>
+</details><h4>第 5 段：早報傳到 Telegram</h4>
+<p>把所有快照合成一筆，組成一則文字傳到手機。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>排程（<strong>Schedule Trigger</strong>）</td>
+<td>每天啟動</td>
+<td>每天 7:10</td>
+</tr>
+<tr>
+<td>讀快照（<strong>Read/Write Files from Disk</strong>）</td>
+<td>一次讀全部快照</td>
+<td><strong>Read</strong>，路徑 <code>/home/node/.n8n-files/snap/*.csv</code></td>
+</tr>
+<tr>
+<td>解開CSV（<strong>Extract from File</strong>）</td>
+<td>CSV 變回多筆資料</td>
+<td>格式 <strong>CSV</strong>，打開 <strong>Exclude Byte Order Mark (BOM)</strong></td>
+</tr>
+<tr>
+<td>合成一筆（<strong>Aggregate</strong>）</td>
+<td>很多筆收成一筆</td>
+<td><strong>All Item Data</strong>，結果放在 <code>data</code> 清單</td>
+</tr>
+<tr>
+<td>傳到Telegram（<strong>Telegram</strong>）</td>
+<td>傳出早報</td>
+<td>選憑證、填 chat ID、<strong>Append n8n Attribution</strong> 關掉</td>
+</tr>
+</tbody></table>
+<p>訊息文字的 <strong>Expression</strong>（照抄素材）：</p>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">{{ &#39;生活早報 &#39; + $now.toFormat(&#39;yyyy-MM-dd&#39;) + &#39;\n&#39; + $json.data.map(r =&gt; &#39;・&#39; + r.label + (r.value ? &#39; &#39; + r.value : &#39;&#39;) + (r.status === &#39;missing&#39; ? &#39; 資料不足&#39; : &#39;&#39;) + (r.dataDate ? &#39;（&#39; + r.dataDate + &#39;）&#39; : &#39;&#39;) + ((r.fetchedAt || &#39;&#39;).startsWith($now.toFormat(&#39;yyyy-MM-dd&#39;)) ? &#39;&#39; : &#39; ⚠舊資料&#39;)).join(&#39;\n&#39;) }}</code></pre></div>
+<p>拆成幾塊來看：</p>
+<ul>
+<li><code>&#39;生活早報 &#39; + $now.toFormat(&#39;yyyy-MM-dd&#39;)</code>：開頭標題加今天日期。</li>
+<li><code>$json.data.map(r =&gt; …)</code>：「每一筆變成一行」，<code>r</code> 代表其中一筆快照。</li>
+<li><code>(r.value ? &#39; &#39; + r.value : &#39;&#39;)</code>：有數字才加數字。</li>
+<li><code>r.status === &#39;missing&#39; ? &#39; 資料不足&#39; : &#39;&#39;</code>：缺資料就寫「資料不足」。</li>
+<li><code>(r.dataDate ? &#39;（&#39; + r.dataDate + &#39;）&#39; : &#39;&#39;)</code>：有資料日期就加括號。</li>
+<li><code>fetchedAt</code> 不是今天就加「⚠舊資料」：判斷這份快照是不是今天抓的。</li>
+<li><code>.join(&#39;\n&#39;)</code>：每行之間換行。<strong><code>&#39;\n&#39;</code> 是反斜線加 n，不能在引號裡真的按 Enter</strong>，實測會報 invalid syntax。</li>
+</ul>
+<p>行的順序照檔名排（fx、news、stock、warn），變形題可以改。早報範例：</p>
+<div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">生活早報 〔今天日期〕
+・美元 〔匯率〕（〔資料日期〕）
+・〔新聞標題〕（〔資料日期〕）
+・〔股名〕 收盤 〔股價〕（〔資料日期〕）
+・〔警特報標題或「目前沒有警特報」〕（〔資料日期〕）</code></pre></div>
+<ol>
+<li><p>匯入 <code>main-report-done.json</code>，在「傳到Telegram」選你的 Telegram 憑證、填 chat ID，確認 <strong>Append n8n Attribution</strong> 是關的。位置見版本附頁。
+你應該看到：5 個節點依序連線，傳到Telegram 沒有紅色警示。</p>
+</li>
+<li><p>執行整條流程。
+你應該看到：手機收到一則「生活早報 〔今天日期〕」，每行一個來源，股價與匯率後面有資料日期；執行紀錄裡「合成一筆」1 筆。Telegram 節點成功後的輸出欄位（待查證）。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？早報出現 <code>undefined</code>，是欄位名稱打錯，大小寫也算。手機沒收到，先確認有對 Bot 按過 <strong>Start</strong>、chat ID 沒填錯。</p>
+</blockquote>
+<ol start="3">
+<li>把七條流程都 <strong>Publish</strong>：子流程、股、匯、警、聞、每日 Excel、早報。
+你應該看到：七條流程在列表上都顯示已發布；隔天 7:10 後手機自動收到早報、<code>daily</code> 多一個當天的檔。</li>
+</ol>
+<details class="wf"><summary>早報完成版（m5/main-report-done.json）</summary><a href="files/m5/main-report-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M5 主線 早報&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;parameters&quot;: {
+        &quot;rule&quot;: {
+          &quot;interval&quot;: [
+            {
+              &quot;triggerAtHour&quot;: 7,
+              &quot;triggerAtMinute&quot;: 10
+            }
+          ]
+        }
+      },
+      &quot;name&quot;: &quot;排程&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.scheduleTrigger&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        0,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;operation&quot;: &quot;read&quot;,
+        &quot;fileSelector&quot;: &quot;/home/node/.n8n-files/snap/*.csv&quot;,
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;讀快照&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.readWriteFile&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        220,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;operation&quot;: &quot;csv&quot;,
+        &quot;options&quot;: {
+          &quot;enableBOM&quot;: true
+        }
+      },
+      &quot;name&quot;: &quot;解開CSV&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.extractFromFile&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        440,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;aggregate&quot;: &quot;aggregateAllItemData&quot;,
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;合成一筆&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.aggregate&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        660,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;chatId&quot;: &quot;&quot;,
+        &quot;text&quot;: &quot;={{ &#39;生活早報 &#39; + $now.toFormat(&#39;yyyy-MM-dd&#39;) + &#39;\\n&#39; + $json.data.map(r =&gt; &#39;・&#39; + r.label + (r.value ? &#39; &#39; + r.value : &#39;&#39;) + (r.status === &#39;missing&#39; ? &#39; 資料不足&#39; : &#39;&#39;) + (r.dataDate ? &#39;（&#39; + r.dataDate + &#39;）&#39; : &#39;&#39;) + ((r.fetchedAt || &#39;&#39;).startsWith($now.toFormat(&#39;yyyy-MM-dd&#39;)) ? &#39;&#39; : &#39; ⚠舊資料&#39;)).join(&#39;\\n&#39;) }}&quot;,
+        &quot;additionalFields&quot;: {
+          &quot;appendAttribution&quot;: false
+        }
+      },
+      &quot;name&quot;: &quot;傳到Telegram&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.telegram&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        880,
+        0
+      ]
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;排程&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;讀快照&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;讀快照&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;解開CSV&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;解開CSV&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;合成一筆&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;合成一筆&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;傳到Telegram&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}</code></pre></div>
+</details><h3 id="sec-5">小練習①：吃藥時間提醒</h3>
+<p>每天晚上 9 點傳一則時間提醒到 Telegram。只做時間提醒，不提供醫療建議；藥名、劑量照醫囑自己決定要不要寫進訊息，訊息會經過 Telegram。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>排程（<strong>Schedule Trigger</strong>）</td>
+<td>每天提醒</td>
+<td>每天 21 點</td>
+</tr>
+<tr>
+<td>提醒內容（<strong>Edit Fields (Set)</strong>）</td>
+<td>準備文字</td>
+<td><code>text</code>＝<code>晚上 9 點，吃藥時間到了</code>，<strong>String</strong></td>
+</tr>
+<tr>
+<td>傳到Telegram（<strong>Telegram</strong>）</td>
+<td>傳出提醒</td>
+<td>選憑證、填 chat ID，文字 <code>{{ $json.text }}</code>，<strong>Append n8n Attribution</strong> 關掉</td>
+</tr>
+</tbody></table>
+<ol>
+<li><p>匯入 <code>ex1-done.json</code>，選 Telegram 憑證並填 chat ID。
+你應該看到：3 個節點依序連線，傳到Telegram 沒有紅色警示。</p>
+</li>
+<li><p>手動執行一次就好，不用等到晚上 9 點。
+你應該看到：手機收到「晚上 9 點，吃藥時間到了」。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？沒收到時先看傳到Telegram 是不是紅色，再確認有按過 <strong>Start</strong>、chat ID 沒填錯。</p>
+</blockquote>
+<p>變形：改時間；改成一天兩次，在 <strong>Schedule Trigger</strong> 加第二個時間，位置見版本附頁。</p>
+<details class="wf"><summary>完成版（m5/ex1-done.json）</summary><a href="files/m5/ex1-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M5 小練習① 吃藥時間提醒&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;parameters&quot;: {
+        &quot;rule&quot;: {
+          &quot;interval&quot;: [
+            {
+              &quot;triggerAtHour&quot;: 21
+            }
+          ]
+        }
+      },
+      &quot;name&quot;: &quot;排程&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.scheduleTrigger&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        0,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;f0&quot;,
+              &quot;name&quot;: &quot;text&quot;,
+              &quot;value&quot;: &quot;晚上 9 點，吃藥時間到了&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;提醒內容&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        220,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;chatId&quot;: &quot;&quot;,
+        &quot;text&quot;: &quot;={{ $json.text }}&quot;,
+        &quot;additionalFields&quot;: {
+          &quot;appendAttribution&quot;: false
+        }
+      },
+      &quot;name&quot;: &quot;傳到Telegram&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.telegram&quot;,
+      &quot;typeVersion&quot;: 1.2,
+      &quot;position&quot;: [
+        440,
+        0
+      ]
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;排程&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;提醒內容&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;提醒內容&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;傳到Telegram&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}</code></pre></div>
+</details><h3 id="sec-6">小練習②：推播到 LINE 或寫進 Google</h3>
+<p>二選一：LINE 路線練習推播給自己；Google 關卡練習把快照數字寫進試算表。兩個分頁都要經歷「申請憑證」這一關，選一個做就好。</p>
+<div class="tabs"><div class="tab-bar" role="tablist" aria-label="選擇分頁"><button type="button" role="tab" data-tab="1" aria-selected="true">LINE 路線</button><button type="button" role="tab" data-tab="2" aria-selected="false">Google 關卡</button></div><div class="tab" data-tab="1" role="tabpanel"><h4>分頁：LINE 路線</h4>
+<p>用 LINE 官方帳號的 Messaging API 傳一則訊息給自己。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>手動（<strong>Manual Trigger</strong>）</td>
+<td>手動啟動</td>
+<td>無</td>
+</tr>
+<tr>
+<td>提醒內容（<strong>Edit Fields (Set)</strong>）</td>
+<td>準備文字與收件人</td>
+<td><code>text</code>、<code>to</code>（你的 userId），都用 <strong>String</strong></td>
+</tr>
+<tr>
+<td>推播到LINE（<strong>HTTP Request</strong>）</td>
+<td>呼叫 LINE 推播</td>
+<td><strong>POST</strong> <code>https://api.line.me/v2/bot/message/push</code>，驗證用 <strong>Header Auth</strong> 憑證，JSON 內容照抄素材</td>
+</tr>
+</tbody></table>
+<p>人工設定約 8 步，介面位置一律（待查證）：</p>
+<ol>
+<li>用 LINE 帳號登入 LINE Developers。</li>
+<li>建 <strong>Provider</strong>。</li>
+<li>建 LINE 官方帳號並啟用 <strong>Messaging API</strong>。</li>
+<li>在後台發行 <strong>Channel access token</strong>（長期）。</li>
+<li>找到自己的 <strong>userId</strong>，後台位置（待查證）。</li>
+<li>用手機掃 QR code，把官方帳號加為好友。</li>
+<li>在 n8n 新增 <strong>Header Auth</strong> 憑證：Name 填 <code>Authorization</code>，Value 填 <code>Bearer &lt;你的 Channel access token&gt;</code>，Bearer 後面一個空格。位置見版本附頁。</li>
+<li>把 userId 貼進「提醒內容」的 <code>to</code>。</li>
+</ol>
+<p>不需要 Webhook。<strong>不要用 LINE Notify</strong>：它已在 2025-03-31 停止服務，n8n 內建的 Line 節點是 Notify 用的，也不能用。免費方案每月推播則數有上限，push 會算進去，則數與要不要綁信用卡以你後台顯示為準（待查證）。</p>
+<ol>
+<li><p>匯入 <code>ex2-line-done.json</code>，在「推播到LINE」選你的 Header Auth 憑證，在「提醒內容」填 <code>to</code>。
+你應該看到：3 個節點依序連線，推播到LINE 沒有紅色警示。</p>
+</li>
+<li><p>手動執行。
+你應該看到：LINE 收到「這是 n8n 推播給自己的測試訊息」。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？錯誤「Authorization failed - please check your credentials」，詳細訊息「Authentication failed. Confirm that the access token in the authorization header is valid.」，是 token 無效（用假 token 實測），回憑證檢查 Value。userId 錯誤時的訊息（待查證）。</p>
+</blockquote>
+<details class="wf"><summary>完成版（m5/ex2-line-done.json）</summary><a href="files/m5/ex2-line-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M5 小練習② LINE 推播給自己&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;parameters&quot;: {},
+      &quot;name&quot;: &quot;手動&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.manualTrigger&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        0,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;mode&quot;: &quot;manual&quot;,
+        &quot;assignments&quot;: {
+          &quot;assignments&quot;: [
+            {
+              &quot;id&quot;: &quot;f0&quot;,
+              &quot;name&quot;: &quot;text&quot;,
+              &quot;value&quot;: &quot;這是 n8n 推播給自己的測試訊息&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            },
+            {
+              &quot;id&quot;: &quot;f1&quot;,
+              &quot;name&quot;: &quot;to&quot;,
+              &quot;value&quot;: &quot;請貼上你的 userId&quot;,
+              &quot;type&quot;: &quot;string&quot;
+            }
+          ]
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;提醒內容&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.set&quot;,
+      &quot;typeVersion&quot;: 3.4,
+      &quot;position&quot;: [
+        220,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;method&quot;: &quot;POST&quot;,
+        &quot;url&quot;: &quot;https://api.line.me/v2/bot/message/push&quot;,
+        &quot;authentication&quot;: &quot;genericCredentialType&quot;,
+        &quot;genericAuthType&quot;: &quot;httpHeaderAuth&quot;,
+        &quot;sendBody&quot;: true,
+        &quot;specifyBody&quot;: &quot;json&quot;,
+        &quot;jsonBody&quot;: &quot;={{ JSON.stringify({ to: $json.to, messages: [{ type: &#39;text&#39;, text: $json.text }] }) }}&quot;,
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;推播到LINE&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.httpRequest&quot;,
+      &quot;typeVersion&quot;: 4.2,
+      &quot;position&quot;: [
+        440,
+        0
+      ]
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;手動&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;提醒內容&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;提醒內容&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;推播到LINE&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}</code></pre></div>
+</details></div><div class="tab" data-tab="2" role="tabpanel"><h4>分頁：Google 關卡</h4>
+<p>把快照裡的股價與匯率寫進 Google 試算表。</p>
+<table>
+<thead>
+<tr>
+<th>節點</th>
+<th>用途</th>
+<th>關鍵設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>手動（<strong>Manual Trigger</strong>）</td>
+<td>手動啟動</td>
+<td>無</td>
+</tr>
+<tr>
+<td>讀快照（<strong>Read/Write Files from Disk</strong>）</td>
+<td>讀兩個快照檔</td>
+<td><strong>Read</strong>，<code>/home/node/.n8n-files/snap/{stock,fx}.csv</code></td>
+</tr>
+<tr>
+<td>解開CSV（<strong>Extract from File</strong>）</td>
+<td>CSV 變回多筆資料</td>
+<td>格式 <strong>CSV</strong>，打開 <strong>Exclude Byte Order Mark (BOM)</strong></td>
+</tr>
+<tr>
+<td>寫進試算表（<strong>Google Sheets</strong>）</td>
+<td>新增資料列</td>
+<td><strong>Append Row</strong>，欄位自動對應</td>
+</tr>
+</tbody></table>
+<p>先在 Google 試算表建一張測試表，第一列打上 <code>kind,label,value,dataDate,status,fetchedAt</code> 六個欄名（逗號處分欄）。</p>
+<p>OAuth 救援站，5 步，介面位置一律（待查證）：</p>
+<ol>
+<li>在 Google Cloud 主控台建專案。</li>
+<li>啟用 Google Sheets API；是否還要 Google Drive API（待查證）。</li>
+<li>設定 OAuth 同意畫面，類型選 External，把自己加成測試使用者。</li>
+<li>建 OAuth 用戶端（網頁應用程式），把 n8n 憑證頁顯示的 <strong>OAuth Redirect URL</strong> 逐字貼進「已授權的重新導向 URI」。</li>
+<li>把用戶端 ID 與密鑰貼回 n8n，按 <strong>Sign in with Google</strong>。</li>
+</ol>
+<p>測試模式的授權大約 <strong>7 天會失效</strong>，失效就回憑證頁重新 <strong>Sign in with Google</strong>。<strong>不用開啟計費。</strong></p>
+<ol>
+<li><p>匯入 <code>ex2-google-done.json</code>，在「寫進試算表」選你的 Google 憑證、文件與工作表，路徑換成 npx 版的人要改「讀快照」。位置見版本附頁。
+你應該看到：4 個節點依序連線，寫進試算表沒有紅色警示。</p>
+</li>
+<li><p>手動執行。
+你應該看到：解開CSV 3 筆、寫進試算表 3 筆，試算表多了 3 列。試算表裡數字是數字還是文字（待查證）。</p>
+</li>
+</ol>
+<blockquote>
+<p>卡住了？Google 登入回不來，先逐字比對 <strong>OAuth Redirect URL</strong> 與測試使用者；授權過期就重新登入。</p>
+</blockquote>
+<details class="wf"><summary>完成版（m5/ex2-google-done.json）</summary><a href="files/m5/ex2-google-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+  &quot;name&quot;: &quot;M5 小練習② 數字寫進 Google 試算表&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;parameters&quot;: {},
+      &quot;name&quot;: &quot;手動&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.manualTrigger&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        0,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;operation&quot;: &quot;read&quot;,
+        &quot;fileSelector&quot;: &quot;/home/node/.n8n-files/snap/{stock,fx}.csv&quot;,
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;讀快照&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.readWriteFile&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        220,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;operation&quot;: &quot;csv&quot;,
+        &quot;options&quot;: {
+          &quot;enableBOM&quot;: true
+        }
+      },
+      &quot;name&quot;: &quot;解開CSV&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.extractFromFile&quot;,
+      &quot;typeVersion&quot;: 1,
+      &quot;position&quot;: [
+        440,
+        0
+      ]
+    },
+    {
+      &quot;parameters&quot;: {
+        &quot;operation&quot;: &quot;append&quot;,
+        &quot;documentId&quot;: {
+          &quot;__rl&quot;: true,
+          &quot;value&quot;: &quot;&quot;,
+          &quot;mode&quot;: &quot;url&quot;
+        },
+        &quot;sheetName&quot;: {
+          &quot;__rl&quot;: true,
+          &quot;value&quot;: &quot;&quot;,
+          &quot;mode&quot;: &quot;list&quot;
+        },
+        &quot;columns&quot;: {
+          &quot;mappingMode&quot;: &quot;autoMapInputData&quot;,
+          &quot;value&quot;: {},
+          &quot;matchingColumns&quot;: [],
+          &quot;schema&quot;: []
+        },
+        &quot;options&quot;: {}
+      },
+      &quot;name&quot;: &quot;寫進試算表&quot;,
+      &quot;type&quot;: &quot;n8n-nodes-base.googleSheets&quot;,
+      &quot;typeVersion&quot;: 4.7,
+      &quot;position&quot;: [
+        660,
+        0
+      ]
+    }
+  ],
+  &quot;connections&quot;: {
+    &quot;手動&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;讀快照&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;讀快照&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;解開CSV&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    },
+    &quot;解開CSV&quot;: {
+      &quot;main&quot;: [
+        [
+          {
+            &quot;node&quot;: &quot;寫進試算表&quot;,
+            &quot;type&quot;: &quot;main&quot;,
+            &quot;index&quot;: 0
+          }
+        ]
+      ]
+    }
+  },
+  &quot;settings&quot;: {
+    &quot;executionOrder&quot;: &quot;v1&quot;
+  }
+}</code></pre></div>
+</details></div></div><h3 id="sec-7">看懂執行紀錄</h3>
+<p>打開 <strong>Executions</strong>。呼叫端和子流程在 Executions 是<strong>兩筆分開的紀錄</strong>；子流程出錯時，呼叫端的「存快照」也會紅，要兩筆都看。</p>
+<p>讀檔節點一個檔＝一筆，解開CSV 一列＝一筆。每日 Excel 看讀快照 2 筆、解開CSV 3 筆、轉數字 3 筆、寫檔 1 筆；早報看讀快照至少 4 筆、合成一筆 1 筆，並點開傳到Telegram 檢查文字裡沒有 <code>undefined</code>。</p>
+<p>Telegram、LINE 失敗時節點是紅色的，<strong>沒有送出就不算成功</strong>；手機有沒有收到，要和紀錄一起看。不能只看有沒有綠燈。</p>
+<h3 id="sec-8">驗收</h3>
+<ul>
+<li class="check"> 正常 N。手機收到早報，股價與匯率每行有資料日期；今天的 Excel 打得開，<code>value</code> 是數字、可以加總。</li>
+<li class="check"> 缺資料 M。把「匯」的抓匯率網址暫時換成 <code>http://localhost:5678/webhook/mock?status=200</code>，執行「匯」再執行「早報」，美元那行是「・美元 資料不足」，不是 0。測完網址改回，重跑「匯」。</li>
+<li class="check"> 舊資料。把 <code>data-old-fx.csv</code> 複製到 <code>snap</code> 資料夾、改名成 <code>fx.csv</code> 覆蓋，執行早報，美元那行後面有「⚠舊資料」。測完重跑「匯」。</li>
+<li class="check"> 重跑 D。早報手動執行兩次，手機收到兩則。本課<strong>沒有防重送</strong>，正式上線靠排程一天一次，不要宣稱已經去重。</li>
+<li class="check"> 故障 E①。把 Telegram 憑證的 token 故意改錯一個字，執行早報，傳到Telegram 變紅，錯誤「Authorization failed - please check your credentials」（用假 token 實測，詳細訊息是 Unauthorized），手機沒收到。測完改回。</li>
+<li class="check"> 故障 E②。把子流程「寫檔」路徑暫時改成 <code>/home/node/test.csv</code>（允許區外），執行「匯」，報「Access to the file is not allowed.」。測完改回。</li>
+<li class="check"> 支線。你選的分頁也要交 N 和 E：LINE 交假 token 的錯誤；Google 交「憑證頁中斷連線再執行」的錯誤（訊息待查證）。</li>
+<li class="check"> 變形題。改早報版面：例如把警特報那行放最前面、改標題文字；缺資料仍要顯示「資料不足」、舊資料仍要有標記。</li>
+</ul>
+<details><summary id="sec-9">卡關救援</summary><ul>
+<li>「Access to the file is not allowed.」→ 看路徑 → 路徑要在 <code>.n8n-files</code> 裡，npx 使用者要換成自己的路徑 → 重跑確認檔案寫進去。</li>
+<li>「The file or directory does not exist」→ 看 <code>.n8n-files</code> 下有沒有 <code>snap</code>、<code>daily</code> → 建好兩個資料夾 → 重跑確認不再報錯。</li>
+<li>執行了但 Windows 資料夾裡看不到檔 → 看是不是 Docker 沒掛載（待查證）→ 照準備第 2 步加 <code>-v</code> 重新啟動 → 重跑確認檔案出現在資料夾。</li>
+<li>「Workflow is not active and cannot be executed.」→ 看子流程是否已 <strong>Publish</strong> → 發布子流程，剛發布等幾秒再跑（實測）→ 確認存快照成功。</li>
+<li>存快照沒有子流程可選、或執行報找不到流程 → 看「存快照」的子流程欄位 → 匯入後要重新選「M5 快照寫入」→ 確認子流程那筆紀錄出現。</li>
+<li><code>snap</code> 裡出現一個叫 <code>.csv</code> 的檔 → 看子流程「寫檔」路徑 → 路徑用了 <code>$json.kind</code>，改成 <code>$(&#39;子流程入口&#39;).first().json.kind</code> → 刪掉怪檔後重跑。</li>
+<li>早報或 Excel 讀不到 <code>kind</code>、第一欄名稱前面多一個看不見的字 → 看「解開CSV」 → 打開 <strong>Exclude Byte Order Mark (BOM)</strong> → 確認欄名正確。</li>
+<li>轉數字報「&#39;value&#39; expects a number but we got &#39;NaN&#39;」→ 看「轉數字」的 Expression → 改成素材的 <code>$json.value ? Number($json.value) : null</code>，不要用 <code>=== &#39;&#39;</code> → 重跑確認通過。</li>
+<li>Excel 裡數字靠左、不能加總 → 看流程有沒有「轉數字」 → 補上這個節點 → 重新產生今天的檔。</li>
+<li>Expression 報「invalid syntax」→ 看有沒有在引號裡真的按 Enter → 換行寫成 <code>&#39;\n&#39;</code>（反斜線加 n）→ 重跑確認。</li>
+<li>早報出現 <code>undefined</code> → 看 Expression 裡的欄位名稱 → 修正拼字與大小寫 → 重跑確認文字正常。</li>
+<li>早報每行都有「⚠舊資料」→ 看 7:00 的收集流程有沒有跑、有沒有失敗 → 去 Executions 檢查並手動重跑 → 確認 <code>fetchedAt</code> 是今天。</li>
+<li>Telegram 收不到 → 看是否沒先按 <strong>Start</strong>、chat ID 錯（錯誤訊息待查證）、token 錯（Unauthorized）→ 逐項檢查 → 手動再傳一則確認。</li>
+</ul>
+<p>求助時附 n8n 版本、哪個節點、錯誤訊息原文、已經試過什麼。截圖和貼文字前，先遮住 Bot token、LINE token、chat ID 和個資。</p>
+</details><details><summary id="sec-10">官方連結</summary><p>依本地官方文件與實測紀錄整理，查詢日期 2026-11-21。</p>
+<ul>
+<li><a href="https://docs.n8n.io/build/flow-logic/break-workflows-into-smaller-parts" target="_blank" rel="noopener noreferrer">n8n 把流程拆成子流程</a><span class="dom">docs.n8n.io</span></li>
+<li><a href="https://docs.n8n.io/get-started/key-concept-glossary" target="_blank" rel="noopener noreferrer">n8n 名詞表（Credential）</a><span class="dom">docs.n8n.io</span></li>
+<li><a href="https://core.telegram.org/bots" target="_blank" rel="noopener noreferrer">Telegram Bot 說明</a><span class="dom">core.telegram.org</span></li>
+<li><a href="https://core.telegram.org/bots/api" target="_blank" rel="noopener noreferrer">Telegram Bot API：getUpdates</a><span class="dom">core.telegram.org</span></li>
+<li><a href="https://developers.line.biz/en/reference/messaging-api/" target="_blank" rel="noopener noreferrer">LINE Messaging API：push</a><span class="dom">developers.line.biz</span></li>
+<li><a href="https://developers.google.com/sheets" target="_blank" rel="noopener noreferrer">Google Sheets API</a><span class="dom">developers.google.com</span></li>
+</ul>
+</details><nav class="pager" aria-label="前後課程"><a class="prev" href="m4.html"><span>← 上一個</span>M4 API、RSS 與排程</a><a class="next" href="m6.html"><span>下一個 →</span>M6 錯誤處理與可靠性</a></nav></article></main><aside class="toc" aria-label="本頁目錄"><div class="t">本頁</div><a href="#sec-1">成果與先修</a><a href="#sec-2">白話觀念</a><a href="#sec-3">素材包</a><a href="#sec-4">主線：早報傳到 Telegram、數字記進 Excel</a><a href="#sec-5">小練習①：吃藥時間提醒</a><a href="#sec-6">小練習②：推播到 LINE 或寫進 Google</a><a href="#sec-7">看懂執行紀錄</a><a href="#sec-8">驗收</a><a href="#sec-9">卡關救援</a><a href="#sec-10">官方連結</a></aside><nav class="bottombar" aria-label="前後課程"><a href="m4.html">← M4 API、RSS 與排程</a><a href="m6.html">M6 錯誤處理與可靠性 →</a></nav></body></html>

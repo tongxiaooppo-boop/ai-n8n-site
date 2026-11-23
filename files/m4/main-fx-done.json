@@ -1,0 +1,116 @@
+{
+  "name": "M4 主線 匯",
+  "nodes": [
+    {
+      "name": "排程",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "抓匯率",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "url": "https://cpx.cbc.gov.tw/api/OpenData/FTDOpenData_Day",
+        "options": {}
+      }
+    },
+    {
+      "name": "最新一筆",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "maxItems": 1,
+        "keep": "lastItems"
+      }
+    },
+    {
+      "name": "整理",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "dataDate",
+              "value": "={{ $json['日期'] ? $json['日期'].slice(0,4) + '-' + $json['日期'].slice(4,6) + '-' + $json['日期'].slice(6,8) : null }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "usd",
+              "value": "={{ $json.NTD_USD ? Number($json.NTD_USD) : null }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "排程": {
+      "main": [
+        [
+          {
+            "node": "抓匯率",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "抓匯率": {
+      "main": [
+        [
+          {
+            "node": "最新一筆",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "最新一筆": {
+      "main": [
+        [
+          {
+            "node": "整理",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
