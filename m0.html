@@ -3,7 +3,55 @@
 沒有先修模組。已經會啟動本機 n8n 的人可以從主線的版本核對與教材檢查流程開始。
 準備一台電腦，主線費用 0 元。不用新帳號連接外部服務，首次啟動需建立 n8n 本機擁有者帳號。</p>
 <h3 id="sec-2">白話觀念</h3>
-<p>n8n 把工作排成一個流程。畫布上的每個節點負責一件事，連線把資料交給下一個節點。<strong>Manual Trigger</strong> 是手動啟動流程的節點。<strong>Edit Fields (Set)</strong> 用來填入或整理欄位，本課簡稱「欄位」。按一次執行，就產生一次執行紀錄。第 26 天的 GitHub Actions 在雲端執行，本課先在自己的電腦啟動 n8n，再從畫布觀察資料。</p>
+<p>開工前先花五分鐘讀這段導讀：自動化是什麼、n8n 跟 28 天課程學過的排程差在哪，以及整門課會一直出現的幾個名詞。沒上過 28 天課程也看得懂。</p>
+<p><strong>自動化就是「設定一次，之後照規則自己跑」。</strong>每天早上打開三個網站查股價、匯率、天氣，再整理成一段話傳給家人，這是手動。把這些步驟交給電腦，每天 7 點自己做完、把結果送到手機，這就是自動化。</p>
+<p><strong>大多數自動化可以先拆成三段：觸發 → 處理 → 送出。</strong>觸發是「什麼時候開始」，例如每天 7 點、收到一則訊息。處理是「拿到資料後做什麼」，例如只挑自選股、把民國年換成西元年、漲跌太大才標記。送出是「結果去哪裡」，例如傳到 Telegram、記進 Excel。實際流程也可能分岔、合併，或同時送到好幾個地方。這門課的「生活早報小幫手」就是：每天 7 點觸發 → 抓股價、匯率、警特報、新聞並整理 → 傳到手機、記進 Excel。</p>
+<p><strong>n8n 用拖拉方塊把多個服務串起來，大多不用寫程式。</strong>畫布上的每個方塊叫節點，一個節點只做一件事；連線把資料交給下一個節點。你寫的是「流程」，不是程式碼。每次執行後，可以到執行紀錄（<strong>Executions</strong>）看每個節點收到什麼、交出什麼，出錯時找得到是哪一步。本課的 n8n 裝在你自己的電腦，免費。</p>
+<p><strong>跟 28 天課程學過的兩種排程比一比。</strong>第 25 天在聊天 AI 裡設排程，第 26 天用 GitHub Actions 每天抓匯率，n8n 是第三種做法：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>聊天 AI 排程（第 25 天）</th>
+<th>GitHub Actions（第 26 天）</th>
+<th>n8n（本課）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>怎麼設定</td>
+<td>跟 AI 用說的</td>
+<td>寫設定檔和程式（可請 AI 寫）</td>
+<td>拖拉節點、填欄位</td>
+</tr>
+<tr>
+<td>在哪裡跑</td>
+<td>AI 公司的伺服器</td>
+<td>GitHub 的雲端</td>
+<td>你自己的電腦</td>
+</tr>
+<tr>
+<td>適合做</td>
+<td>每次讓 AI 產生內容，例如出練習題</td>
+<td>一件固定的事，例如抓一份資料更新網站</td>
+<td>串好幾個服務，要判斷、要通知、要記錄</td>
+</tr>
+<tr>
+<td>要注意</td>
+<td>內容由 AI 生成，數字和事實要另外核對</td>
+<td>排程可能延遲或漏跑，不保證準點</td>
+<td>電腦要開著，n8n 要在跑</td>
+</tr>
+</tbody></table>
+<p><strong>怎麼選（以兩門課的例子來說）：</strong>想讓 AI 定時產生一般內容，用聊天 AI 排程；把一件固定的事交給雲端、不想讓電腦一直開著，用 GitHub Actions；要從好幾個地方抓資料、整理後傳到手機，還想看清楚每一步，用 n8n。三者也可以搭配，n8n 裡也能呼叫 AI（M8）。</p>
+<p><strong>五個名詞先有印象就好，後面的模組會一個一個教：</strong></p>
+<ul>
+<li><strong>觸發（Trigger）</strong>：決定流程什麼時候開始的節點。本模組用的 <strong>Manual Trigger</strong> 是「按一下才開始」；M4 會換成每天定時的 <strong>Schedule Trigger</strong>。</li>
+<li><strong>節點</strong>：流程裡的一個步驟。本模組的 <strong>Edit Fields (Set)</strong> 用來填入或整理欄位，本課簡稱「欄位」。</li>
+<li><strong>API</strong>：網站專門給程式取資料的窗口，回來的通常是 JSON（欄位名稱和值排得整整齊齊的資料文字）。第 26 天用過央行的 API，M4 會再加上證交所。</li>
+<li><strong>憑證（Credential）</strong>：n8n 另外保存「登入鑰匙」的地方，例如 API 金鑰、Telegram Bot 的 token。鑰匙放在憑證裡，就不會跟著流程檔一起匯出。M5 會教；<strong>token 不要直接貼進流程欄位、不要給別人、不要截進圖裡</strong>。</li>
+<li><strong>Webhook</strong>：一個專屬網址，別的服務把資料送到這個網址，流程就開始。M7 用它和 Telegram 做「傳『查 2330』就回覆收盤價」。</li>
+</ul>
+<p><strong>本模組只做第一步：</strong>在自己電腦啟動 n8n，跑一條 3 個節點的流程。按一次執行，就產生一次執行紀錄。</p>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">手動 → 假早報 → 顯示文字</code></pre></div>
 <h3 id="sec-3">素材包</h3>
 <ul>
