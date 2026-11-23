@@ -41,21 +41,18 @@
 </tbody></table>
 <p>環境啟動後，依序做以下共同操作。下面兩個分頁各選一個，完成啟動後回來執行。</p>
 <ol>
-<li>核對自己的版本與版本附頁，打開任一個內建範例，執行一次。內建範例名稱（待查證）。
-你應該看到：範例的節點與執行結果，可逐個打開查看。</li>
+<li>核對自己的版本與版本附頁，打開任一個內建範例，執行一次。內建範例名稱（待查證）。<br><span class="see">你應該看到</span>範例的節點與執行結果，可逐個打開查看。</li>
 </ol>
 <blockquote>
 <p>卡住了？找不到內建範例時先記下版本與畫面，對照版本附頁的待查證項目。</p>
 </blockquote>
 <ol start="2">
-<li><p>另開流程，下載並用 <strong>Import from File</strong> 匯入 <code>main-done.json</code>，再按 <strong>Execute workflow</strong> 執行整條流程。位置見版本附頁。
-你應該看到：手動、假早報、顯示文字共 3 個節點，執行後出現綠色勾勾。</p>
+<li><p>另開流程，下載並用 <strong>Import from File</strong> 匯入 <code>main-done.json</code>，再按 <strong>Execute workflow</strong> 執行整條流程。位置見版本附頁。<br><span class="see">你應該看到</span>手動、假早報、顯示文字共 3 個節點，執行後出現綠色勾勾。</p>
 </li>
-<li><p>打開「顯示文字」，查看輸入與輸出。
-你應該看到：輸入與輸出各 1 筆，<code>text</code> 為 <code>【測試】今天的早報：假想甲 100 元，美元 32.85</code>。</p>
+<li><p>打開「顯示文字」，查看輸入與輸出。<br><span class="see">你應該看到</span>輸入與輸出各 1 筆，<code>text</code> 為 <code>【測試】今天的早報：假想甲 100 元，美元 32.85</code>。</p>
 </li>
 </ol>
-<details class="wf"><summary>完成版（m0/main-done.json）</summary><a href="files/m0/main-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 462 76" width="462" height="76" role="img" aria-label="流程圖：手動、假早報、顯示文字"><defs><marker id="ah1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M122 38 C139 38 139 38 152 38" marker-end="url(#ah1)"/><path class="e" d="M287 38 C304 38 304 38 317 38" marker-end="url(#ah1)"/><g class="n trigger"><rect x="10" y="10" width="112" height="56" rx="12"/><text class="nm" x="66" y="34">手動</text><text class="ty" x="66" y="52">Manual Trigger</text></g><g class="n data"><rect x="156" y="10" width="131" height="56" rx="12"/><text class="nm" x="221.5" y="34">假早報</text><text class="ty" x="221.5" y="52">Edit Fields (Set)</text></g><g class="n data"><rect x="321" y="10" width="131" height="56" rx="12"/><text class="nm" x="386.5" y="34">顯示文字</text><text class="ty" x="386.5" y="52">Edit Fields (Set)</text></g></svg></div><figcaption>完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>完成版（m0/main-done.json）</summary><a href="files/m0/main-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M0 主線 教材檢查流程&quot;,
   &quot;nodes&quot;: [
     {
@@ -159,31 +156,27 @@
 </details><div class="tabs"><div class="tab-bar" role="tablist" aria-label="選擇分頁"><button type="button" role="tab" data-tab="1" aria-selected="true">Docker Desktop</button><button type="button" role="tab" data-tab="2" aria-selected="false">npx 備案</button></div><div class="tab" data-tab="1" role="tabpanel"><h4>分頁：Docker Desktop</h4>
 <p>Docker 版尚未實測，實際執行結果（待查證）。以下使用任務指定的官方啟動指令。</p>
 <ol>
-<li><p>安裝並啟動 Docker Desktop。Windows 需準備 WSL2，安裝細節參考本頁官方連結。
-你應該看到：Docker Desktop 已啟動。</p>
+<li><p>安裝並啟動 Docker Desktop。Windows 需準備 WSL2，安裝細節參考本頁官方連結。<br><span class="see">你應該看到</span>Docker Desktop 已啟動。</p>
 </li>
 <li><p>打開終端機，依序執行以下兩行，保留終端機視窗。</p>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-sh">docker volume create n8n_data
 docker run -it --rm --name n8n -p 5678:5678 -e GENERIC_TIMEZONE=Asia/Taipei -e TZ=Asia/Taipei -v n8n_data:/home/node/.n8n docker.n8n.io/n8nio/n8n</code></pre></div>
-<p>你應該看到：建立 <code>n8n_data</code> 後開始輸出 n8n 啟動訊息。</p>
+<p><span class="see">你應該看到</span>建立 <code>n8n_data</code> 後開始輸出 n8n 啟動訊息。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？啟動失敗時先查看 Docker Desktop 的容器日誌，確認 5678 埠是否被占用。</p>
 </blockquote>
 <ol start="3">
-<li>開啟 <code>http://localhost:5678</code>，首次啟動時建立本機擁有者帳號，再回到共同操作跑範例與教材檢查流程。
-你應該看到：n8n 編輯器，教材檢查流程可輸出指定的 <code>text</code>。</li>
+<li>開啟 <code>http://localhost:5678</code>，首次啟動時建立本機擁有者帳號，再回到共同操作跑範例與教材檢查流程。<br><span class="see">你應該看到</span>n8n 編輯器，教材檢查流程可輸出指定的 <code>text</code>。</li>
 </ol>
 <p>關掉終端機視窗會停止 n8n，資料留在 <code>n8n_data</code>。重新開機後要啟動 Docker Desktop，重跑上面的 <code>docker run</code> 指令。</p>
 </div><div class="tab" data-tab="2" role="tabpanel"><h4>分頁：npx 備案</h4>
 <p>此路線已實測，作為短期備案。啟動時會警告「在容器外執行已棄用，未來版本會要求 Docker」。</p>
 <ol>
-<li><p>安裝 Node.js 24 LTS，在 PowerShell 執行 <code>node --version</code> 核對。
-你應該看到：版本以 <code>v24</code> 開頭。</p>
+<li><p>安裝 Node.js 24 LTS，在 PowerShell 執行 <code>node --version</code> 核對。<br><span class="see">你應該看到</span>版本以 <code>v24</code> 開頭。</p>
 </li>
-<li><p>在 PowerShell 設定台灣時區並啟動 n8n，保留終端機視窗。一般啟動命令為 <code>npx n8n</code>，含時區的寫法如下。
-你應該看到：n8n 啟動訊息與容器外執行的棄用警告。</p>
+<li><p>在 PowerShell 設定台灣時區並啟動 n8n，保留終端機視窗。一般啟動命令為 <code>npx n8n</code>，含時區的寫法如下。<br><span class="see">你應該看到</span>n8n 啟動訊息與容器外執行的棄用警告。</p>
 </li>
 </ol>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-powershell">$env:GENERIC_TIMEZONE=&quot;Asia/Taipei&quot;
@@ -192,8 +185,7 @@ npx n8n</code></pre></div>
 <p>卡住了？安裝失敗時先核對 Node.js 是否為 24 LTS，實測 Node 26 會安裝失敗。</p>
 </blockquote>
 <ol start="3">
-<li>開啟 <code>http://localhost:5678</code>，建立本機擁有者帳號，再回到共同操作跑範例與教材檢查流程。
-你應該看到：n8n 編輯器，教材檢查流程可輸出指定的 <code>text</code>。</li>
+<li>開啟 <code>http://localhost:5678</code>，建立本機擁有者帳號，再回到共同操作跑範例與教材檢查流程。<br><span class="see">你應該看到</span>n8n 編輯器，教材檢查流程可輸出指定的 <code>text</code>。</li>
 </ol>
 <p>資料放在作業系統家目錄的 <code>.n8n</code> 資料夾。關閉啟動終端機會停止服務，重新開機後要重跑時區與啟動指令。</p>
 </div></div><h3 id="sec-5">小練習①：採買清單</h3>
@@ -223,21 +215,18 @@ npx n8n</code></pre></div>
 </tr>
 </tbody></table>
 <ol>
-<li><p>匯入 <code>ex1-done.json</code>，打開「買米」確認資料，再執行整條流程。
-你應該看到：「加上數量」輸出 1 筆，<code>line</code> 為 <code>買米 × 1</code>。</p>
+<li><p>匯入 <code>ex1-done.json</code>，打開「買米」確認資料，再執行整條流程。<br><span class="see">你應該看到</span>「加上數量」輸出 1 筆，<code>line</code> 為 <code>買米 × 1</code>。</p>
 </li>
-<li><p>刪掉「買米」的 <code>title</code> 欄位，保留 <code>qty</code>，重新執行並記錄 <code>line</code> 實際變成什麼。
-你應該看到：輸入只剩數量，輸出的清單文字缺少標題。</p>
+<li><p>刪掉「買米」的 <code>title</code> 欄位，保留 <code>qty</code>，重新執行並記錄 <code>line</code> 實際變成什麼。<br><span class="see">你應該看到</span>輸入只剩數量，輸出的清單文字缺少標題。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？仍看到買米時先確認刪的是來源節點的欄位，再執行整條流程查看新結果。</p>
 </blockquote>
 <ol start="3">
-<li>恢復 <code>title</code> 為買米，再執行一次。
-你應該看到：<code>line</code> 恢復 <code>買米 × 1</code>。</li>
+<li>恢復 <code>title</code> 為買米，再執行一次。<br><span class="see">你應該看到</span><code>line</code> 恢復 <code>買米 × 1</code>。</li>
 </ol>
-<details class="wf"><summary>完成版（m0/ex1-done.json）</summary><a href="files/m0/ex1-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 462 76" width="462" height="76" role="img" aria-label="流程圖：手動、買米、加上數量"><defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M122 38 C139 38 139 38 152 38" marker-end="url(#ah2)"/><path class="e" d="M287 38 C304 38 304 38 317 38" marker-end="url(#ah2)"/><g class="n trigger"><rect x="10" y="10" width="112" height="56" rx="12"/><text class="nm" x="66" y="34">手動</text><text class="ty" x="66" y="52">Manual Trigger</text></g><g class="n data"><rect x="156" y="10" width="131" height="56" rx="12"/><text class="nm" x="221.5" y="34">買米</text><text class="ty" x="221.5" y="52">Edit Fields (Set)</text></g><g class="n data"><rect x="321" y="10" width="131" height="56" rx="12"/><text class="nm" x="386.5" y="34">加上數量</text><text class="ty" x="386.5" y="52">Edit Fields (Set)</text></g></svg></div><figcaption>完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>完成版（m0/ex1-done.json）</summary><a href="files/m0/ex1-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M0 小練習① 採買清單&quot;,
   &quot;nodes&quot;: [
     {
@@ -359,17 +348,15 @@ npx n8n</code></pre></div>
 </tr>
 </tbody></table>
 <ol>
-<li><p>匯入 <code>ex2-done.json</code>，執行整條流程並檢查「提醒草稿」。
-你應該看到：輸出 1 筆，<code>draft</code> 為 <code>提醒阿禾：倒垃圾</code>。</p>
+<li><p>匯入 <code>ex2-done.json</code>，執行整條流程並檢查「提醒草稿」。<br><span class="see">你應該看到</span>輸出 1 筆，<code>draft</code> 為 <code>提醒阿禾：倒垃圾</code>。</p>
 </li>
-<li><p>再執行一次，打開 <strong>Executions</strong>，這裡可以查看每次執行紀錄。位置見版本附頁。
-你應該看到：兩次執行各有自己的時間與 1 筆結果。</p>
+<li><p>再執行一次，打開 <strong>Executions</strong>，這裡可以查看每次執行紀錄。位置見版本附頁。<br><span class="see">你應該看到</span>兩次執行各有自己的時間與 1 筆結果。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？分不清兩次結果時先比對執行時間，再逐次打開查看，n8n 會保留兩次執行。</p>
 </blockquote>
-<details class="wf"><summary>完成版（m0/ex2-done.json）</summary><a href="files/m0/ex2-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 462 76" width="462" height="76" role="img" aria-label="流程圖：手動、家事、提醒草稿"><defs><marker id="ah3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M122 38 C139 38 139 38 152 38" marker-end="url(#ah3)"/><path class="e" d="M287 38 C304 38 304 38 317 38" marker-end="url(#ah3)"/><g class="n trigger"><rect x="10" y="10" width="112" height="56" rx="12"/><text class="nm" x="66" y="34">手動</text><text class="ty" x="66" y="52">Manual Trigger</text></g><g class="n data"><rect x="156" y="10" width="131" height="56" rx="12"/><text class="nm" x="221.5" y="34">家事</text><text class="ty" x="221.5" y="52">Edit Fields (Set)</text></g><g class="n data"><rect x="321" y="10" width="131" height="56" rx="12"/><text class="nm" x="386.5" y="34">提醒草稿</text><text class="ty" x="386.5" y="52">Edit Fields (Set)</text></g></svg></div><figcaption>完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>完成版（m0/ex2-done.json）</summary><a href="files/m0/ex2-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M0 小練習② 家庭提醒&quot;,
   &quot;nodes&quot;: [
     {

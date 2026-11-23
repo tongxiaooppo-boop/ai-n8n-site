@@ -63,11 +63,9 @@
 </tr>
 </tbody></table>
 <ol>
-<li><p>照順序 <strong>Publish</strong>：M5 快照子流程 → M6 錯誤流程 → 4 條收集流程（股、匯、警、聞）→ 每日 Excel → 早報。位置見版本附頁。
-你應該看到：Overview 裡這幾個流程都是 Published（位置見版本附頁）。</p>
+<li><p>照順序 <strong>Publish</strong>：M5 快照子流程 → M6 錯誤流程 → 4 條收集流程（股、匯、警、聞）→ 每日 Excel → 早報。位置見版本附頁。<br><span class="see">你應該看到</span>Overview 裡這幾個流程都是 Published（位置見版本附頁）。</p>
 </li>
-<li><p>把 M6 錯誤流程設成其他流程的 Error Workflow：到每條流程的 <strong>Workflow Settings</strong> 選它。位置見版本附頁。
-你應該看到：每條流程的 <strong>Error Workflow</strong> 欄位都選了錯誤流程。</p>
+<li><p>把 M6 錯誤流程設成其他流程的 Error Workflow：到每條流程的 <strong>Workflow Settings</strong> 選它。位置見版本附頁。<br><span class="see">你應該看到</span>每條流程的 <strong>Error Workflow</strong> 欄位都選了錯誤流程。</p>
 </li>
 <li><p>檢查時間：</p>
 <ul>
@@ -75,13 +73,13 @@
 <li>收集流程排在早報前面（M5 的 7:00 與 7:10）。</li>
 <li>那段時間電腦要開著，n8n 要在跑。</li>
 </ul>
-<p>你應該看到：時區是台北；收集流程時間比早報早。</p>
+<p><span class="see">你應該看到</span>時區是台北；收集流程時間比早報早。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？隔天 7:10 沒收到早報，先看 <strong>Executions</strong> 有沒有那一天的紀錄：沒有紀錄，通常是電腦睡著或 n8n 沒開，不是流程壞了。</p>
 </blockquote>
-<details class="wf"><summary>早報完成版（m5/main-report-done.json）</summary><a href="files/m5/main-report-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 748 76" width="748" height="76" role="img" aria-label="流程圖：排程、讀快照、解開CSV、合成一筆、傳到Telegram"><defs><marker id="ah47" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M135 38 C152 38 152 38 165 38" marker-end="url(#ah47)"/><path class="e" d="M294 38 C311 38 311 38 324 38" marker-end="url(#ah47)"/><path class="e" d="M459 38 C476 38 476 38 489 38" marker-end="url(#ah47)"/><path class="e" d="M589 38 C606 38 606 38 619 38" marker-end="url(#ah47)"/><g class="n trigger"><rect x="10" y="10" width="125" height="56" rx="12"/><text class="nm" x="72.5" y="34">排程</text><text class="ty" x="72.5" y="52">Schedule Trigger</text></g><g class="n data"><rect x="169" y="10" width="125" height="56" rx="12"/><text class="nm" x="231.5" y="34">讀快照</text><text class="ty" x="231.5" y="52">Read/Write Files</text></g><g class="n data"><rect x="328" y="10" width="131" height="56" rx="12"/><text class="nm" x="393.5" y="34">解開CSV</text><text class="ty" x="393.5" y="52">Extract from File</text></g><g class="n data"><rect x="493" y="10" width="96" height="56" rx="12"/><text class="nm" x="541" y="34">合成一筆</text><text class="ty" x="541" y="52">Aggregate</text></g><g class="n send"><rect x="623" y="10" width="115" height="56" rx="12"/><text class="nm" x="680.5" y="34">傳到Telegram</text><text class="ty" x="680.5" y="52">Telegram</text></g></svg></div><figcaption>早報完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>早報完成版（m5/main-report-done.json）</summary><a href="files/m5/main-report-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M5 主線 早報&quot;,
   &quot;nodes&quot;: [
     {
@@ -214,27 +212,24 @@
 }</code></pre></div>
 </details><h4>第 1 段之後的一週</h4>
 <p>每天打開 <code>week-log.csv</code> 填一列：早報幾點到、每個來源的資料日期、有沒有 ⚠舊資料、有沒有收到錯誤通知、失敗的是哪個節點、有沒有補跑。補跑的做法：手動執行那一條收集流程，再手動跑早報。</p>
-<p>你應該看到：7 列都填了，失敗也照實寫，不是只寫成功的。週末、假日股價資料日不會變，不算失敗（M4、M5 學過）。</p>
+<p><span class="see">你應該看到</span>7 列都填了，失敗也照實寫，不是只寫成功的。週末、假日股價資料日不會變，不算失敗（M4、M5 學過）。</p>
 <p>電腦睡眠或關機、終端機視窗關掉（M0 的 <code>docker run -it --rm</code> 關視窗就停）時，排程都不會跑。開回來之後會不會補跑錯過的那一次，待查證；Windows 睡眠設定的位置，待查證。</p>
 <h4>第 2 段：備份</h4>
 <p>備份要放四樣：流程、憑證（還是加密的）、加密金鑰、<code>.n8n-files</code> 的資料檔。n8n 開著也能匯出。</p>
 <p>n8n 的資料放在哪：npx 版在 <code>C:\Users\&lt;你&gt;\.n8n</code>（環境變數 <code>N8N_USER_FOLDER</code> 可以改「家」的位置，n8n 會用它底下的 <code>.n8n</code>）；Docker 版在 volume <code>n8n_data</code>（容器裡的 <code>/home/node/.n8n</code>）。裡面有 <code>database.sqlite</code>（流程、憑證、執行紀錄）和 <code>config</code>（<strong>加密金鑰</strong>）。<code>config</code> 的內容長這樣：<code>{&quot;encryptionKey&quot;: &quot;&lt;一串英數字&gt;&quot;}</code>。</p>
 <ol>
-<li>建一個備份資料夾，日期用當天，例如 <code>D:\n8n-backup\2026-01-05\</code>。
-你應該看到：資料夾建好了，是空的。</li>
+<li>建一個備份資料夾，日期用當天，例如 <code>D:\n8n-backup\2026-01-05\</code>。<br><span class="see">你應該看到</span>資料夾建好了，是空的。</li>
 </ol>
 <h4>做法：npx</h4>
 <ol start="2">
 <li><p>在 PowerShell 匯出流程與憑證（一個流程一個檔）：</p>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-powershell">npx n8n export:workflow --backup --output=D:\n8n-backup\2026-01-05\workflows\
 npx n8n export:credentials --backup --output=D:\n8n-backup\2026-01-05\credentials\</code></pre></div>
-<p>你應該看到：「Successfully exported N workflows.」和「Successfully exported N credentials.」（N 是你的數量）。匯出的憑證 <code>&quot;data&quot;</code> 是一串亂碼，因為還是加密的，要配原本的金鑰才有用。</p>
+<p><span class="see">你應該看到</span>「Successfully exported N workflows.」和「Successfully exported N credentials.」（N 是你的數量）。匯出的憑證 <code>&quot;data&quot;</code> 是一串亂碼，因為還是加密的，要配原本的金鑰才有用。</p>
 </li>
-<li><p>打開 <code>C:\Users\&lt;你&gt;\.n8n\config</code>，把裡面的金鑰抄下來，存成另一個檔（例如 <code>key.txt</code>）放在同一個備份資料夾。
-你應該看到：備份資料夾裡有 <code>key.txt</code>。這個檔和憑證放在一起就等於整串鑰匙，照上面的安全提醒處理。</p>
+<li><p>打開 <code>C:\Users\&lt;你&gt;\.n8n\config</code>，把裡面的金鑰抄下來，存成另一個檔（例如 <code>key.txt</code>）放在同一個備份資料夾。<br><span class="see">你應該看到</span>備份資料夾裡有 <code>key.txt</code>。這個檔和憑證放在一起就等於整串鑰匙，照上面的安全提醒處理。</p>
 </li>
-<li><p>複製整個 <code>C:\Users\&lt;你&gt;\.n8n-files</code> 到備份資料夾。
-你應該看到：備份資料夾裡有 <code>workflows</code>、<code>credentials</code> 兩個資料夾，加上金鑰檔和 <code>.n8n-files</code> 的副本。</p>
+<li><p>複製整個 <code>C:\Users\&lt;你&gt;\.n8n-files</code> 到備份資料夾。<br><span class="see">你應該看到</span>備份資料夾裡有 <code>workflows</code>、<code>credentials</code> 兩個資料夾，加上金鑰檔和 <code>.n8n-files</code> 的副本。</p>
 </li>
 </ol>
 <h4>做法：Docker</h4>
@@ -243,14 +238,13 @@ npx n8n export:credentials --backup --output=D:\n8n-backup\2026-01-05\credential
 <li><p>用 <code>docker exec</code> 匯出，寫進掛載的 <code>.n8n-files</code>（M5），這樣 Windows 看得到：</p>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-sh">docker exec n8n n8n export:workflow --backup --output=/home/node/.n8n-files/backup/workflows/
 docker exec n8n n8n export:credentials --backup --output=/home/node/.n8n-files/backup/credentials/</code></pre></div>
-<p>你應該看到：（待查證）成功訊息；Windows 的 <code>.n8n-files\backup</code> 底下有兩個資料夾。</p>
+<p><span class="see">你應該看到</span>（待查證）成功訊息；Windows 的 <code>.n8n-files\backup</code> 底下有兩個資料夾。</p>
 </li>
 <li><p>用下面指令看金鑰，抄下來存成 <code>key.txt</code>：</p>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-sh">docker exec n8n cat /home/node/.n8n/config</code></pre></div>
-<p>你應該看到：（待查證）一段含 <code>encryptionKey</code> 的內容。</p>
+<p><span class="see">你應該看到</span>（待查證）一段含 <code>encryptionKey</code> 的內容。</p>
 </li>
-<li><p>把 <code>.n8n-files\backup</code> 搬到備份資料夾，再複製整個 <code>.n8n-files</code>。
-你應該看到：備份資料夾裡有 <code>workflows</code>、<code>credentials</code>、金鑰檔和 <code>.n8n-files</code> 的副本。</p>
+<li><p>把 <code>.n8n-files\backup</code> 搬到備份資料夾，再複製整個 <code>.n8n-files</code>。<br><span class="see">你應該看到</span>備份資料夾裡有 <code>workflows</code>、<code>credentials</code>、金鑰檔和 <code>.n8n-files</code> 的副本。</p>
 </li>
 </ol>
 <blockquote>
@@ -263,26 +257,25 @@ docker exec n8n n8n export:credentials --backup --output=/home/node/.n8n-files/b
 <li><p>開一個<strong>新的</strong> PowerShell 視窗，設環境變數：</p>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-powershell">$env:N8N_USER_FOLDER=&quot;C:\n8n-restore&quot;
 $env:N8N_ENCRYPTION_KEY=&quot;&lt;備份裡的金鑰&gt;&quot;</code></pre></div>
-<p>你應該看到：沒有訊息。這個視窗之後的 n8n 都用 <code>C:\n8n-restore</code> 當家，並使用備份裡的金鑰。</p>
+<p><span class="see">你應該看到</span>沒有訊息。這個視窗之後的 n8n 都用 <code>C:\n8n-restore</code> 當家，並使用備份裡的金鑰。</p>
 </li>
 <li><p>匯入流程與憑證：</p>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-powershell">npx n8n import:workflow --separate --input=D:\n8n-backup\2026-01-05\workflows\
 npx n8n import:credentials --separate --input=D:\n8n-backup\2026-01-05\credentials\</code></pre></div>
-<p>你應該看到：匯入成功的訊息。匯入的流程一律變成「沒有 Publish」（<code>import:workflow</code> 會自動取消 Publish），所以副本不會自己跑排程。</p>
+<p><span class="see">你應該看到</span>匯入成功的訊息。匯入的流程一律變成「沒有 Publish」（<code>import:workflow</code> 會自動取消 Publish），所以副本不會自己跑排程。</p>
 </li>
 <li><p>換埠，讓副本和正式版可以同時開：</p>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-powershell">$env:N8N_PORT=&quot;5688&quot;
 $env:N8N_RUNNERS_BROKER_PORT=&quot;5689&quot;
 npx n8n start</code></pre></div>
-<p>你應該看到：n8n 啟動。</p>
+<p><span class="see">你應該看到</span>n8n 啟動。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？「n8n Task Broker&#39;s port 5679 is already in use. Do you have another instance of n8n running already?」：沒設 <code>N8N_RUNNERS_BROKER_PORT</code>，5679 被正式版占走了。兩個埠都改好，5678 和 5688 就能同時開。</p>
 </blockquote>
 <ol start="4">
-<li>打開 <code>http://localhost:5688</code>。第一次開會要求建立擁有者帳號（畫面待查證）。
-你應該看到：流程和憑證都在。</li>
+<li>打開 <code>http://localhost:5688</code>。第一次開會要求建立擁有者帳號（畫面待查證）。<br><span class="see">你應該看到</span>流程和憑證都在。</li>
 </ol>
 <h4>做法：Docker</h4>
 <p>Docker 版本機沒有實測，以下全部待查證。</p>
@@ -290,27 +283,25 @@ npx n8n start</code></pre></div>
 <li><p>建新的 volume、用新的容器名稱，埠換成 5688，並帶入金鑰：</p>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-sh">docker volume create n8n_restore
 docker run -it --rm --name n8n-restore -p 5688:5678 -e GENERIC_TIMEZONE=Asia/Taipei -e TZ=Asia/Taipei -e N8N_ENCRYPTION_KEY=&lt;備份裡的金鑰&gt; -v n8n_restore:/home/node/.n8n -v &quot;D:\n8n-backup\&lt;日期&gt;:/backup:ro&quot; docker.n8n.io/n8nio/n8n</code></pre></div>
-<p>你應該看到：（待查證）副本啟動。</p>
+<p><span class="see">你應該看到</span>（待查證）副本啟動。</p>
 </li>
 <li><p>另開一個終端機，用 <code>docker exec</code> 匯入備份（上一步的 <code>-v ...:/backup:ro</code> 把備份資料夾唯讀掛進容器的 <code>/backup</code>）：</p>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-sh">docker exec n8n-restore n8n import:workflow --separate --input=/backup/workflows/
 docker exec n8n-restore n8n import:credentials --separate --input=/backup/credentials/</code></pre></div>
-<p>你應該看到：（待查證）匯入成功；打開 <code>http://localhost:5688</code>，流程和憑證都在。</p>
+<p><span class="see">你應該看到</span>（待查證）匯入成功；打開 <code>http://localhost:5688</code>，流程和憑證都在。</p>
 </li>
 </ol>
 <h4>四種情境</h4>
 <p>副本跟正式版讀的是同一個 <code>.n8n-files</code>（npx 版的允許區預設是作業系統家目錄底下的 <code>.n8n-files</code>，跟 n8n 資料放在哪無關）。所以在副本裡只准跑「讀」的流程，不要跑會寫快照、寫 Excel 的流程；要測通知，先把 Telegram 的 chat ID 換成測試用的對象。</p>
 <ul>
-<li><p><strong>N（正常）：帶金鑰匯入。</strong> 到副本手動跑小練習①（只讀檔）。
-你應該看到：所有憑證都解得開；小練習①讀到 2 筆。</p>
+<li><p><strong>N（正常）：帶金鑰匯入。</strong> 到副本手動跑小練習①（只讀檔）。<br><span class="see">你應該看到</span>所有憑證都解得開；小練習①讀到 2 筆。</p>
 </li>
 <li><p><strong>M（缺資料）：故意不設金鑰匯入。</strong> 另開一個<strong>新的</strong> PowerShell 視窗（才不會沿用 N 設好的金鑰），用另一個資料夾，再匯入：</p>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-powershell">$env:N8N_USER_FOLDER=&quot;C:\n8n-restore-nokey&quot;
 Remove-Item Env:N8N_ENCRYPTION_KEY -ErrorAction SilentlyContinue
 npx n8n import:workflow --separate --input=&lt;備份資料夾&gt;\workflows\
 npx n8n import:credentials --separate --input=&lt;備份資料夾&gt;\credentials\</code></pre></div>
-<p>匯入都會顯示成功，但 n8n 會自己產生一把<strong>新的</strong>金鑰。照第 3 步換埠開起來，打開任何一個憑證，或手動跑一個用到憑證的流程（先把 Telegram 的 chat ID 換成測試對象，不要跑會寫檔的流程）。
-你應該看到：用到憑證時失敗，訊息是「Credentials could not be decrypted. The likely reason is that a different &quot;encryptionKey&quot; was used to encrypt the data.」結論：這份備份不完整，<strong>不准切換</strong>。</p>
+<p>匯入都會顯示成功，但 n8n 會自己產生一把<strong>新的</strong>金鑰。照第 3 步換埠開起來，打開任何一個憑證，或手動跑一個用到憑證的流程（先把 Telegram 的 chat ID 換成測試對象，不要跑會寫檔的流程）。<br><span class="see">你應該看到</span>用到憑證時失敗，訊息是「Credentials could not be decrypted. The likely reason is that a different &quot;encryptionKey&quot; was used to encrypt the data.」結論：這份備份不完整，<strong>不准切換</strong>。</p>
 </li>
 <li><p><strong>D（重複）：複製整個 <code>.n8n</code> 資料夾還原。</strong> 照這個順序做，<strong>一步都不能跳</strong>：</p>
 <ol>
@@ -326,10 +317,9 @@ npx n8n unpublish:workflow --all</code></pre></div>
 <ol start="4">
 <li>照第 3 步換埠，才開副本；正式版可以重新打開。</li>
 </ol>
-<p>你應該看到：「All workflows unpublished successfully」，之後副本裡 Publish 的流程是 0 個。原因：整包複製的副本，原本 Publish 的流程還是 Publish；沒先取消的話，副本一開，正式版和副本的排程會同時跑，Telegram 收到兩份早報。如果真的收到兩份：馬上關掉副本，到副本把流程取消 Publish。</p>
+<p><span class="see">你應該看到</span>「All workflows unpublished successfully」，之後副本裡 Publish 的流程是 0 個。原因：整包複製的副本，原本 Publish 的流程還是 Publish；沒先取消的話，副本一開，正式版和副本的排程會同時跑，Telegram 收到兩份早報。如果真的收到兩份：馬上關掉副本，到副本把流程取消 Publish。</p>
 </li>
-<li><p><strong>E（故障）：用壞掉的資料庫開不起來。</strong> 資料庫檔壞掉時，n8n 會重試 5 次。
-你應該看到：「SQLITE_CORRUPT: database disk image is malformed」，最後「There was an error initializing DB」，開不起來。處理：停止切換、正式版照常跑，<strong>不要拿壞的備份覆蓋正式資料</strong>，改用前一份備份再試。</p>
+<li><p><strong>E（故障）：用壞掉的資料庫開不起來。</strong> 資料庫檔壞掉時，n8n 會重試 5 次。<br><span class="see">你應該看到</span>「SQLITE_CORRUPT: database disk image is malformed」，最後「There was an error initializing DB」，開不起來。處理：停止切換、正式版照常跑，<strong>不要拿壞的備份覆蓋正式資料</strong>，改用前一份備份再試。</p>
 </li>
 </ul>
 <p>確認副本能用之後，<strong>再決定</strong>要不要切換；這門課的練習做到「確認能用」就結束，關掉副本即可。</p>
@@ -363,20 +353,17 @@ npx n8n unpublish:workflow --all</code></pre></div>
 </tr>
 </tbody></table>
 <ol>
-<li><p>把 <code>data-ledger.csv</code> 放到 <code>.n8n-files\m9\</code>，再複製一份到備份資料夾。
-你應該看到：兩個位置都有這個檔。</p>
+<li><p>把 <code>data-ledger.csv</code> 放到 <code>.n8n-files\m9\</code>，再複製一份到備份資料夾。<br><span class="see">你應該看到</span>兩個位置都有這個檔。</p>
 </li>
-<li><p>刪掉 <code>.n8n-files\m9\</code> 裡的原檔（假裝不見了），再從備份複製回來。
-你應該看到：<code>.n8n-files\m9\data-ledger.csv</code> 又出現了。</p>
+<li><p>刪掉 <code>.n8n-files\m9\</code> 裡的原檔（假裝不見了），再從備份複製回來。<br><span class="see">你應該看到</span><code>.n8n-files\m9\data-ledger.csv</code> 又出現了。</p>
 </li>
-<li><p>匯入 <code>ex1-done.json</code>，按 <strong>Execute workflow</strong>。位置見版本附頁。
-你應該看到：「解開CSV」2 筆，第一筆 <code>item: 早餐</code>、<code>amount: &quot;65&quot;</code>（字串，不是數字 65）；第一筆沒有 <code>note</code> 欄位（空格子讀回來是「沒有這個欄位」）。要比對列數與欄位，不是只看有沒有綠燈。</p>
+<li><p>匯入 <code>ex1-done.json</code>，按 <strong>Execute workflow</strong>。位置見版本附頁。<br><span class="see">你應該看到</span>「解開CSV」2 筆，第一筆 <code>item: 早餐</code>、<code>amount: &quot;65&quot;</code>（字串，不是數字 65）；第一筆沒有 <code>note</code> 欄位（空格子讀回來是「沒有這個欄位」）。要比對列數與欄位，不是只看有沒有綠燈。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？「Access to the file is not allowed.」：路徑不在 <code>.n8n-files</code> 裡，或 npx 版沒有換掉素材裡的 Docker 路徑（M5）。</p>
 </blockquote>
-<details class="wf"><summary>完成版（m9/ex1-done.json）</summary><a href="files/m9/ex1-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 456 76" width="456" height="76" role="img" aria-label="流程圖：手動執行、讀還原的記帳檔、解開CSV"><defs><marker id="ah48" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M122 38 C139 38 139 38 152 38" marker-end="url(#ah48)"/><path class="e" d="M281 38 C298 38 298 38 311 38" marker-end="url(#ah48)"/><g class="n trigger"><rect x="10" y="10" width="112" height="56" rx="12"/><text class="nm" x="66" y="34">手動執行</text><text class="ty" x="66" y="52">Manual Trigger</text></g><g class="n data"><rect x="156" y="10" width="125" height="56" rx="12"/><text class="nm" x="218.5" y="34">讀還原的記帳檔</text><text class="ty" x="218.5" y="52">Read/Write Files</text></g><g class="n data"><rect x="315" y="10" width="131" height="56" rx="12"/><text class="nm" x="380.5" y="34">解開CSV</text><text class="ty" x="380.5" y="52">Extract from File</text></g></svg></div><figcaption>完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>完成版（m9/ex1-done.json）</summary><a href="files/m9/ex1-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M9 小練習① 家用記帳還原&quot;,
   &quot;nodes&quot;: [
     {
@@ -474,20 +461,17 @@ npx n8n unpublish:workflow --all</code></pre></div>
 </tr>
 </tbody></table>
 <ol>
-<li><p>把 <code>data-upgrade-test.csv</code> 放到 <code>.n8n-files\m9\</code>，匯入 <code>ex2-done.json</code>，在<strong>正式版</strong>跑一次，把結果記下來（或從 <strong>Executions</strong> 複製）。
-你應該看到：「解開CSV」2 筆；<code>code</code> 是 <code>&quot;0050&quot;</code>（開頭的 0 還在）；第一筆 <code>note</code> 是 <code>盤後,不是即時</code>；第二筆 <code>price</code> 是 <code>&quot;100&quot;</code>，沒有 <code>note</code>。</p>
+<li><p>把 <code>data-upgrade-test.csv</code> 放到 <code>.n8n-files\m9\</code>，匯入 <code>ex2-done.json</code>，在<strong>正式版</strong>跑一次，把結果記下來（或從 <strong>Executions</strong> 複製）。<br><span class="see">你應該看到</span>「解開CSV」2 筆；<code>code</code> 是 <code>&quot;0050&quot;</code>（開頭的 0 還在）；第一筆 <code>note</code> 是 <code>盤後,不是即時</code>；第二筆 <code>price</code> 是 <code>&quot;100&quot;</code>，沒有 <code>note</code>。</p>
 </li>
-<li><p>先備份（第 2 段）。回到第 3 段開副本的那個 PowerShell 視窗（環境變數還在），先按 <code>Ctrl+C</code> 停掉舊版副本，確認它停了，再用新版開副本：<code>npx n8n@&lt;新版本&gt; start</code>。正式版不要停，也不要在正式版的視窗做這一步。版本號查 n8n 官方 Changelog。Docker 版：<code>docker pull docker.n8n.io/n8nio/n8n:&lt;版本&gt;</code>，再用同一個 volume 重新 <code>docker run</code>（官方 Update n8n 頁；Docker 實際效果待查證）。
-你應該看到：新版 n8n 在副本的埠開起來，流程和憑證都在。</p>
+<li><p>先備份（第 2 段）。回到第 3 段開副本的那個 PowerShell 視窗（環境變數還在），先按 <code>Ctrl+C</code> 停掉舊版副本，確認它停了，再用新版開副本：<code>npx n8n@&lt;新版本&gt; start</code>。正式版不要停，也不要在正式版的視窗做這一步。版本號查 n8n 官方 Changelog。Docker 版：<code>docker pull docker.n8n.io/n8nio/n8n:&lt;版本&gt;</code>，再用同一個 volume 重新 <code>docker run</code>（官方 Update n8n 頁；Docker 實際效果待查證）。<br><span class="see">你應該看到</span>新版 n8n 在副本的埠開起來，流程和憑證都在。</p>
 </li>
-<li><p>在副本匯入同一個 <code>ex2-done.json</code>，再跑一次，和第 1 步的結果比對。
-你應該看到：兩邊都是 2 筆，<code>code</code> 都是 <code>&quot;0050&quot;</code>，<code>note</code> 與 <code>price</code> 都一樣。一樣才升級正式版；不一樣就先不升，查 Changelog。</p>
+<li><p>在副本匯入同一個 <code>ex2-done.json</code>，再跑一次，和第 1 步的結果比對。<br><span class="see">你應該看到</span>兩邊都是 2 筆，<code>code</code> 都是 <code>&quot;0050&quot;</code>，<code>note</code> 與 <code>price</code> 都一樣。一樣才升級正式版；不一樣就先不升，查 Changelog。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？新版開不起來：換回舊版本號，並用升級前的備份還原，不要只換版本號。大版本升級可能會改資料庫結構，改了就回不去，所以「先備份」是規則，不是建議。</p>
 </blockquote>
-<details class="wf"><summary>完成版（m9/ex2-done.json）</summary><a href="files/m9/ex2-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 456 76" width="456" height="76" role="img" aria-label="流程圖：手動執行、讀測試檔、解開CSV"><defs><marker id="ah49" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M122 38 C139 38 139 38 152 38" marker-end="url(#ah49)"/><path class="e" d="M281 38 C298 38 298 38 311 38" marker-end="url(#ah49)"/><g class="n trigger"><rect x="10" y="10" width="112" height="56" rx="12"/><text class="nm" x="66" y="34">手動執行</text><text class="ty" x="66" y="52">Manual Trigger</text></g><g class="n data"><rect x="156" y="10" width="125" height="56" rx="12"/><text class="nm" x="218.5" y="34">讀測試檔</text><text class="ty" x="218.5" y="52">Read/Write Files</text></g><g class="n data"><rect x="315" y="10" width="131" height="56" rx="12"/><text class="nm" x="380.5" y="34">解開CSV</text><text class="ty" x="380.5" y="52">Extract from File</text></g></svg></div><figcaption>完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>完成版（m9/ex2-done.json）</summary><a href="files/m9/ex2-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M9 小練習② 升級前後試跑&quot;,
   &quot;nodes&quot;: [
     {

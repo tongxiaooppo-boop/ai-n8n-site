@@ -27,15 +27,13 @@
 <p>先做準備，再依序完成五小段：快照寫入子流程、改「匯」、匯入股警聞、每日 Excel、早報。</p>
 <h4>準備：資料夾與 Telegram</h4>
 <ol>
-<li><p>建資料夾：在 <code>C:\Users\&lt;你&gt;\.n8n-files</code> 底下建 <code>snap</code>、<code>daily</code> 兩個資料夾。實測：Windows 上 n8n <strong>不會自動建子資料夾</strong>，沒建會報「The file or directory does not exist」。
-你應該看到：<code>.n8n-files</code> 底下有 <code>snap</code>、<code>daily</code> 兩個空資料夾。</p>
+<li><p>建資料夾：在 <code>C:\Users\&lt;你&gt;\.n8n-files</code> 底下建 <code>snap</code>、<code>daily</code> 兩個資料夾。實測：Windows 上 n8n <strong>不會自動建子資料夾</strong>，沒建會報「The file or directory does not exist」。<br><span class="see">你應該看到</span><code>.n8n-files</code> 底下有 <code>snap</code>、<code>daily</code> 兩個空資料夾。</p>
 </li>
 <li><p>用 Docker 的人，要讓容器看得到這個資料夾：關掉 n8n，把 M0 的 <code>docker run</code> 指令加上一段 <code>-v</code>（PowerShell 寫法）後重新啟動。不掛載的話，檔案會寫在容器裡，Windows 資料夾看不到。</p>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-sh">docker run -it --rm --name n8n -p 5678:5678 -e GENERIC_TIMEZONE=Asia/Taipei -e TZ=Asia/Taipei -v n8n_data:/home/node/.n8n -v &quot;$env:USERPROFILE\.n8n-files:/home/node/.n8n-files&quot; docker.n8n.io/n8nio/n8n</code></pre></div>
-<p>你應該看到：n8n 正常啟動，之後寫出的檔案會出現在 Windows 的 <code>.n8n-files\snap</code>。本機沒有 Docker，掛載的實際效果與容器是否自動建資料夾（待查證）。</p>
+<p><span class="see">你應該看到</span>n8n 正常啟動，之後寫出的檔案會出現在 Windows 的 <code>.n8n-files\snap</code>。本機沒有 Docker，掛載的實際效果與容器是否自動建資料夾（待查證）。</p>
 </li>
-<li><p>用 npx 的人：素材裡的路徑是 Docker 的 <code>/home/node/.n8n-files/...</code>，要換成 <code>C:/Users/&lt;你&gt;/.n8n-files/...</code>。要改的節點：子流程「寫檔」、每日 Excel 的「讀快照」「寫檔」、早報「讀快照」、Google 分頁「讀快照」。
-你應該看到：這五個節點的路徑都以你自己的 <code>C:/Users/&lt;你&gt;/.n8n-files/</code> 開頭。</p>
+<li><p>用 npx 的人：素材裡的路徑是 Docker 的 <code>/home/node/.n8n-files/...</code>，要換成 <code>C:/Users/&lt;你&gt;/.n8n-files/...</code>。要改的節點：子流程「寫檔」、每日 Excel 的「讀快照」「寫檔」、早報「讀快照」、Google 分頁「讀快照」。<br><span class="see">你應該看到</span>這五個節點的路徑都以你自己的 <code>C:/Users/&lt;你&gt;/.n8n-files/</code> 開頭。</p>
 </li>
 </ol>
 <blockquote>
@@ -47,8 +45,7 @@
 <li>找官方的 <strong>@BotFather</strong>，傳 <code>/newbot</code>，照提示取名，拿到 <strong>Bot token</strong>。</li>
 <li>在 Telegram 找到自己的 Bot，按 <strong>Start</strong>。沒先開對話，Bot 不能傳訊息給你。</li>
 <li>取得自己的 <strong>chat ID</strong>：瀏覽器開 <code>https://api.telegram.org/bot&lt;你的 Bot Token&gt;/getUpdates</code>，在回應裡找 <code>&quot;chat&quot;:{&quot;id&quot;:數字</code>。這個網址含 token，看完關掉，不要分享。</li>
-<li>在 n8n 新增 <strong>Telegram API</strong> 憑證，貼上 token，位置見版本附頁。
-你應該看到：n8n 的憑證清單多了一把 Telegram 憑證，你手上有一個 chat ID（數字）。App 畫面與 getUpdates 回空的原因（待查證）。</li>
+<li>在 n8n 新增 <strong>Telegram API</strong> 憑證，貼上 token，位置見版本附頁。<br><span class="see">你應該看到</span>n8n 的憑證清單多了一把 Telegram 憑證，你手上有一個 chat ID（數字）。App 畫面與 getUpdates 回空的原因（待查證）。</li>
 </ul>
 </li>
 </ol>
@@ -83,19 +80,17 @@
 </tbody></table>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">/home/node/.n8n-files/snap/{{ $(&#39;子流程入口&#39;).first().json.kind }}.csv</code></pre></div>
 <ol>
-<li><p>匯入 <code>sub-snapshot-done.json</code>，確認三個節點與上表一致。
-你應該看到：3 個節點依序連線；npx 使用者已換成自己的路徑。</p>
+<li><p>匯入 <code>sub-snapshot-done.json</code>，確認三個節點與上表一致。<br><span class="see">你應該看到</span>3 個節點依序連線；npx 使用者已換成自己的路徑。</p>
 </li>
 <li><p>看懂檔名那一行：為什麼不寫 <code>$json.kind</code>？實測：資料<strong>轉成檔案之後，原本的欄位就不在 <code>$json</code> 裡了</strong>，寫 <code>$json.kind</code> 會得到一個沒有名字的 <code>.csv</code>。所以要「回頭拿前面節點的資料」：<code>$(&#39;子流程入口&#39;).first().json.kind</code> 是去「子流程入口」拿第一筆的 <code>kind</code>。</p>
 </li>
-<li><p>按 <strong>Publish</strong>，不用按執行，它要等別人呼叫。Publish 後要等幾秒才生效。
-你應該看到：流程列表裡它顯示已發布，位置見版本附頁。</p>
+<li><p>按 <strong>Publish</strong>，不用按執行，它要等別人呼叫。Publish 後要等幾秒才生效。<br><span class="see">你應該看到</span>流程列表裡它顯示已發布，位置見版本附頁。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？之後呼叫時報「Workflow is not active and cannot be executed.」，先確認有 <strong>Publish</strong>，剛發布就等幾秒再跑。</p>
 </blockquote>
-<details class="wf"><summary>快照寫入子流程（m5/sub-snapshot-done.json）</summary><a href="files/m5/sub-snapshot-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 507 76" width="507" height="76" role="img" aria-label="流程圖：子流程入口、轉成CSV、寫檔"><defs><marker id="ah23" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M186 38 C203 38 203 38 216 38" marker-end="url(#ah23)"/><path class="e" d="M338 38 C355 38 355 38 368 38" marker-end="url(#ah23)"/><g class="n trigger"><rect x="10" y="10" width="176" height="56" rx="12"/><text class="nm" x="98" y="34">子流程入口</text><text class="ty" x="98" y="52">Execute Workflow Trigger</text></g><g class="n data"><rect x="220" y="10" width="118" height="56" rx="12"/><text class="nm" x="279" y="34">轉成CSV</text><text class="ty" x="279" y="52">Convert to File</text></g><g class="n data"><rect x="372" y="10" width="125" height="56" rx="12"/><text class="nm" x="434.5" y="34">寫檔</text><text class="ty" x="434.5" y="52">Read/Write Files</text></g></svg></div><figcaption>快照寫入子流程的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>快照寫入子流程（m5/sub-snapshot-done.json）</summary><a href="files/m5/sub-snapshot-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M5 快照寫入&quot;,
   &quot;nodes&quot;: [
     {
@@ -277,13 +272,12 @@
 </tbody></table>
 <p>缺資料時 <code>value</code> 是 <code>null</code>、<code>status</code> 是 <code>missing</code>，<strong>不寫 0</strong>（沿用 M2–M4）。</p>
 <ol>
-<li>把「整理」改成上面六個欄位，後面接「存快照」，在「存快照」選「M5 快照寫入」。執行整條流程。
-你應該看到：「存快照」1 筆，<code>fileName</code> 結尾是 <code>/snap/fx.csv</code>；用記事本打開 <code>snap\fx.csv</code>：第一行是欄名，第二行是美元那一筆。</li>
+<li>把「整理」改成上面六個欄位，後面接「存快照」，在「存快照」選「M5 快照寫入」。執行整條流程。<br><span class="see">你應該看到</span>「存快照」1 筆，<code>fileName</code> 結尾是 <code>/snap/fx.csv</code>；用記事本打開 <code>snap\fx.csv</code>：第一行是欄名，第二行是美元那一筆。</li>
 </ol>
 <blockquote>
 <p>卡住了？「存快照」沒有子流程可選，或執行報找不到流程：先確認快照寫入子流程已 <strong>Publish</strong>，再回「存快照」重新選一次。</p>
 </blockquote>
-<details class="wf"><summary>「匯」完成版（m5/main-fx-done.json）</summary><a href="files/m5/main-fx-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 757 76" width="757" height="76" role="img" aria-label="流程圖：排程、抓匯率、最新一筆、整理、存快照"><defs><marker id="ah24" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M135 38 C152 38 152 38 165 38" marker-end="url(#ah24)"/><path class="e" d="M268 38 C285 38 285 38 298 38" marker-end="url(#ah24)"/><path class="e" d="M398 38 C415 38 415 38 428 38" marker-end="url(#ah24)"/><path class="e" d="M563 38 C580 38 580 38 593 38" marker-end="url(#ah24)"/><g class="n trigger"><rect x="10" y="10" width="125" height="56" rx="12"/><text class="nm" x="72.5" y="34">排程</text><text class="ty" x="72.5" y="52">Schedule Trigger</text></g><g class="n data"><rect x="169" y="10" width="99" height="56" rx="12"/><text class="nm" x="218.5" y="34">抓匯率</text><text class="ty" x="218.5" y="52">HTTP Request</text></g><g class="n logic"><rect x="302" y="10" width="96" height="56" rx="12"/><text class="nm" x="350" y="34">最新一筆</text><text class="ty" x="350" y="52">Limit</text></g><g class="n data"><rect x="432" y="10" width="131" height="56" rx="12"/><text class="nm" x="497.5" y="34">整理</text><text class="ty" x="497.5" y="52">Edit Fields (Set)</text></g><g class="n send"><rect x="597" y="10" width="150" height="56" rx="12"/><text class="nm" x="672" y="34">存快照</text><text class="ty" x="672" y="52">Execute Sub-workflow</text></g></svg></div><figcaption>「匯」完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>「匯」完成版（m5/main-fx-done.json）</summary><a href="files/m5/main-fx-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M5 主線 匯&quot;,
   &quot;nodes&quot;: [
     {
@@ -501,17 +495,15 @@
 <li>「警」的「抓警特報」保留 M4 的 <strong>Always Output Data</strong>，沒有警特報也要有一行狀態。</li>
 </ul>
 <ol>
-<li><p>匯入 <code>main-stock-done.json</code>、<code>main-warn-done.json</code>、<code>main-news-done.json</code>，各自在「存快照」選「M5 快照寫入」。
-你應該看到：三條流程的「存快照」都沒有紅色警示。</p>
+<li><p>匯入 <code>main-stock-done.json</code>、<code>main-warn-done.json</code>、<code>main-news-done.json</code>，各自在「存快照」選「M5 快照寫入」。<br><span class="see">你應該看到</span>三條流程的「存快照」都沒有紅色警示。</p>
 </li>
-<li><p>三條各執行一次。
-你應該看到：<code>snap</code> 資料夾裡有 <code>fx.csv</code>、<code>news.csv</code>、<code>stock.csv</code>、<code>warn.csv</code> 四個檔；股的「整理」2 筆、聞的「整理」3 筆、警至少 1 筆（沒有警特報時是「目前沒有警特報」）。</p>
+<li><p>三條各執行一次。<br><span class="see">你應該看到</span><code>snap</code> 資料夾裡有 <code>fx.csv</code>、<code>news.csv</code>、<code>stock.csv</code>、<code>warn.csv</code> 四個檔；股的「整理」2 筆、聞的「整理」3 筆、警至少 1 筆（沒有警特報時是「目前沒有警特報」）。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？<code>snap</code> 裡出現一個叫 <code>.csv</code> 的檔，是子流程「寫檔」路徑用了 <code>$json.kind</code>，改回第 1 段的寫法。</p>
 </blockquote>
-<details class="wf"><summary>「股」完成版（m5/main-stock-done.json）</summary><a href="files/m5/main-stock-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 757 76" width="757" height="76" role="img" aria-label="流程圖：排程、抓股價、挑自選股、整理、存快照"><defs><marker id="ah25" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M135 38 C152 38 152 38 165 38" marker-end="url(#ah25)"/><path class="e" d="M268 38 C285 38 285 38 298 38" marker-end="url(#ah25)"/><path class="e" d="M398 38 C415 38 415 38 428 38" marker-end="url(#ah25)"/><path class="e" d="M563 38 C580 38 580 38 593 38" marker-end="url(#ah25)"/><g class="n trigger"><rect x="10" y="10" width="125" height="56" rx="12"/><text class="nm" x="72.5" y="34">排程</text><text class="ty" x="72.5" y="52">Schedule Trigger</text></g><g class="n data"><rect x="169" y="10" width="99" height="56" rx="12"/><text class="nm" x="218.5" y="34">抓股價</text><text class="ty" x="218.5" y="52">HTTP Request</text></g><g class="n logic"><rect x="302" y="10" width="96" height="56" rx="12"/><text class="nm" x="350" y="34">挑自選股</text><text class="ty" x="350" y="52">Filter</text></g><g class="n data"><rect x="432" y="10" width="131" height="56" rx="12"/><text class="nm" x="497.5" y="34">整理</text><text class="ty" x="497.5" y="52">Edit Fields (Set)</text></g><g class="n send"><rect x="597" y="10" width="150" height="56" rx="12"/><text class="nm" x="672" y="34">存快照</text><text class="ty" x="672" y="52">Execute Sub-workflow</text></g></svg></div><figcaption>「股」完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>「股」完成版（m5/main-stock-done.json）</summary><a href="files/m5/main-stock-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M5 主線 股&quot;,
   &quot;nodes&quot;: [
     {
@@ -699,7 +691,7 @@
     &quot;executionOrder&quot;: &quot;v1&quot;
   }
 }</code></pre></div>
-</details><details class="wf"><summary>「警」完成版（m5/main-warn-done.json）</summary><a href="files/m5/main-warn-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+</details><figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 624 76" width="624" height="76" role="img" aria-label="流程圖：排程、抓警特報、整理、存快照"><defs><marker id="ah26" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M135 38 C152 38 152 38 165 38" marker-end="url(#ah26)"/><path class="e" d="M265 38 C282 38 282 38 295 38" marker-end="url(#ah26)"/><path class="e" d="M430 38 C447 38 447 38 460 38" marker-end="url(#ah26)"/><g class="n trigger"><rect x="10" y="10" width="125" height="56" rx="12"/><text class="nm" x="72.5" y="34">排程</text><text class="ty" x="72.5" y="52">Schedule Trigger</text></g><g class="n data"><rect x="169" y="10" width="96" height="56" rx="12"/><text class="nm" x="217" y="34">抓警特報</text><text class="ty" x="217" y="52">RSS Read</text></g><g class="n data"><rect x="299" y="10" width="131" height="56" rx="12"/><text class="nm" x="364.5" y="34">整理</text><text class="ty" x="364.5" y="52">Edit Fields (Set)</text></g><g class="n send"><rect x="464" y="10" width="150" height="56" rx="12"/><text class="nm" x="539" y="34">存快照</text><text class="ty" x="539" y="52">Execute Sub-workflow</text></g></svg></div><figcaption>「警」完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>「警」完成版（m5/main-warn-done.json）</summary><a href="files/m5/main-warn-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M5 主線 警&quot;,
   &quot;nodes&quot;: [
     {
@@ -844,7 +836,7 @@
     &quot;executionOrder&quot;: &quot;v1&quot;
   }
 }</code></pre></div>
-</details><details class="wf"><summary>「聞」完成版（m5/main-news-done.json）</summary><a href="files/m5/main-news-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+</details><figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 754 76" width="754" height="76" role="img" aria-label="流程圖：排程、抓新聞、取前3則、整理、存快照"><defs><marker id="ah27" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M135 38 C152 38 152 38 165 38" marker-end="url(#ah27)"/><path class="e" d="M265 38 C282 38 282 38 295 38" marker-end="url(#ah27)"/><path class="e" d="M395 38 C412 38 412 38 425 38" marker-end="url(#ah27)"/><path class="e" d="M560 38 C577 38 577 38 590 38" marker-end="url(#ah27)"/><g class="n trigger"><rect x="10" y="10" width="125" height="56" rx="12"/><text class="nm" x="72.5" y="34">排程</text><text class="ty" x="72.5" y="52">Schedule Trigger</text></g><g class="n data"><rect x="169" y="10" width="96" height="56" rx="12"/><text class="nm" x="217" y="34">抓新聞</text><text class="ty" x="217" y="52">RSS Read</text></g><g class="n logic"><rect x="299" y="10" width="96" height="56" rx="12"/><text class="nm" x="347" y="34">取前3則</text><text class="ty" x="347" y="52">Limit</text></g><g class="n data"><rect x="429" y="10" width="131" height="56" rx="12"/><text class="nm" x="494.5" y="34">整理</text><text class="ty" x="494.5" y="52">Edit Fields (Set)</text></g><g class="n send"><rect x="594" y="10" width="150" height="56" rx="12"/><text class="nm" x="669" y="34">存快照</text><text class="ty" x="669" y="52">Execute Sub-workflow</text></g></svg></div><figcaption>「聞」完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>「聞」完成版（m5/main-news-done.json）</summary><a href="files/m5/main-news-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M5 主線 聞&quot;,
   &quot;nodes&quot;: [
     {
@@ -1057,20 +1049,17 @@
 <p>為什麼不寫 <code>$json.value === &#39;&#39;</code> 判斷空值？實測：CSV 的空格子讀回來是「<strong>沒有這個欄位</strong>」而不是空字串，這樣寫會變成 <code>NaN</code> 報錯。</p>
 <p>一天一個檔，同一天重跑會覆蓋同名檔。<strong>不要用寫檔的 Append 選項累積</strong>：實測會重複寫表頭。</p>
 <ol>
-<li><p>匯入 <code>main-excel-done.json</code>，確認「解開CSV」已打開 <strong>Exclude Byte Order Mark (BOM)</strong>，位置見版本附頁。
-你應該看到：6 個節點依序連線，排程是 7:10。</p>
+<li><p>匯入 <code>main-excel-done.json</code>，確認「解開CSV」已打開 <strong>Exclude Byte Order Mark (BOM)</strong>，位置見版本附頁。<br><span class="see">你應該看到</span>6 個節點依序連線，排程是 7:10。</p>
 </li>
-<li><p>執行整條流程。
-你應該看到：讀快照 2 筆（兩個檔）、解開CSV 3 筆（股 2＋匯 1）、轉數字 3 筆且 <code>value</code> 是數字、寫檔 1 筆。</p>
+<li><p>執行整條流程。<br><span class="see">你應該看到</span>讀快照 2 筆（兩個檔）、解開CSV 3 筆（股 2＋匯 1）、轉數字 3 筆且 <code>value</code> 是數字、寫檔 1 筆。</p>
 </li>
-<li><p>用 Excel 打開 <code>daily\</code> 裡今天的檔。
-你應該看到：<code>value</code> 那欄靠右對齊、可以加總。</p>
+<li><p>用 Excel 打開 <code>daily\</code> 裡今天的檔。<br><span class="see">你應該看到</span><code>value</code> 那欄靠右對齊、可以加總。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？轉數字報「&#39;value&#39; expects a number but we got &#39;NaN&#39;」，是用了 <code>=== &#39;&#39;</code> 判斷，改成素材的寫法；Excel 裡數字靠左，是少了「轉數字」。</p>
 </blockquote>
-<details class="wf"><summary>每日 Excel 完成版（m5/main-excel-done.json）</summary><a href="files/m5/main-excel-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 945 76" width="945" height="76" role="img" aria-label="流程圖：排程、讀快照、解開CSV、轉數字、轉成Excel、寫檔"><defs><marker id="ah28" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M135 38 C152 38 152 38 165 38" marker-end="url(#ah28)"/><path class="e" d="M294 38 C311 38 311 38 324 38" marker-end="url(#ah28)"/><path class="e" d="M459 38 C476 38 476 38 489 38" marker-end="url(#ah28)"/><path class="e" d="M624 38 C641 38 641 38 654 38" marker-end="url(#ah28)"/><path class="e" d="M776 38 C793 38 793 38 806 38" marker-end="url(#ah28)"/><g class="n trigger"><rect x="10" y="10" width="125" height="56" rx="12"/><text class="nm" x="72.5" y="34">排程</text><text class="ty" x="72.5" y="52">Schedule Trigger</text></g><g class="n data"><rect x="169" y="10" width="125" height="56" rx="12"/><text class="nm" x="231.5" y="34">讀快照</text><text class="ty" x="231.5" y="52">Read/Write Files</text></g><g class="n data"><rect x="328" y="10" width="131" height="56" rx="12"/><text class="nm" x="393.5" y="34">解開CSV</text><text class="ty" x="393.5" y="52">Extract from File</text></g><g class="n data"><rect x="493" y="10" width="131" height="56" rx="12"/><text class="nm" x="558.5" y="34">轉數字</text><text class="ty" x="558.5" y="52">Edit Fields (Set)</text></g><g class="n data"><rect x="658" y="10" width="118" height="56" rx="12"/><text class="nm" x="717" y="34">轉成Excel</text><text class="ty" x="717" y="52">Convert to File</text></g><g class="n data"><rect x="810" y="10" width="125" height="56" rx="12"/><text class="nm" x="872.5" y="34">寫檔</text><text class="ty" x="872.5" y="52">Read/Write Files</text></g></svg></div><figcaption>每日 Excel 完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>每日 Excel 完成版（m5/main-excel-done.json）</summary><a href="files/m5/main-excel-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M5 主線 每日Excel&quot;,
   &quot;nodes&quot;: [
     {
@@ -1289,21 +1278,18 @@
 ・〔股名〕 收盤 〔股價〕（〔資料日期〕）
 ・〔警特報標題或「目前沒有警特報」〕（〔資料日期〕）</code></pre></div>
 <ol>
-<li><p>匯入 <code>main-report-done.json</code>，在「傳到Telegram」選你的 Telegram 憑證、填 chat ID，確認 <strong>Append n8n Attribution</strong> 是關的。位置見版本附頁。
-你應該看到：5 個節點依序連線，傳到Telegram 沒有紅色警示。</p>
+<li><p>匯入 <code>main-report-done.json</code>，在「傳到Telegram」選你的 Telegram 憑證、填 chat ID，確認 <strong>Append n8n Attribution</strong> 是關的。位置見版本附頁。<br><span class="see">你應該看到</span>5 個節點依序連線，傳到Telegram 沒有紅色警示。</p>
 </li>
-<li><p>執行整條流程。
-你應該看到：手機收到一則「生活早報 〔今天日期〕」，每行一個來源，股價與匯率後面有資料日期；執行紀錄裡「合成一筆」1 筆。Telegram 節點成功後的輸出欄位（待查證）。</p>
+<li><p>執行整條流程。<br><span class="see">你應該看到</span>手機收到一則「生活早報 〔今天日期〕」，每行一個來源，股價與匯率後面有資料日期；執行紀錄裡「合成一筆」1 筆。Telegram 節點成功後的輸出欄位（待查證）。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？早報出現 <code>undefined</code>，是欄位名稱打錯，大小寫也算。手機沒收到，先確認有對 Bot 按過 <strong>Start</strong>、chat ID 沒填錯。</p>
 </blockquote>
 <ol start="3">
-<li>把七條流程都 <strong>Publish</strong>：子流程、股、匯、警、聞、每日 Excel、早報。
-你應該看到：七條流程在列表上都顯示已發布；隔天 7:10 後手機自動收到早報、<code>daily</code> 多一個當天的檔。</li>
+<li>把七條流程都 <strong>Publish</strong>：子流程、股、匯、警、聞、每日 Excel、早報。<br><span class="see">你應該看到</span>七條流程在列表上都顯示已發布；隔天 7:10 後手機自動收到早報、<code>daily</code> 多一個當天的檔。</li>
 </ol>
-<details class="wf"><summary>早報完成版（m5/main-report-done.json）</summary><a href="files/m5/main-report-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 748 76" width="748" height="76" role="img" aria-label="流程圖：排程、讀快照、解開CSV、合成一筆、傳到Telegram"><defs><marker id="ah29" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M135 38 C152 38 152 38 165 38" marker-end="url(#ah29)"/><path class="e" d="M294 38 C311 38 311 38 324 38" marker-end="url(#ah29)"/><path class="e" d="M459 38 C476 38 476 38 489 38" marker-end="url(#ah29)"/><path class="e" d="M589 38 C606 38 606 38 619 38" marker-end="url(#ah29)"/><g class="n trigger"><rect x="10" y="10" width="125" height="56" rx="12"/><text class="nm" x="72.5" y="34">排程</text><text class="ty" x="72.5" y="52">Schedule Trigger</text></g><g class="n data"><rect x="169" y="10" width="125" height="56" rx="12"/><text class="nm" x="231.5" y="34">讀快照</text><text class="ty" x="231.5" y="52">Read/Write Files</text></g><g class="n data"><rect x="328" y="10" width="131" height="56" rx="12"/><text class="nm" x="393.5" y="34">解開CSV</text><text class="ty" x="393.5" y="52">Extract from File</text></g><g class="n data"><rect x="493" y="10" width="96" height="56" rx="12"/><text class="nm" x="541" y="34">合成一筆</text><text class="ty" x="541" y="52">Aggregate</text></g><g class="n send"><rect x="623" y="10" width="115" height="56" rx="12"/><text class="nm" x="680.5" y="34">傳到Telegram</text><text class="ty" x="680.5" y="52">Telegram</text></g></svg></div><figcaption>早報完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>早報完成版（m5/main-report-done.json）</summary><a href="files/m5/main-report-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M5 主線 早報&quot;,
   &quot;nodes&quot;: [
     {
@@ -1461,18 +1447,16 @@
 </tr>
 </tbody></table>
 <ol>
-<li><p>匯入 <code>ex1-done.json</code>，選 Telegram 憑證並填 chat ID。
-你應該看到：3 個節點依序連線，傳到Telegram 沒有紅色警示。</p>
+<li><p>匯入 <code>ex1-done.json</code>，選 Telegram 憑證並填 chat ID。<br><span class="see">你應該看到</span>3 個節點依序連線，傳到Telegram 沒有紅色警示。</p>
 </li>
-<li><p>手動執行一次就好，不用等到晚上 9 點。
-你應該看到：手機收到「晚上 9 點，吃藥時間到了」。</p>
+<li><p>手動執行一次就好，不用等到晚上 9 點。<br><span class="see">你應該看到</span>手機收到「晚上 9 點，吃藥時間到了」。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？沒收到時先看傳到Telegram 是不是紅色，再確認有按過 <strong>Start</strong>、chat ID 沒填錯。</p>
 </blockquote>
 <p>變形：改時間；改成一天兩次，在 <strong>Schedule Trigger</strong> 加第二個時間，位置見版本附頁。</p>
-<details class="wf"><summary>完成版（m5/ex1-done.json）</summary><a href="files/m5/ex1-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 459 76" width="459" height="76" role="img" aria-label="流程圖：排程、提醒內容、傳到Telegram"><defs><marker id="ah30" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M135 38 C152 38 152 38 165 38" marker-end="url(#ah30)"/><path class="e" d="M300 38 C317 38 317 38 330 38" marker-end="url(#ah30)"/><g class="n trigger"><rect x="10" y="10" width="125" height="56" rx="12"/><text class="nm" x="72.5" y="34">排程</text><text class="ty" x="72.5" y="52">Schedule Trigger</text></g><g class="n data"><rect x="169" y="10" width="131" height="56" rx="12"/><text class="nm" x="234.5" y="34">提醒內容</text><text class="ty" x="234.5" y="52">Edit Fields (Set)</text></g><g class="n send"><rect x="334" y="10" width="115" height="56" rx="12"/><text class="nm" x="391.5" y="34">傳到Telegram</text><text class="ty" x="391.5" y="52">Telegram</text></g></svg></div><figcaption>完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>完成版（m5/ex1-done.json）</summary><a href="files/m5/ex1-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M5 小練習① 吃藥時間提醒&quot;,
   &quot;nodes&quot;: [
     {
@@ -1602,17 +1586,15 @@
 </ol>
 <p>不需要 Webhook。<strong>不要用 LINE Notify</strong>：它已在 2025-03-31 停止服務，n8n 內建的 Line 節點是 Notify 用的，也不能用。免費方案每月推播則數有上限，push 會算進去，則數與要不要綁信用卡以你後台顯示為準（待查證）。</p>
 <ol>
-<li><p>匯入 <code>ex2-line-done.json</code>，在「推播到LINE」選你的 Header Auth 憑證，在「提醒內容」填 <code>to</code>。
-你應該看到：3 個節點依序連線，推播到LINE 沒有紅色警示。</p>
+<li><p>匯入 <code>ex2-line-done.json</code>，在「推播到LINE」選你的 Header Auth 憑證，在「提醒內容」填 <code>to</code>。<br><span class="see">你應該看到</span>3 個節點依序連線，推播到LINE 沒有紅色警示。</p>
 </li>
-<li><p>手動執行。
-你應該看到：LINE 收到「這是 n8n 推播給自己的測試訊息」。</p>
+<li><p>手動執行。<br><span class="see">你應該看到</span>LINE 收到「這是 n8n 推播給自己的測試訊息」。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？錯誤「Authorization failed - please check your credentials」，詳細訊息「Authentication failed. Confirm that the access token in the authorization header is valid.」，是 token 無效（用假 token 實測），回憑證檢查 Value。userId 錯誤時的訊息（待查證）。</p>
 </blockquote>
-<details class="wf"><summary>完成版（m5/ex2-line-done.json）</summary><a href="files/m5/ex2-line-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 430 76" width="430" height="76" role="img" aria-label="流程圖：手動、提醒內容、推播到LINE"><defs><marker id="ah31" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M122 38 C139 38 139 38 152 38" marker-end="url(#ah31)"/><path class="e" d="M287 38 C304 38 304 38 317 38" marker-end="url(#ah31)"/><g class="n trigger"><rect x="10" y="10" width="112" height="56" rx="12"/><text class="nm" x="66" y="34">手動</text><text class="ty" x="66" y="52">Manual Trigger</text></g><g class="n data"><rect x="156" y="10" width="131" height="56" rx="12"/><text class="nm" x="221.5" y="34">提醒內容</text><text class="ty" x="221.5" y="52">Edit Fields (Set)</text></g><g class="n data"><rect x="321" y="10" width="99" height="56" rx="12"/><text class="nm" x="370.5" y="34">推播到LINE</text><text class="ty" x="370.5" y="52">HTTP Request</text></g></svg></div><figcaption>完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>完成版（m5/ex2-line-done.json）</summary><a href="files/m5/ex2-line-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M5 小練習② LINE 推播給自己&quot;,
   &quot;nodes&quot;: [
     {
@@ -1744,17 +1726,15 @@
 </ol>
 <p>測試模式的授權大約 <strong>7 天會失效</strong>，失效就回憑證頁重新 <strong>Sign in with Google</strong>。<strong>不用開啟計費。</strong></p>
 <ol>
-<li><p>匯入 <code>ex2-google-done.json</code>，在「寫進試算表」選你的 Google 憑證、文件與工作表，路徑換成 npx 版的人要改「讀快照」。位置見版本附頁。
-你應該看到：4 個節點依序連線，寫進試算表沒有紅色警示。</p>
+<li><p>匯入 <code>ex2-google-done.json</code>，在「寫進試算表」選你的 Google 憑證、文件與工作表，路徑換成 npx 版的人要改「讀快照」。位置見版本附頁。<br><span class="see">你應該看到</span>4 個節點依序連線，寫進試算表沒有紅色警示。</p>
 </li>
-<li><p>手動執行。
-你應該看到：解開CSV 3 筆、寫進試算表 3 筆，試算表多了 3 列。試算表裡數字是數字還是文字（待查證）。</p>
+<li><p>手動執行。<br><span class="see">你應該看到</span>解開CSV 3 筆、寫進試算表 3 筆，試算表多了 3 列。試算表裡數字是數字還是文字（待查證）。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？Google 登入回不來，先逐字比對 <strong>OAuth Redirect URL</strong> 與測試使用者；授權過期就重新登入。</p>
 </blockquote>
-<details class="wf"><summary>完成版（m5/ex2-google-done.json）</summary><a href="files/m5/ex2-google-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 595 76" width="595" height="76" role="img" aria-label="流程圖：手動、讀快照、解開CSV、寫進試算表"><defs><marker id="ah32" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M122 38 C139 38 139 38 152 38" marker-end="url(#ah32)"/><path class="e" d="M281 38 C298 38 298 38 311 38" marker-end="url(#ah32)"/><path class="e" d="M446 38 C463 38 463 38 476 38" marker-end="url(#ah32)"/><g class="n trigger"><rect x="10" y="10" width="112" height="56" rx="12"/><text class="nm" x="66" y="34">手動</text><text class="ty" x="66" y="52">Manual Trigger</text></g><g class="n data"><rect x="156" y="10" width="125" height="56" rx="12"/><text class="nm" x="218.5" y="34">讀快照</text><text class="ty" x="218.5" y="52">Read/Write Files</text></g><g class="n data"><rect x="315" y="10" width="131" height="56" rx="12"/><text class="nm" x="380.5" y="34">解開CSV</text><text class="ty" x="380.5" y="52">Extract from File</text></g><g class="n send"><rect x="480" y="10" width="105" height="56" rx="12"/><text class="nm" x="532.5" y="34">寫進試算表</text><text class="ty" x="532.5" y="52">Google Sheets</text></g></svg></div><figcaption>完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>完成版（m5/ex2-google-done.json）</summary><a href="files/m5/ex2-google-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M5 小練習② 數字寫進 Google 試算表&quot;,
   &quot;nodes&quot;: [
     {

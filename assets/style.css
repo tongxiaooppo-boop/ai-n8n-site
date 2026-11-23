@@ -14,3 +14,45 @@ main{min-width:0}.art{max-width:calc(68ch + 56px);margin:0 auto;padding:28px 28p
 .tab+.tab{border-top:1px dashed var(--s-line)}.js .tab+.tab{border-top:0}
 
 .wf{border-top:1px solid var(--s-line);padding:10px 0}
+
+/* 流程圖（Opus 2026-11-23） */
+:root{--f-trigger:#1b7563;--f-trigger-bg:#e0efea;--f-data:#5c6a66;--f-data-bg:#ffffff;--f-logic:#a86d12;--f-logic-bg:#fbf1e2;--f-send:#2f63a8;--f-send-bg:#e7eef8;--f-ai:#7a4fb5;--f-ai-bg:#f1eafa}
+@media(prefers-color-scheme:dark){:root{--f-trigger:#5cc3a8;--f-trigger-bg:#173a32;--f-data:#93a39e;--f-data-bg:#18211f;--f-logic:#e3ab4f;--f-logic-bg:#3a2c16;--f-send:#7fa9e6;--f-send-bg:#1b2a40;--f-ai:#b796e8;--f-ai-bg:#2b2140}}
+.flow{margin:18px 0 6px;border:1px solid var(--s-line);border-radius:12px;background:var(--s-panel);padding:10px 0 4px}
+.flow-scroll{overflow-x:auto;padding:0 10px;-webkit-overflow-scrolling:touch}
+.flow-svg{display:block;max-width:100%;height:auto;font-family:var(--sans)}
+@media(max-width:700px){.flow-svg{max-width:none}}
+.flow figcaption{font-size:.76rem;color:var(--s-muted);padding:4px 14px 4px}
+.flow-svg .e{fill:none;stroke:var(--s-muted);stroke-width:1.6}.flow-svg .e.sub{stroke:var(--f-ai);stroke-dasharray:4 4}
+.flow-svg marker path{fill:var(--s-muted)}
+.flow-svg .el{font-size:11px;fill:var(--s-muted);font-weight:600}
+.flow-svg .n rect{stroke-width:1.6}
+.flow-svg .nm{font-size:14px;font-weight:700;fill:var(--s-ink);text-anchor:middle}
+.flow-svg .ty{font-size:11px;fill:var(--s-muted);text-anchor:middle}
+.flow-svg .n.trigger rect{fill:var(--f-trigger-bg);stroke:var(--f-trigger)}.flow-svg .n.trigger .ty{fill:var(--f-trigger)}
+.flow-svg .n.data rect{fill:var(--f-data-bg);stroke:var(--f-data)}
+.flow-svg .n.logic rect{fill:var(--f-logic-bg);stroke:var(--f-logic)}.flow-svg .n.logic .ty{fill:var(--f-logic)}
+.flow-svg .n.send rect{fill:var(--f-send-bg);stroke:var(--f-send)}.flow-svg .n.send .ty{fill:var(--f-send)}
+.flow-svg .n.ai rect{fill:var(--f-ai-bg);stroke:var(--f-ai)}.flow-svg .n.ai .ty{fill:var(--f-ai)}
+.flow-svg .n.ai .nm{font-size:13px}
+
+/* 版面加強（Opus 2026-11-23） */
+.hero{display:grid;gap:18px;margin:0 0 28px;padding:0 0 26px;border-bottom:1px solid var(--s-line)}
+.hero-img{width:100%;height:auto;aspect-ratio:16/7;object-fit:cover;border-radius:16px;background:var(--s-card)}
+.hero h1{font-size:2rem;margin:0 0 6px}
+.hero .subtitle{font-size:1.02rem;margin:0 0 14px;color:var(--s-ink)}
+.points{list-style:none;padding:0!important;margin:0 0 18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.points li{margin:0!important;padding:10px 14px;border-radius:12px;background:var(--s-card);font-size:.86rem;color:var(--s-muted);line-height:1.5}
+.points b{display:block;color:var(--s-accent);font-size:.98rem;margin-bottom:2px}
+.cta{display:inline-block;background:var(--s-accent);color:var(--s-accent-ink);text-decoration:none;font-weight:700;padding:10px 20px;border-radius:999px}
+.cta:hover{filter:brightness(1.08)}
+.course-list{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))!important;gap:14px!important}
+.course{padding:0 0 14px!important;overflow:hidden;gap:2px;transition:transform .15s ease,box-shadow .15s ease}
+.course>*{margin-left:16px;margin-right:16px}
+.course>span:first-of-type{margin-top:12px;font-weight:700;color:var(--s-accent)}
+.course .thumb{margin:0;width:100%;height:auto;aspect-ratio:1200/630;object-fit:cover;border-bottom:1px solid var(--s-line)}
+.course:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgb(0 0 0 / .08)}
+.banner{display:block;width:100%;height:auto;aspect-ratio:1200/400;object-fit:cover;border-radius:14px;margin:4px 0 22px;background:var(--s-card)}
+.art h3{padding-left:12px;border-left:4px solid var(--s-accent)}
+.see{display:inline-block;font-size:.78rem;font-weight:700;color:var(--s-accent-ink);background:var(--s-ok);border-radius:999px;padding:0 9px;margin-right:6px;line-height:1.7}
+blockquote{background:var(--s-panel);border-radius:0 10px 10px 0;padding:8px 16px}

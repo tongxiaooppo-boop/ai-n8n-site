@@ -39,7 +39,7 @@
 <td><code>report</code>（<strong>String</strong>），值切換 <strong>Expression</strong></td>
 </tr>
 </tbody></table>
-<details class="wf"><summary>起始版（m1/main-start.json）</summary><a href="files/m1/main-start.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 297 76" width="297" height="76" role="img" aria-label="流程圖：手動、假資料"><defs><marker id="ah4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M122 38 C139 38 139 38 152 38" marker-end="url(#ah4)"/><g class="n trigger"><rect x="10" y="10" width="112" height="56" rx="12"/><text class="nm" x="66" y="34">手動</text><text class="ty" x="66" y="52">Manual Trigger</text></g><g class="n data"><rect x="156" y="10" width="131" height="56" rx="12"/><text class="nm" x="221.5" y="34">假資料</text><text class="ty" x="221.5" y="52">Edit Fields (Set)</text></g></svg></div><figcaption>起始版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>起始版（m1/main-start.json）</summary><a href="files/m1/main-start.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M1 主線 起始版&quot;,
   &quot;nodes&quot;: [
     {
@@ -107,27 +107,24 @@
 }
 </code></pre></div>
 </details><ol>
-<li><p>匯入起始版，打開「假資料」，核對上表的值與型別，再執行流程。
-你應該看到：「假資料」輸出 1 筆，三個欄位與上表一致。</p>
+<li><p>匯入起始版，打開「假資料」，核對上表的值與型別，再執行流程。<br><span class="see">你應該看到</span>「假資料」輸出 1 筆，三個欄位與上表一致。</p>
 </li>
 <li><p>接上 <strong>Edit Fields (Set)</strong>，命名為「早報文字」，用 <strong>Add Field</strong> 新增 <code>report</code>，型別選 <strong>String</strong>，值切換 <strong>Expression</strong> 後貼入下方句子。位置見版本附頁。</p>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">【測試早報】{{ $json.stockName }}收盤 {{ $json.stockClose }} 元｜美元 {{ $json.usd ?? &#39;未提供&#39; }}</code></pre></div>
-<p>你應該看到：預覽把欄位換成假想甲、100 與 32.85。</p>
+<p><span class="see">你應該看到</span>預覽把欄位換成假想甲、100 與 32.85。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？預覽仍顯示大括號文字時先確認值已切換 <strong>Expression</strong>，並檢查欄位名稱大小寫。</p>
 </blockquote>
 <ol start="3">
-<li><p>按 <strong>Execute workflow</strong> 執行整條流程，打開「早報文字」查看輸出。位置見版本附頁。
-你應該看到：<code>report</code> 為 <code>【測試早報】假想甲收盤 100 元｜美元 32.85</code>，共 1 筆。</p>
+<li><p>按 <strong>Execute workflow</strong> 執行整條流程，打開「早報文字」查看輸出。位置見版本附頁。<br><span class="see">你應該看到</span><code>report</code> 為 <code>【測試早報】假想甲收盤 100 元｜美元 32.85</code>，共 1 筆。</p>
 </li>
-<li><p>刪除「假資料」中的 <code>usd</code> 欄位並重跑，再恢復 <code>usd</code> 為 32.85 重跑。
-你應該看到：刪除時顯示 <code>美元 未提供</code>，恢復後顯示 <code>美元 32.85</code>。</p>
+<li><p>刪除「假資料」中的 <code>usd</code> 欄位並重跑，再恢復 <code>usd</code> 為 32.85 重跑。<br><span class="see">你應該看到</span>刪除時顯示 <code>美元 未提供</code>，恢復後顯示 <code>美元 32.85</code>。</p>
 </li>
 </ol>
 <p><code>?? &#39;未提供&#39;</code> 會在該值缺少或為 <code>null</code> 時顯示提示。這樣可以保留「沒有匯率」的資訊。</p>
-<details class="wf"><summary>完成版（m1/main-done.json）</summary><a href="files/m1/main-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 462 76" width="462" height="76" role="img" aria-label="流程圖：手動、假資料、早報文字"><defs><marker id="ah5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M122 38 C139 38 139 38 152 38" marker-end="url(#ah5)"/><path class="e" d="M287 38 C304 38 304 38 317 38" marker-end="url(#ah5)"/><g class="n trigger"><rect x="10" y="10" width="112" height="56" rx="12"/><text class="nm" x="66" y="34">手動</text><text class="ty" x="66" y="52">Manual Trigger</text></g><g class="n data"><rect x="156" y="10" width="131" height="56" rx="12"/><text class="nm" x="221.5" y="34">假資料</text><text class="ty" x="221.5" y="52">Edit Fields (Set)</text></g><g class="n data"><rect x="321" y="10" width="131" height="56" rx="12"/><text class="nm" x="386.5" y="34">早報文字</text><text class="ty" x="386.5" y="52">Edit Fields (Set)</text></g></svg></div><figcaption>完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>完成版（m1/main-done.json）</summary><a href="files/m1/main-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M1 主線 假早報&quot;,
   &quot;nodes&quot;: [
     {
@@ -255,18 +252,17 @@
 </tr>
 </tbody></table>
 <ol>
-<li><p>建立新流程，依表加入並連接節點，填好「午餐」的兩個欄位，執行一次。
-你應該看到：「午餐」輸出 1 筆，<code>item</code> 為便當，<code>amount</code> 為數字 95。</p>
+<li><p>建立新流程，依表加入並連接節點，填好「午餐」的兩個欄位，執行一次。<br><span class="see">你應該看到</span>「午餐」輸出 1 筆，<code>item</code> 為便當，<code>amount</code> 為數字 95。</p>
 </li>
 <li><p>將「支出草稿」的 <code>draft</code> 值切換 <strong>Expression</strong>，輸入下方內容，再執行整條流程。</p>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">午餐：{{ $json.item }} {{ $json.amount }} 元</code></pre></div>
-<p>你應該看到：<code>draft</code> 為 <code>午餐：便當 95 元</code>，共 1 筆。</p>
+<p><span class="see">你應該看到</span><code>draft</code> 為 <code>午餐：便當 95 元</code>，共 1 筆。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？品項空白時先核對來源欄位是否叫 <code>item</code>，並檢查連線是否從「午餐」接入「支出草稿」。</p>
 </blockquote>
-<details class="wf"><summary>完成版（m1/ex1-done.json）</summary><a href="files/m1/ex1-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 462 76" width="462" height="76" role="img" aria-label="流程圖：手動、午餐、支出草稿"><defs><marker id="ah6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M122 38 C139 38 139 38 152 38" marker-end="url(#ah6)"/><path class="e" d="M287 38 C304 38 304 38 317 38" marker-end="url(#ah6)"/><g class="n trigger"><rect x="10" y="10" width="112" height="56" rx="12"/><text class="nm" x="66" y="34">手動</text><text class="ty" x="66" y="52">Manual Trigger</text></g><g class="n data"><rect x="156" y="10" width="131" height="56" rx="12"/><text class="nm" x="221.5" y="34">午餐</text><text class="ty" x="221.5" y="52">Edit Fields (Set)</text></g><g class="n data"><rect x="321" y="10" width="131" height="56" rx="12"/><text class="nm" x="386.5" y="34">支出草稿</text><text class="ty" x="386.5" y="52">Edit Fields (Set)</text></g></svg></div><figcaption>完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>完成版（m1/ex1-done.json）</summary><a href="files/m1/ex1-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M1 小練習① 午餐記帳&quot;,
   &quot;nodes&quot;: [
     {
@@ -388,18 +384,16 @@
 </tr>
 </tbody></table>
 <ol>
-<li><p>建立新流程，依表加入三個節點並連線，執行後檢查「學習」。
-你應該看到：1 筆資料含 <code>who</code> 阿禾與數字 <code>minutes</code> 20。</p>
+<li><p>建立新流程，依表加入三個節點並連線，執行後檢查「學習」。<br><span class="see">你應該看到</span>1 筆資料含 <code>who</code> 阿禾與數字 <code>minutes</code> 20。</p>
 </li>
-<li><p>將「提醒文字」的 <code>text</code> 值切換 <strong>Expression</strong>，輸入下方內容，再執行整條流程。
-你應該看到：<code>text</code> 為 <code>阿禾，今天讀書 20 分鐘</code>。</p>
+<li><p>將「提醒文字」的 <code>text</code> 值切換 <strong>Expression</strong>，輸入下方內容，再執行整條流程。<br><span class="see">你應該看到</span><code>text</code> 為 <code>阿禾，今天讀書 20 分鐘</code>。</p>
 </li>
 </ol>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">{{ $json.who }}，今天讀書 {{ $json.minutes }} 分鐘</code></pre></div>
 <blockquote>
 <p>卡住了？分鐘數沒出現時先比對 <code>minutes</code> 的拼字與上游輸出，再重跑整條流程。</p>
 </blockquote>
-<details class="wf"><summary>完成版（m1/ex2-done.json）</summary><a href="files/m1/ex2-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 462 76" width="462" height="76" role="img" aria-label="流程圖：手動、學習、提醒文字"><defs><marker id="ah7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M122 38 C139 38 139 38 152 38" marker-end="url(#ah7)"/><path class="e" d="M287 38 C304 38 304 38 317 38" marker-end="url(#ah7)"/><g class="n trigger"><rect x="10" y="10" width="112" height="56" rx="12"/><text class="nm" x="66" y="34">手動</text><text class="ty" x="66" y="52">Manual Trigger</text></g><g class="n data"><rect x="156" y="10" width="131" height="56" rx="12"/><text class="nm" x="221.5" y="34">學習</text><text class="ty" x="221.5" y="52">Edit Fields (Set)</text></g><g class="n data"><rect x="321" y="10" width="131" height="56" rx="12"/><text class="nm" x="386.5" y="34">提醒文字</text><text class="ty" x="386.5" y="52">Edit Fields (Set)</text></g></svg></div><figcaption>完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>完成版（m1/ex2-done.json）</summary><a href="files/m1/ex2-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M1 小練習② 學習提醒&quot;,
   &quot;nodes&quot;: [
     {

@@ -54,7 +54,7 @@
 <td><strong>Boolean</strong> 的 <strong>is true</strong></td>
 </tr>
 </tbody></table>
-<details class="wf"><summary>起始版（m3/main-start.json）</summary><a href="files/m3/main-start.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 427 76" width="427" height="76" role="img" aria-label="流程圖：手動、整理後股票、拆成多筆"><defs><marker id="ah12" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M122 38 C139 38 139 38 152 38" marker-end="url(#ah12)"/><path class="e" d="M287 38 C304 38 304 38 317 38" marker-end="url(#ah12)"/><g class="n trigger"><rect x="10" y="10" width="112" height="56" rx="12"/><text class="nm" x="66" y="34">手動</text><text class="ty" x="66" y="52">Manual Trigger</text></g><g class="n data"><rect x="156" y="10" width="131" height="56" rx="12"/><text class="nm" x="221.5" y="34">整理後股票</text><text class="ty" x="221.5" y="52">Edit Fields (Set)</text></g><g class="n data"><rect x="321" y="10" width="96" height="56" rx="12"/><text class="nm" x="369" y="34">拆成多筆</text><text class="ty" x="369" y="52">Split Out</text></g></svg></div><figcaption>起始版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>起始版（m3/main-start.json）</summary><a href="files/m3/main-start.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M3 主線 起始版&quot;,
   &quot;nodes&quot;: [
     {
@@ -125,8 +125,7 @@
 }
 </code></pre></div>
 </details><ol>
-<li>匯入起始版，核對「整理後股票」的 <strong>JSON Output</strong> 是下方五筆測資，再執行到「拆成多筆」。位置見版本附頁。
-你應該看到：陣列節點輸出 1 個 Item，「拆成多筆」輸出 5 個 Items。</li>
+<li>匯入起始版，核對「整理後股票」的 <strong>JSON Output</strong> 是下方五筆測資，再執行到「拆成多筆」。位置見版本附頁。<br><span class="see">你應該看到</span>陣列節點輸出 1 個 Item，「拆成多筆」輸出 5 個 Items。</li>
 </ol>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{&quot;data&quot;:[
  {&quot;dataDate&quot;:&quot;2026-11-17&quot;,&quot;code&quot;:&quot;2330&quot;,&quot;name&quot;:&quot;假想甲&quot;,&quot;close&quot;:2170,&quot;change&quot;:-45,&quot;valid&quot;:true},
@@ -135,8 +134,7 @@
  {&quot;dataDate&quot;:&quot;2026-11-17&quot;,&quot;code&quot;:&quot;3008&quot;,&quot;name&quot;:&quot;假想丁&quot;,&quot;close&quot;:31.5,&quot;change&quot;:1.5,&quot;valid&quot;:true},
  {&quot;dataDate&quot;:&quot;2026-11-17&quot;,&quot;code&quot;:&quot;2603&quot;,&quot;name&quot;:&quot;假想戊&quot;,&quot;close&quot;:190,&quot;change&quot;:-10,&quot;valid&quot;:true}]}</code></pre></div>
 <ol start="2">
-<li>接上「算漲跌幅」，開啟 <strong>Include Other Input Fields</strong> 保留其他欄位；新增 <code>pct</code>，選 <strong>Number</strong>，值切換 <strong>Expression</strong> 並貼上下式。位置見版本附頁。
-你應該看到：第一筆仍有 <code>code=&quot;2330&quot;</code>、<code>close=2170</code>、<code>change=-45</code>，新增 <code>pct=-2.03</code>。</li>
+<li>接上「算漲跌幅」，開啟 <strong>Include Other Input Fields</strong> 保留其他欄位；新增 <code>pct</code>，選 <strong>Number</strong>，值切換 <strong>Expression</strong> 並貼上下式。位置見版本附頁。<br><span class="see">你應該看到</span>第一筆仍有 <code>code=&quot;2330&quot;</code>、<code>close=2170</code>、<code>change=-45</code>，新增 <code>pct=-2.03</code>。</li>
 </ol>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">{{ $json.valid &amp;&amp; ($json.close - $json.change) &gt; 0 ? Math.round($json.change / ($json.close - $json.change) * 10000) / 100 : null }}</code></pre></div>
 <p>前一日收盤＝今天收盤 − 漲跌。漲跌幅＝漲跌 ÷ 前一日收盤 × 100，再四捨五入到小數 2 位。資料無效或分母不是正數就給 <code>null</code>，不硬算。</p>
@@ -144,16 +142,14 @@
 <p>卡住了？代號消失時先開啟保留其他欄位；<code>pct</code> 出現引號時先核對型別是 <strong>Number</strong>。</p>
 </blockquote>
 <ol start="3">
-<li>接上「超過門檻嗎」，條件填下式，選 <strong>Boolean</strong> 的 <strong>is true</strong>；執行整條流程並分別檢查兩個輸出。
-你應該看到：true 2 筆，第一筆 <code>code=&quot;3008&quot;</code>、<code>pct=5</code>；false 3 筆，第一筆為 2330。</li>
+<li>接上「超過門檻嗎」，條件填下式，選 <strong>Boolean</strong> 的 <strong>is true</strong>；執行整條流程並分別檢查兩個輸出。<br><span class="see">你應該看到</span>true 2 筆，第一筆 <code>code=&quot;3008&quot;</code>、<code>pct=5</code>；false 3 筆，第一筆為 2330。</li>
 </ol>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">{{ $json.pct !== null &amp;&amp; Math.abs($json.pct) &gt;= 3 }}</code></pre></div>
 <p><code>Math.abs</code> 是不管正負，只看大小。這裡「漲或跌超過 3%」包含剛好 3%；改條件裡的 <code>3</code> 就能換門檻。true 是要標記的 3008（+5%）、2603（−5%）。false 是 2330（−2.03%）、2317（+0.23%）、9999（無資料）。<strong>無資料走 false 不代表沒漲跌，是「不知道」</strong>，M5 早報會另外標「資料不足」。</p>
 <ol start="4">
-<li>分別把正常、缺資料測資貼進「整理後股票」，每次替換整份內容後重跑，最後恢復五筆資料。
-你應該看到：正常測資 <code>pct=5.26</code> 並走 true；缺資料測資 <code>pct=null</code> 並走 false，沒有變成 0。</li>
+<li>分別把正常、缺資料測資貼進「整理後股票」，每次替換整份內容後重跑，最後恢復五筆資料。<br><span class="see">你應該看到</span>正常測資 <code>pct=5.26</code> 並走 true；缺資料測資 <code>pct=null</code> 並走 false，沒有變成 0。</li>
 </ol>
-<details class="wf"><summary>完成版（m3/main-done.json）</summary><a href="files/m3/main-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 722 76" width="722" height="76" role="img" aria-label="流程圖：手動、整理後股票、拆成多筆、算漲跌幅、超過門檻嗎"><defs><marker id="ah13" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M122 38 C139 38 139 38 152 38" marker-end="url(#ah13)"/><path class="e" d="M287 38 C304 38 304 38 317 38" marker-end="url(#ah13)"/><path class="e" d="M417 38 C434 38 434 38 447 38" marker-end="url(#ah13)"/><path class="e" d="M582 38 C599 38 599 38 612 38" marker-end="url(#ah13)"/><g class="n trigger"><rect x="10" y="10" width="112" height="56" rx="12"/><text class="nm" x="66" y="34">手動</text><text class="ty" x="66" y="52">Manual Trigger</text></g><g class="n data"><rect x="156" y="10" width="131" height="56" rx="12"/><text class="nm" x="221.5" y="34">整理後股票</text><text class="ty" x="221.5" y="52">Edit Fields (Set)</text></g><g class="n data"><rect x="321" y="10" width="96" height="56" rx="12"/><text class="nm" x="369" y="34">拆成多筆</text><text class="ty" x="369" y="52">Split Out</text></g><g class="n data"><rect x="451" y="10" width="131" height="56" rx="12"/><text class="nm" x="516.5" y="34">算漲跌幅</text><text class="ty" x="516.5" y="52">Edit Fields (Set)</text></g><g class="n logic"><rect x="616" y="10" width="96" height="56" rx="12"/><text class="nm" x="664" y="34">超過門檻嗎</text><text class="ty" x="664" y="52">If</text></g></svg></div><figcaption>完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>完成版（m3/main-done.json）</summary><a href="files/m3/main-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M3 主線 漲跌超過門檻才標記&quot;,
   &quot;nodes&quot;: [
     {
@@ -339,23 +335,20 @@
 </tr>
 </tbody></table>
 <ol>
-<li>建立前三個節點，在「新聞陣列」的 <strong>JSON Output</strong> 填入下方資料，接上拆分後執行。
-你應該看到：「拆成多筆」有 5 筆，前兩筆連結都是 <code>https://example.invalid/n1</code>。</li>
+<li>建立前三個節點，在「新聞陣列」的 <strong>JSON Output</strong> 填入下方資料，接上拆分後執行。<br><span class="see">你應該看到</span>「拆成多筆」有 5 筆，前兩筆連結都是 <code>https://example.invalid/n1</code>。</li>
 </ol>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{&quot;news&quot;:[{&quot;title&quot;:&quot;颱風假最新消息&quot;,&quot;link&quot;:&quot;https://example.invalid/n1&quot;},{&quot;title&quot;:&quot;颱風假最新消息&quot;,&quot;link&quot;:&quot;https://example.invalid/n1&quot;},{&quot;title&quot;:&quot;颱風假最新消息&quot;,&quot;link&quot;:&quot;https://example.invalid/n2&quot;},{&quot;title&quot;:&quot;防詐騙宣導&quot;,&quot;link&quot;:&quot;https://example.invalid/n3&quot;},{&quot;title&quot;:&quot;電費調整說明&quot;,&quot;link&quot;:&quot;https://example.invalid/n4&quot;}]}</code></pre></div>
 <ol start="2">
-<li>接上「去掉重複」，選表中的本次輸入操作，指定比較欄位 <code>link</code>。位置見版本附頁。
-你應該看到：5 筆變 4 筆，<code>n1</code> 留一筆，<code>n2</code> 也保留。</li>
+<li>接上「去掉重複」，選表中的本次輸入操作，指定比較欄位 <code>link</code>。位置見版本附頁。<br><span class="see">你應該看到</span>5 筆變 4 筆，<code>n1</code> 留一筆，<code>n2</code> 也保留。</li>
 </ol>
 <blockquote>
 <p>卡住了？只剩一則颱風新聞時先看比較欄位是否誤選 <code>title</code>。第 3 筆標題相同但連結不同，是另一則新聞。</p>
 </blockquote>
 <ol start="3">
-<li>接上「挑字詞」，比較 <code>{{ $json.title }}</code> 是否 <strong>contains</strong> <code>颱風</code>，執行並核對連結。
-你應該看到：4 筆變 2 筆，第一筆連結為 <code>https://example.invalid/n1</code>，第二筆為 <code>https://example.invalid/n2</code>。</li>
+<li>接上「挑字詞」，比較 <code>{{ $json.title }}</code> 是否 <strong>contains</strong> <code>颱風</code>，執行並核對連結。<br><span class="see">你應該看到</span>4 筆變 2 筆，第一筆連結為 <code>https://example.invalid/n1</code>，第二筆為 <code>https://example.invalid/n2</code>。</li>
 </ol>
 <p>這裡只看這一次的資料，跨天記得用的是 M4 的另一個操作。</p>
-<details class="wf"><summary>完成版（m3/ex1-done.json）</summary><a href="files/m3/ex1-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 722 76" width="722" height="76" role="img" aria-label="流程圖：手動、新聞陣列、拆成多筆、去掉重複、挑字詞"><defs><marker id="ah14" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M122 38 C139 38 139 38 152 38" marker-end="url(#ah14)"/><path class="e" d="M287 38 C304 38 304 38 317 38" marker-end="url(#ah14)"/><path class="e" d="M417 38 C434 38 434 38 447 38" marker-end="url(#ah14)"/><path class="e" d="M582 38 C599 38 599 38 612 38" marker-end="url(#ah14)"/><g class="n trigger"><rect x="10" y="10" width="112" height="56" rx="12"/><text class="nm" x="66" y="34">手動</text><text class="ty" x="66" y="52">Manual Trigger</text></g><g class="n data"><rect x="156" y="10" width="131" height="56" rx="12"/><text class="nm" x="221.5" y="34">新聞陣列</text><text class="ty" x="221.5" y="52">Edit Fields (Set)</text></g><g class="n data"><rect x="321" y="10" width="96" height="56" rx="12"/><text class="nm" x="369" y="34">拆成多筆</text><text class="ty" x="369" y="52">Split Out</text></g><g class="n logic"><rect x="451" y="10" width="131" height="56" rx="12"/><text class="nm" x="516.5" y="34">去掉重複</text><text class="ty" x="516.5" y="52">Remove Duplicates</text></g><g class="n logic"><rect x="616" y="10" width="96" height="56" rx="12"/><text class="nm" x="664" y="34">挑字詞</text><text class="ty" x="664" y="52">Filter</text></g></svg></div><figcaption>完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>完成版（m3/ex1-done.json）</summary><a href="files/m3/ex1-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M3 小練習 新聞不重複&quot;,
   &quot;nodes&quot;: [
     {
@@ -531,26 +524,23 @@
 </tr>
 </tbody></table>
 <ol>
-<li>建立「手動」與兩個清單節點，把手動的同一個輸出分別接到兩個清單，依序填入下方兩份 <strong>JSON Output</strong>。
-你應該看到：阿禾清單輸出 1 個 Item，<code>list</code> 內 2 項；小嵐清單輸出 1 個 Item，<code>list</code> 內 3 項。</li>
+<li>建立「手動」與兩個清單節點，把手動的同一個輸出分別接到兩個清單，依序填入下方兩份 <strong>JSON Output</strong>。<br><span class="see">你應該看到</span>阿禾清單輸出 1 個 Item，<code>list</code> 內 2 項；小嵐清單輸出 1 個 Item，<code>list</code> 內 3 項。</li>
 </ol>
 <p>阿禾清單：</p>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{&quot;list&quot;:[{&quot;item&quot;:&quot;衛生紙&quot;,&quot;qty&quot;:1,&quot;who&quot;:&quot;阿禾&quot;},{&quot;item&quot;:&quot;牛奶&quot;,&quot;qty&quot;:2,&quot;who&quot;:&quot;阿禾&quot;}]}</code></pre></div>
 <p>小嵐清單：</p>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{&quot;list&quot;:[{&quot;item&quot;:&quot;雞蛋&quot;,&quot;qty&quot;:1,&quot;who&quot;:&quot;小嵐&quot;},{&quot;item&quot;:&quot;牛奶&quot;,&quot;qty&quot;:1,&quot;who&quot;:&quot;小嵐&quot;},{&quot;item&quot;:&quot;洗碗精&quot;,&quot;qty&quot;:1,&quot;who&quot;:&quot;小嵐&quot;}]}</code></pre></div>
 <ol start="2">
-<li>加入「合併」，阿禾接 <strong>Input 1</strong>、小嵐接 <strong>Input 2</strong>，模式選 <strong>Append</strong>。位置見版本附頁。
-你應該看到：「合併」輸出 2 個 Items，各自帶著一個 <code>list</code> 陣列。</li>
+<li>加入「合併」，阿禾接 <strong>Input 1</strong>、小嵐接 <strong>Input 2</strong>，模式選 <strong>Append</strong>。位置見版本附頁。<br><span class="see">你應該看到</span>「合併」輸出 2 個 Items，各自帶著一個 <code>list</code> 陣列。</li>
 </ol>
 <blockquote>
 <p>卡住了？少一人的清單時先檢查兩個輸入口都有接線，再確認模式是 <strong>Append</strong>。</p>
 </blockquote>
 <ol start="3">
-<li>接上「拆成多筆」，指定 <code>list</code> 並執行整條流程，逐筆查看 <code>who</code>。
-你應該看到：5 筆，第一筆 <code>item=&quot;衛生紙&quot;</code>、<code>qty=1</code>、<code>who=&quot;阿禾&quot;</code>，兩人的牛奶各自保留。</li>
+<li>接上「拆成多筆」，指定 <code>list</code> 並執行整條流程，逐筆查看 <code>who</code>。<br><span class="see">你應該看到</span>5 筆，第一筆 <code>item=&quot;衛生紙&quot;</code>、<code>qty=1</code>、<code>who=&quot;阿禾&quot;</code>，兩人的牛奶各自保留。</li>
 </ol>
 <p><strong>Append</strong> 就是前後接起來，這課不合併同品項。想一想：要怎麼知道牛奶共買幾瓶？先寫出做法，不用做出來。</p>
-<details class="wf"><summary>完成版（m3/ex2-done.json）</summary><a href="files/m3/ex2-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 557 162" width="557" height="162" role="img" aria-label="流程圖：手動、阿禾清單、小嵐清單、合併、拆成多筆"><defs><marker id="ah15" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M122 38 C139 38 139 38 152 38" marker-end="url(#ah15)"/><path class="e" d="M122 38 C139 38 139 124 152 124" marker-end="url(#ah15)"/><path class="e" d="M287 38 C304 38 304 38 317 38" marker-end="url(#ah15)"/><path class="e" d="M287 124 C304 124 304 38 317 38" marker-end="url(#ah15)"/><path class="e" d="M417 38 C434 38 434 38 447 38" marker-end="url(#ah15)"/><g class="n trigger"><rect x="10" y="10" width="112" height="56" rx="12"/><text class="nm" x="66" y="34">手動</text><text class="ty" x="66" y="52">Manual Trigger</text></g><g class="n data"><rect x="156" y="10" width="131" height="56" rx="12"/><text class="nm" x="221.5" y="34">阿禾清單</text><text class="ty" x="221.5" y="52">Edit Fields (Set)</text></g><g class="n data"><rect x="156" y="96" width="131" height="56" rx="12"/><text class="nm" x="221.5" y="120">小嵐清單</text><text class="ty" x="221.5" y="138">Edit Fields (Set)</text></g><g class="n logic"><rect x="321" y="10" width="96" height="56" rx="12"/><text class="nm" x="369" y="34">合併</text><text class="ty" x="369" y="52">Merge</text></g><g class="n data"><rect x="451" y="10" width="96" height="56" rx="12"/><text class="nm" x="499" y="34">拆成多筆</text><text class="ty" x="499" y="52">Split Out</text></g></svg></div><figcaption>完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>完成版（m3/ex2-done.json）</summary><a href="files/m3/ex2-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M3 小練習 家庭採買合併&quot;,
   &quot;nodes&quot;: [
     {

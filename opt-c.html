@@ -61,8 +61,7 @@
 </li>
 <li><p>有不同：輸出 1 筆，列出新增和移除。</p>
 </li>
-<li><p>匯入 <code>main-done.json</code>，「傳通知」選你的 Telegram 憑證，Chat ID 改成 <code>&lt;你的 Chat ID&gt;</code>。
-你應該看到：5 個節點連成一條線；「比對基準」打開是一段程式，第一行是 <code>baseline</code>，有 7 個頻道名稱。</p>
+<li><p>匯入 <code>main-done.json</code>，「傳通知」選你的 Telegram 憑證，Chat ID 改成 <code>&lt;你的 Chat ID&gt;</code>。<br><span class="see">你應該看到</span>5 個節點連成一條線；「比對基準」打開是一段程式，第一行是 <code>baseline</code>，有 7 個頻道名稱。</p>
 </li>
 <li><p>按 <strong>Execute workflow</strong>（不用等週一）。
 你應該看到（N）：「抓頁面」1 筆；「擷取頻道」1 筆，<code>names</code> 有 7 個名稱，<code>links</code> 有 7 個網址；「比對基準」<strong>0 筆</strong>；「傳通知」沒有跑。2026-11-21 實測抓到的 7 個頻道是：消費者保護消費資（警）訊、消費者保護新聞稿、本院新聞、即時新聞澄清（資料來源：各部會）、部會新聞（資料來源：各部會）、院長行程、院會決議，也就是素材裡的基準。</p>
@@ -72,18 +71,16 @@
 <p>卡住了？「比對基準」有輸出、顯示有變動：先打開「擷取頻道」，把 <code>names</code> 跟基準逐個比，看是網頁真的改了，還是名稱有多一個空白、括號全形半形不同。確認是真的變動，就更新基準那一行。</p>
 </blockquote>
 <ol start="3">
-<li><p>打開 <strong>Executions</strong>，看這一次的紀錄。
-你應該看到：手動執行的一筆；各節點的筆數跟上一步一樣，「比對基準」是 0 筆。<strong>0 筆不是失敗</strong>。</p>
+<li><p>打開 <strong>Executions</strong>，看這一次的紀錄。<br><span class="see">你應該看到</span>手動執行的一筆；各節點的筆數跟上一步一樣，「比對基準」是 0 筆。<strong>0 筆不是失敗</strong>。</p>
 </li>
-<li><p>測 503（E）：把「抓頁面」網址暫時改成 <code>http://localhost:5678/webhook/mock?status=503</code>（M4 的模擬來源，要先 <strong>Publish</strong>），重跑。
-你應該看到：「抓頁面」紅燈，訊息跟 M6、結業範例一樣：「Service unavailable - try again later or consider setting this node to retry automatically」，後面的節點都沒跑。測完把網址改回行政院。</p>
+<li><p>測 503（E）：把「抓頁面」網址暫時改成 <code>http://localhost:5678/webhook/mock?status=503</code>（M4 的模擬來源，要先 <strong>Publish</strong>），重跑。<br><span class="see">你應該看到</span>「抓頁面」紅燈，訊息跟 M6、結業範例一樣：「Service unavailable - try again later or consider setting this node to retry automatically」，後面的節點都沒跑。測完把網址改回行政院。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？改完網址後還是抓到行政院的資料：看有沒有按到存檔，或打開的是不是另一個流程；模擬來源也要先 <strong>Publish</strong> 並等幾秒。</p>
 </blockquote>
 <p><strong>基準怎麼更新</strong>：確認變動是合理的（例如行政院真的新增了頻道）之後，把 <code>baseline</code> 那一行改成新的清單。基準是「最近一次<strong>人工確認</strong>」，不是自動記住上次的結果。</p>
-<details class="wf"><summary>完成版（c/main-done.json）</summary><a href="files/c/main-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 668 76" width="668" height="76" role="img" aria-label="流程圖：每週一早上、抓頁面、擷取頻道、比對基準、傳通知"><defs><marker id="ah54" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M135 38 C152 38 152 38 165 38" marker-end="url(#ah54)"/><path class="e" d="M268 38 C285 38 285 38 298 38" marker-end="url(#ah54)"/><path class="e" d="M398 38 C415 38 415 38 428 38" marker-end="url(#ah54)"/><path class="e" d="M528 38 C545 38 545 38 558 38" marker-end="url(#ah54)"/><g class="n trigger"><rect x="10" y="10" width="125" height="56" rx="12"/><text class="nm" x="72.5" y="34">每週一早上</text><text class="ty" x="72.5" y="52">Schedule Trigger</text></g><g class="n data"><rect x="169" y="10" width="99" height="56" rx="12"/><text class="nm" x="218.5" y="34">抓頁面</text><text class="ty" x="218.5" y="52">HTTP Request</text></g><g class="n data"><rect x="302" y="10" width="96" height="56" rx="12"/><text class="nm" x="350" y="34">擷取頻道</text><text class="ty" x="350" y="52">HTML</text></g><g class="n data"><rect x="432" y="10" width="96" height="56" rx="12"/><text class="nm" x="480" y="34">比對基準</text><text class="ty" x="480" y="52">Code</text></g><g class="n send"><rect x="562" y="10" width="96" height="56" rx="12"/><text class="nm" x="610" y="34">傳通知</text><text class="ty" x="610" y="52">Telegram</text></g></svg></div><figcaption>完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>完成版（c/main-done.json）</summary><a href="files/c/main-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;選修 C 網頁變動監看&quot;,
   &quot;nodes&quot;: [
     {
@@ -272,17 +269,15 @@
 <li><p>匯入 <code>ex1-done.json</code>，按 <strong>Execute workflow</strong>。
 你應該看到（N）：「擷取頻道」1 筆，<code>names</code> 有 7 個；「比對基準」<strong>0 筆</strong>。</p>
 </li>
-<li><p>新增：在假網頁的 <code>&lt;/ul&gt;</code> 前面多加一個 <code>&lt;li&gt;&lt;a href=&quot;https://www.ey.gov.tw/RSS_Content.aspx?ModuleType=9&quot;&gt;寵物新聞&lt;/a&gt;&lt;/li&gt;</code>，重跑。
-你應該看到：「比對基準」1 筆，<code>status: 有變動</code>，<code>added: [&quot;寵物新聞&quot;]</code>，<code>removed: []</code>；訊息是「行政院 RSS 頻道有變動／新增：寵物新聞／移除：無／確認後記得更新基準」（實際分行）。</p>
+<li><p>新增：在假網頁的 <code>&lt;/ul&gt;</code> 前面多加一個 <code>&lt;li&gt;&lt;a href=&quot;https://www.ey.gov.tw/RSS_Content.aspx?ModuleType=9&quot;&gt;寵物新聞&lt;/a&gt;&lt;/li&gt;</code>，重跑。<br><span class="see">你應該看到</span>「比對基準」1 筆，<code>status: 有變動</code>，<code>added: [&quot;寵物新聞&quot;]</code>，<code>removed: []</code>；訊息是「行政院 RSS 頻道有變動／新增：寵物新聞／移除：無／確認後記得更新基準」（實際分行）。</p>
 </li>
-<li><p>空擷取：把假網頁裡的 <code>RSS_Content.aspx</code> 全部換成 <code>Other.aspx</code>（模擬網頁改版，連結不再有 <code>RSS_Content</code>），重跑。
-你應該看到：「擷取頻道」的 <code>names</code> 是<strong>空陣列</strong>；「比對基準」1 筆，<code>status: 解析失敗</code>，訊息「⚠ 行政院 RSS 頻道頁一個頻道都抓不到，可能是網頁改版，請手動打開網頁確認」。<strong>不是</strong>「7 個都移除」。</p>
+<li><p>空擷取：把假網頁裡的 <code>RSS_Content.aspx</code> 全部換成 <code>Other.aspx</code>（模擬網頁改版，連結不再有 <code>RSS_Content</code>），重跑。<br><span class="see">你應該看到</span>「擷取頻道」的 <code>names</code> 是<strong>空陣列</strong>；「比對基準」1 筆，<code>status: 解析失敗</code>，訊息「⚠ 行政院 RSS 頻道頁一個頻道都抓不到，可能是網頁改版，請手動打開網頁確認」。<strong>不是</strong>「7 個都移除」。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？改完 HTML 「比對基準」仍是 0 筆：先確認改的是「假網頁」的內容，不是別的節點；再看「擷取頻道」的 <code>names</code> 有沒有真的變。</p>
 </blockquote>
-<details class="wf"><summary>完成版（c/ex1-done.json）</summary><a href="files/c/ex1-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 557 76" width="557" height="76" role="img" aria-label="流程圖：手動執行、假網頁、擷取頻道、比對基準"><defs><marker id="ah55" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M122 38 C139 38 139 38 152 38" marker-end="url(#ah55)"/><path class="e" d="M287 38 C304 38 304 38 317 38" marker-end="url(#ah55)"/><path class="e" d="M417 38 C434 38 434 38 447 38" marker-end="url(#ah55)"/><g class="n trigger"><rect x="10" y="10" width="112" height="56" rx="12"/><text class="nm" x="66" y="34">手動執行</text><text class="ty" x="66" y="52">Manual Trigger</text></g><g class="n data"><rect x="156" y="10" width="131" height="56" rx="12"/><text class="nm" x="221.5" y="34">假網頁</text><text class="ty" x="221.5" y="52">Edit Fields (Set)</text></g><g class="n data"><rect x="321" y="10" width="96" height="56" rx="12"/><text class="nm" x="369" y="34">擷取頻道</text><text class="ty" x="369" y="52">HTML</text></g><g class="n data"><rect x="451" y="10" width="96" height="56" rx="12"/><text class="nm" x="499" y="34">比對基準</text><text class="ty" x="499" y="52">Code</text></g></svg></div><figcaption>完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>完成版（c/ex1-done.json）</summary><a href="files/c/ex1-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;選修 C 小練習① 自製網頁測試&quot;,
   &quot;nodes&quot;: [
     {

@@ -30,18 +30,16 @@
 $env:N8N_PORT=&quot;5688&quot;
 $env:N8N_RUNNERS_BROKER_PORT=&quot;5689&quot;
 npx n8n start</code></pre></div>
-<p>你應該看到：n8n 啟動；這個視窗之後的 n8n 都用 <code>C:\n8n-mcp-lab</code> 當家。做法跟 M9 第 3 段一樣，正式版（5678）可以同時開著。</p>
+<p><span class="see">你應該看到</span>n8n 啟動；這個視窗之後的 n8n 都用 <code>C:\n8n-mcp-lab</code> 當家。做法跟 M9 第 3 段一樣，正式版（5678）可以同時開著。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？「n8n Task Broker&#39;s port 5679 is already in use」：沒設 <code>N8N_RUNNERS_BROKER_PORT</code>，被正式版占走了。兩個埠都改好再啟動。</p>
 </blockquote>
 <ol start="2">
-<li><p>打開 <code>http://localhost:5688</code>，建立擁有者帳號（畫面待查證）。
-你應該看到：一個全新的、空的 n8n：沒有你正式版的流程，也沒有憑證。</p>
+<li><p>打開 <code>http://localhost:5688</code>，建立擁有者帳號（畫面待查證）。<br><span class="see">你應該看到</span>一個全新的、空的 n8n：沒有你正式版的流程，也沒有憑證。</p>
 </li>
-<li><p>到 <strong>Settings &gt; Instance-level MCP</strong>，打開 <strong>Enable MCP access</strong>，建立或取得 MCP 用的金鑰（位置與按鈕畫面待查證，見版本附頁）。把金鑰先複製起來，只放在你自己的記事本，不要貼進對話或流程。
-你應該看到：MCP 已啟用，頁面上有 <strong>Server URL</strong> 和金鑰。伺服器網址長得像 <code>http://localhost:5688/mcp-server/http</code>。</p>
+<li><p>到 <strong>Settings &gt; Instance-level MCP</strong>，打開 <strong>Enable MCP access</strong>，建立或取得 MCP 用的金鑰（位置與按鈕畫面待查證，見版本附頁）。把金鑰先複製起來，只放在你自己的記事本，不要貼進對話或流程。<br><span class="see">你應該看到</span>MCP 已啟用，頁面上有 <strong>Server URL</strong> 和金鑰。伺服器網址長得像 <code>http://localhost:5688/mcp-server/http</code>。</p>
 </li>
 </ol>
 <blockquote>
@@ -74,24 +72,21 @@ npx n8n start</code></pre></div>
 <li><p>Claude 哪個方案能用 MCP、要不要付費：<strong>待查證</strong>。</p>
 </li>
 </ul>
-<p>你應該看到：AI 用戶端列出「n8n MCP Server」，能看到一批工具。請 AI 先「列出你能用的 n8n 工具」，確認有連上。</p>
+<p><span class="see">你應該看到</span>AI 用戶端列出「n8n MCP Server」，能看到一批工具。請 AI 先「列出你能用的 n8n 工具」，確認有連上。</p>
 <h4>做法 B（免費退路）：沒有能接 MCP 的 AI</h4>
 <p>不用 MCP 也能做完整課：</p>
 <ol>
 <li>把 <a href="files/b/prompt-restock.txt" download>prompt-restock.txt</a> 的全文貼給<strong>任何免費聊天 AI</strong>，請它回一份 n8n workflow JSON。</li>
 <li>把回答存成 <code>restock.json</code>（只留 JSON，把前後的說明文字刪掉）。</li>
-<li>在副本用 <strong>Import from File</strong> 匯入。
-你應該看到：匯入成功、出現 4 個節點的流程（或接近 4 個；AI 做得不對，就是下一段要驗收的重點）。</li>
+<li>在副本用 <strong>Import from File</strong> 匯入。<br><span class="see">你應該看到</span>匯入成功、出現 4 個節點的流程（或接近 4 個；AI 做得不對，就是下一段要驗收的重點）。</li>
 </ol>
 <p>後面的<strong>自己驗收完全一樣</strong>。</p>
 <h3 id="sec-6">第 3 段：請 AI 做補貨提醒</h3>
 <p>把 <a href="files/b/prompt-restock.txt" download>prompt-restock.txt</a> 的內容貼給 AI（做法 B 已經做過這步）。重點是它裡面寫了：只放 4 個節點、節點用中文名、不要通知／寄信／寫檔／HTTP Request、不用任何憑證、<strong>不要 Publish</strong>、做完說明每個節點在做什麼，還列了你接下來要測的四種情況。</p>
 <ol>
-<li><p>貼上需求，讓 AI 在副本建立流程。
-你應該看到：AI 回報建立成功。（實測整條路是：AI 用 MCP 送出流程程式 → 驗證「valid，4 個節點」→ 建立成功 → 執行。）</p>
+<li><p>貼上需求，讓 AI 在副本建立流程。<br><span class="see">你應該看到</span>AI 回報建立成功。（實測整條路是：AI 用 MCP 送出流程程式 → 驗證「valid，4 個節點」→ 建立成功 → 執行。）</p>
 </li>
-<li><p>回到副本的 n8n 編輯器，打開 <strong>Overview</strong> 找到新流程，點進去。
-你應該看到：4 個節點，名稱是中文，沒有通知、寄信、寫檔、HTTP Request；<strong>沒有被 Publish</strong>。</p>
+<li><p>回到副本的 n8n 編輯器，打開 <strong>Overview</strong> 找到新流程，點進去。<br><span class="see">你應該看到</span>4 個節點，名稱是中文，沒有通知、寄信、寫檔、HTTP Request；<strong>沒有被 Publish</strong>。</p>
 </li>
 </ol>
 <blockquote>
@@ -132,7 +127,7 @@ npx n8n start</code></pre></div>
 <td>欄位 <code>draft</code>：<code>&lt;品名&gt; 剩 &lt;數量&gt;，低於 &lt;門檻&gt;，記得補貨</code></td>
 </tr>
 </tbody></table>
-<details class="wf"><summary>對照答案（b/main-done.json）</summary><a href="files/b/main-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 592 76" width="592" height="76" role="img" aria-label="流程圖：手動執行、假庫存、低於門檻？、補貨草稿"><defs><marker id="ah53" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M122 38 C139 38 139 38 152 38" marker-end="url(#ah53)"/><path class="e" d="M287 38 C304 38 304 38 317 38" marker-end="url(#ah53)"/><path class="e" d="M417 28.666666666666668 C434 28.666666666666668 434 38 447 38" marker-end="url(#ah53)"/><text class="el" x="421" y="24.666666666666668">true</text><g class="n trigger"><rect x="10" y="10" width="112" height="56" rx="12"/><text class="nm" x="66" y="34">手動執行</text><text class="ty" x="66" y="52">Manual Trigger</text></g><g class="n data"><rect x="156" y="10" width="131" height="56" rx="12"/><text class="nm" x="221.5" y="34">假庫存</text><text class="ty" x="221.5" y="52">Edit Fields (Set)</text></g><g class="n logic"><rect x="321" y="10" width="96" height="56" rx="12"/><text class="nm" x="369" y="34">低於門檻？</text><text class="ty" x="369" y="52">If</text></g><g class="n data"><rect x="451" y="10" width="131" height="56" rx="12"/><text class="nm" x="516.5" y="34">補貨草稿</text><text class="ty" x="516.5" y="52">Edit Fields (Set)</text></g></svg></div><figcaption>對照答案的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>對照答案（b/main-done.json）</summary><a href="files/b/main-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;選修 B 補貨提醒（對照答案）&quot;,
   &quot;nodes&quot;: [
     {
@@ -258,31 +253,24 @@ npx n8n start</code></pre></div>
 </details><h3 id="sec-7">第 4 段：自己驗收</h3>
 <p><strong>匯入或建立成功、有綠燈，都不算通過。</strong> 照順序做這四種情境，每次都記下 <strong>Executions</strong> 裡看到的筆數與草稿：</p>
 <ol>
-<li><p><strong>N（正常）</strong>：衛生紙 2、門檻 3。
-你應該看到：走 true，1 筆；草稿「衛生紙 剩 2，低於 3，記得補貨」。</p>
+<li><p><strong>N（正常）</strong>：衛生紙 2、門檻 3。<br><span class="see">你應該看到</span>走 true，1 筆；草稿「衛生紙 剩 2，低於 3，記得補貨」。</p>
 </li>
-<li><p><strong>剛好等於</strong>：把假庫存的 <code>qty</code> 改成 3（門檻也是 3）。
-你應該看到：走 false，1 筆；<strong>沒有草稿</strong>。「低於」不含等於。想讓「剛好等於」也提醒，要把 If 改成「小於或等於」，這是改需求一次。</p>
+<li><p><strong>剛好等於</strong>：把假庫存的 <code>qty</code> 改成 3（門檻也是 3）。<br><span class="see">你應該看到</span>走 false，1 筆；<strong>沒有草稿</strong>。「低於」不含等於。想讓「剛好等於」也提醒，要把 If 改成「小於或等於」，這是改需求一次。</p>
 </li>
-<li><p><strong>M（缺資料）</strong>：把 <code>qty</code> 那一行整個拿掉。
-你應該看到：<strong>不會報錯</strong>，走 false，沒有草稿。</p>
+<li><p><strong>M（缺資料）</strong>：把 <code>qty</code> 那一行整個拿掉。<br><span class="see">你應該看到</span><strong>不會報錯</strong>，走 false，沒有草稿。</p>
 </li>
-<li><p><strong>打錯欄位</strong>：把 If 裡的 <code>$json.qty</code> 打成 <code>$json.qyt</code>。
-你應該看到：<strong>也不會報錯</strong>，走 false，沒有草稿。</p>
+<li><p><strong>打錯欄位</strong>：把 If 裡的 <code>$json.qty</code> 打成 <code>$json.qyt</code>。<br><span class="see">你應該看到</span><strong>也不會報錯</strong>，走 false，沒有草稿。</p>
 </li>
 </ol>
 <blockquote>
 <p><strong>兩個「安靜地不提醒」要特別小心。</strong> 缺資料和打錯字都不會紅燈，只是沒通知；只看綠燈會以為一切正常。修法跟結業範例同一招：在 If 加一個「<code>qty</code> 存在（<strong>exists</strong>）」的條件，而且每種情境都要<strong>親自跑</strong>，不能相信 AI 說「我測過了」。</p>
 </blockquote>
 <ol start="5">
-<li><p><strong>修一次錯</strong>：用第 4 點的錯誤，把 <code>$json.qyt</code> 改回 <code>$json.qty</code>，再跑 N。
-你應該看到：回到走 true、1 筆、有草稿。</p>
+<li><p><strong>修一次錯</strong>：用第 4 點的錯誤，把 <code>$json.qyt</code> 改回 <code>$json.qty</code>，再跑 N。<br><span class="see">你應該看到</span>回到走 true、1 筆、有草稿。</p>
 </li>
-<li><p><strong>檢查沒有 Publish</strong>：到 <strong>Overview</strong>。
-你應該看到：這條流程不是 Published 狀態（Published 標記位置見版本附頁）。</p>
+<li><p><strong>檢查沒有 Publish</strong>：到 <strong>Overview</strong>。<br><span class="see">你應該看到</span>這條流程不是 Published 狀態（Published 標記位置見版本附頁）。</p>
 </li>
-<li><p><strong>收尾</strong>：到 Instance-level MCP 關掉 <strong>Enable MCP access</strong> 或撤銷金鑰（<strong>Revoke access</strong>，位置待查證），再關掉副本的 PowerShell 視窗。
-你應該看到：AI 用戶端再也連不上。</p>
+<li><p><strong>收尾</strong>：到 Instance-level MCP 關掉 <strong>Enable MCP access</strong> 或撤銷金鑰（<strong>Revoke access</strong>，位置待查證），再關掉副本的 PowerShell 視窗。<br><span class="see">你應該看到</span>AI 用戶端再也連不上。</p>
 </li>
 </ol>
 <h3 id="sec-8">驗收</h3>

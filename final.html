@@ -176,8 +176,7 @@
 <p>位置見版本附頁；排程怎麼設、Telegram 憑證怎麼建，回 M4、M5。</p>
 <h4>做法：先照做一次</h4>
 <ol>
-<li><p>匯入 <a href="files/f/main-done.json" download>main-done.json</a>，「傳通知」選你的 Telegram 憑證，Chat ID 改成 <code>&lt;你的 Chat ID&gt;</code>。
-你應該看到：5 個節點，連成一條線；「低於目標？」下面有 true、false 兩個出口，只有 true 接「傳通知」。</p>
+<li><p>匯入 <a href="files/f/main-done.json" download>main-done.json</a>，「傳通知」選你的 Telegram 憑證，Chat ID 改成 <code>&lt;你的 Chat ID&gt;</code>。<br><span class="see">你應該看到</span>5 個節點，連成一條線；「低於目標？」下面有 true、false 兩個出口，只有 true 接「傳通知」。</p>
 </li>
 <li><p>先不管排程，按 <strong>Execute workflow</strong>。
 你應該看到（N）：「抓匯率」輸出 4,692 筆左右（央行把歷史每日資料都回給你）；「最新一筆」1 筆；「低於目標？」走 <strong>false</strong>，1 筆；「傳通知」沒有跑。2026-11-21 實測當天美元 32.936，目標價預設 30，所以不通知。</p>
@@ -187,14 +186,12 @@
 <p>卡住了？「抓匯率」逾時或沒資料：先看網址有沒有貼對、逾時有沒有設到 20 秒（資料量大，預設時間可能不夠）。連續失敗就改用 M6 學的重試，不要一直手按。</p>
 </blockquote>
 <ol start="3">
-<li><p>改成你自己的目標：打開「低於目標？」，把第二個條件的 <code>30</code> 換成你的目標價。想測通知會不會真的送出，就暫時把 <code>30</code> 改大（例如 <code>40</code>），重跑。
-你應該看到：走 <strong>true</strong>，「傳通知」跑了，Telegram 收到「美元匯率 …（日期 央行資料，不是銀行牌告），低於你設的目標」。測完把目標價改回你的真值，不然每天都會被通知。</p>
+<li><p>改成你自己的目標：打開「低於目標？」，把第二個條件的 <code>30</code> 換成你的目標價。想測通知會不會真的送出，就暫時把 <code>30</code> 改大（例如 <code>40</code>），重跑。<br><span class="see">你應該看到</span>走 <strong>true</strong>，「傳通知」跑了，Telegram 收到「美元匯率 …（日期 央行資料，不是銀行牌告），低於你設的目標」。測完把目標價改回你的真值，不然每天都會被通知。</p>
 </li>
-<li><p>打開 <strong>Executions</strong>，確認這一次的紀錄筆數與走哪一路，記在驗收紀錄表。
-你應該看到：最近一筆是手動執行；各節點的筆數和你剛才看到的一樣。</p>
+<li><p>打開 <strong>Executions</strong>，確認這一次的紀錄筆數與走哪一路，記在驗收紀錄表。<br><span class="see">你應該看到</span>最近一筆是手動執行；各節點的筆數和你剛才看到的一樣。</p>
 </li>
 </ol>
-<details class="wf"><summary>完成版（f/main-done.json）</summary><a href="files/f/main-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 668 76" width="668" height="76" role="img" aria-label="流程圖：每天早上、抓匯率、最新一筆、低於目標？、傳通知"><defs><marker id="ah50" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M135 38 C152 38 152 38 165 38" marker-end="url(#ah50)"/><path class="e" d="M268 38 C285 38 285 38 298 38" marker-end="url(#ah50)"/><path class="e" d="M398 38 C415 38 415 38 428 38" marker-end="url(#ah50)"/><path class="e" d="M528 28.666666666666668 C545 28.666666666666668 545 38 558 38" marker-end="url(#ah50)"/><text class="el" x="532" y="24.666666666666668">true</text><g class="n trigger"><rect x="10" y="10" width="125" height="56" rx="12"/><text class="nm" x="72.5" y="34">每天早上</text><text class="ty" x="72.5" y="52">Schedule Trigger</text></g><g class="n data"><rect x="169" y="10" width="99" height="56" rx="12"/><text class="nm" x="218.5" y="34">抓匯率</text><text class="ty" x="218.5" y="52">HTTP Request</text></g><g class="n logic"><rect x="302" y="10" width="96" height="56" rx="12"/><text class="nm" x="350" y="34">最新一筆</text><text class="ty" x="350" y="52">Limit</text></g><g class="n logic"><rect x="432" y="10" width="96" height="56" rx="12"/><text class="nm" x="480" y="34">低於目標？</text><text class="ty" x="480" y="52">If</text></g><g class="n send"><rect x="562" y="10" width="96" height="56" rx="12"/><text class="nm" x="610" y="34">傳通知</text><text class="ty" x="610" y="52">Telegram</text></g></svg></div><figcaption>完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>完成版（f/main-done.json）</summary><a href="files/f/main-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;結業範例 旅費匯率提醒&quot;,
   &quot;nodes&quot;: [
     {
@@ -359,26 +356,21 @@
 <p><strong>診斷失敗。</strong></p>
 <ol>
 <li>把「抓匯率」的網址暫時改成 <code>http://localhost:5678/webhook/mock?status=200</code>（M4、M6 用過的模擬來源，要先 <strong>Publish</strong>；它回 200 但裡面沒有匯率欄位）。</li>
-<li>把「低於目標？」先改成只留一個條件：<code>NTD_USD</code> 小於 30（刪掉「存在」那個條件）。重跑。
-你應該看到：<strong>走 true，「傳通知」跑了</strong>，收到「美元匯率 undefined（undefined 央行資料…）」這種訊息。流程是綠燈、通知也送出去了，但內容是錯的。</li>
+<li>把「低於目標？」先改成只留一個條件：<code>NTD_USD</code> 小於 30（刪掉「存在」那個條件）。重跑。<br><span class="see">你應該看到</span><strong>走 true，「傳通知」跑了</strong>，收到「美元匯率 undefined（undefined 央行資料…）」這種訊息。流程是綠燈、通知也送出去了，但內容是錯的。</li>
 </ol>
 <blockquote>
 <p>卡住了？沒有走到 true：確認「抓匯率」網址真的是模擬來源、且模擬來源流程有 <strong>Publish</strong>；也確認第二個條件的左邊是 <code>NTD_USD</code>，不是別的欄位。</p>
 </blockquote>
 <ol start="3">
-<li>找原因。打開「最新一筆」的輸出，沒有 <code>NTD_USD</code> 這個欄位；再打開「低於目標？」，空值被當成「小於 30」，條件成立。
-你應該看到：輸入沒有匯率，If 卻判成 true。<strong>綠燈不代表對</strong>，只有打開輸出才知道。</li>
+<li>找原因。打開「最新一筆」的輸出，沒有 <code>NTD_USD</code> 這個欄位；再打開「低於目標？」，空值被當成「小於 30」，條件成立。<br><span class="see">你應該看到</span>輸入沒有匯率，If 卻判成 true。<strong>綠燈不代表對</strong>，只有打開輸出才知道。</li>
 </ol>
 <p><strong>復原。</strong></p>
 <ol>
 <li>加回第一個條件：<code>NTD_USD</code> 存在（<strong>exists</strong>），和「小於 30」用 <strong>AND</strong> 一起成立。</li>
-<li>用模擬來源重跑一次。
-你應該看到：走 <strong>false</strong>，沒有通知。</li>
-<li>把網址改回央行網址，再跑一次 N，確認回到原本的結果（false，1 筆）。
-你應該看到：N 的結果跟第 2 步一樣；缺資料那次的紀錄編號也記進驗收紀錄表。</li>
+<li>用模擬來源重跑一次。<br><span class="see">你應該看到</span>走 <strong>false</strong>，沒有通知。</li>
+<li>把網址改回央行網址，再跑一次 N，確認回到原本的結果（false，1 筆）。<br><span class="see">你應該看到</span>N 的結果跟第 2 步一樣；缺資料那次的紀錄編號也記進驗收紀錄表。</li>
 </ol>
-<p><strong>503 故障（E）。</strong> 把網址改成 <code>http://localhost:5678/webhook/mock?status=503</code>。
-你應該看到：「抓匯率」紅燈，訊息「Service unavailable - try again later or consider setting this node to retry automatically」，後面都沒跑。這時要有人知道：M6 的錯誤流程與重試怎麼接，題目交件時至少要證明<strong>壞了你會知道</strong>。測完改回央行網址。</p>
+<p><strong>503 故障（E）。</strong> 把網址改成 <code>http://localhost:5678/webhook/mock?status=503</code>。<br><span class="see">你應該看到</span>「抓匯率」紅燈，訊息「Service unavailable - try again later or consider setting this node to retry automatically」，後面都沒跑。這時要有人知道：M6 的錯誤流程與重試怎麼接，題目交件時至少要證明<strong>壞了你會知道</strong>。測完改回央行網址。</p>
 <h3 id="sec-4">題目卡</h3>
 <p>每題先做出 N，再依序測 M、E，最後改一次需求。下面的「建議節點」只是起點，數量和名稱可以自己調；沒寫到的來源網址，回對應模組找（只用白名單來源）。</p>
 <h4>題 1：自選股盤後雷達</h4>

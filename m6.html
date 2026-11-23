@@ -56,21 +56,18 @@
 </tr>
 </tbody></table>
 <ol>
-<li><p>打開「抓匯率」，在 <strong>Options</strong> 加 <strong>Timeout</strong>，填 <code>10000</code>。位置見版本附頁。
-你應該看到：Options 裡多了一項 Timeout，值是 10000。</p>
+<li><p>打開「抓匯率」，在 <strong>Options</strong> 加 <strong>Timeout</strong>，填 <code>10000</code>。位置見版本附頁。<br><span class="see">你應該看到</span>Options 裡多了一項 Timeout，值是 10000。</p>
 </li>
-<li><p>在同一個節點的 <strong>Settings</strong> 打開 <strong>Retry On Fail</strong>，<strong>Max Tries</strong> 填 <code>3</code>，<strong>Wait Between Tries</strong> 填 <code>2000</code>。
-你應該看到：三個欄位都有值；Max Tries 是 3，意思是失敗時總共最多呼叫 3 次。</p>
+<li><p>在同一個節點的 <strong>Settings</strong> 打開 <strong>Retry On Fail</strong>，<strong>Max Tries</strong> 填 <code>3</code>，<strong>Wait Between Tries</strong> 填 <code>2000</code>。<br><span class="see">你應該看到</span>三個欄位都有值；Max Tries 是 3，意思是失敗時總共最多呼叫 3 次。</p>
 </li>
-<li><p>執行整條流程一次，確認照常。
-你應該看到：整理 1 筆，<code>status</code> 是 <code>ok</code>，和 M5 一樣；沒有紅色節點。</p>
+<li><p>執行整條流程一次，確認照常。<br><span class="see">你應該看到</span>整理 1 筆，<code>status</code> 是 <code>ok</code>，和 M5 一樣；沒有紅色節點。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？找不到 Retry On Fail：它在節點的 <strong>Settings</strong> 分頁，不是 <strong>Parameters</strong>；找不到 Timeout：它在 <strong>Options</strong> 的新增選項裡。位置見版本附頁。</p>
 </blockquote>
 <p>股、警、聞三條也照同樣的兩處設定改（Timeout 10000、Retry On Fail、Max Tries 3、Wait Between Tries 2000），不重複步驟。</p>
-<details class="wf"><summary>「匯」逾時與重試完成版（m6/main-fx-done.json）</summary><a href="files/m6/main-fx-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 573 76" width="573" height="76" role="img" aria-label="流程圖：排程、抓匯率、最新一筆、整理"><defs><marker id="ah33" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M135 38 C152 38 152 38 165 38" marker-end="url(#ah33)"/><path class="e" d="M268 38 C285 38 285 38 298 38" marker-end="url(#ah33)"/><path class="e" d="M398 38 C415 38 415 38 428 38" marker-end="url(#ah33)"/><g class="n trigger"><rect x="10" y="10" width="125" height="56" rx="12"/><text class="nm" x="72.5" y="34">排程</text><text class="ty" x="72.5" y="52">Schedule Trigger</text></g><g class="n data"><rect x="169" y="10" width="99" height="56" rx="12"/><text class="nm" x="218.5" y="34">抓匯率</text><text class="ty" x="218.5" y="52">HTTP Request</text></g><g class="n logic"><rect x="302" y="10" width="96" height="56" rx="12"/><text class="nm" x="350" y="34">最新一筆</text><text class="ty" x="350" y="52">Limit</text></g><g class="n data"><rect x="432" y="10" width="131" height="56" rx="12"/><text class="nm" x="497.5" y="34">整理</text><text class="ty" x="497.5" y="52">Edit Fields (Set)</text></g></svg></div><figcaption>「匯」逾時與重試完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>「匯」逾時與重試完成版（m6/main-fx-done.json）</summary><a href="files/m6/main-fx-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M6 主線 匯（逾時＋重試）&quot;,
   &quot;nodes&quot;: [
     {
@@ -248,24 +245,20 @@
 時間：{{ $now.toFormat(&#39;MM-dd HH:mm&#39;) }}</code></pre></div>
 <p>四行分別是：哪條流程、哪個節點、錯誤訊息原文、什麼時間。<code>$json.workflow</code>、<code>$json.execution</code> 是 Error Trigger 交出來的資料，不用自己準備。</p>
 <ol>
-<li><p>匯入 <code>main-errwf-done.json</code>，在「傳到Telegram」選你的 Telegram 憑證、填 chat ID，確認 <strong>Append n8n Attribution</strong> 是關的。位置見版本附頁。
-你應該看到：3 個節點依序連線，傳到Telegram 沒有紅色警示。</p>
+<li><p>匯入 <code>main-errwf-done.json</code>，在「傳到Telegram」選你的 Telegram 憑證、填 chat ID，確認 <strong>Append n8n Attribution</strong> 是關的。位置見版本附頁。<br><span class="see">你應該看到</span>3 個節點依序連線，傳到Telegram 沒有紅色警示。</p>
 </li>
-<li><p>錯誤流程本身要不要 <strong>Publish</strong>：如果介面要求才 <strong>Publish</strong>（待查證）。
-你應該看到：流程列表裡有「M6 錯誤流程」。</p>
+<li><p>錯誤流程本身要不要 <strong>Publish</strong>：如果介面要求才 <strong>Publish</strong>（待查證）。<br><span class="see">你應該看到</span>流程列表裡有「M6 錯誤流程」。</p>
 </li>
-<li><p>到股、匯、警、聞四條流程，各自打開 <strong>Workflow Settings</strong>，把 <strong>Error Workflow</strong> 選成「M6 錯誤流程」。位置見版本附頁。
-你應該看到：四條流程的 Error Workflow 都顯示「M6 錯誤流程」。</p>
+<li><p>到股、匯、警、聞四條流程，各自打開 <strong>Workflow Settings</strong>，把 <strong>Error Workflow</strong> 選成「M6 錯誤流程」。位置見版本附頁。<br><span class="see">你應該看到</span>四條流程的 Error Workflow 都顯示「M6 錯誤流程」。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？Error Workflow 清單裡找不到「M6 錯誤流程」：先確認錯誤流程開頭是 <strong>Error Trigger</strong>，並且已存檔。</p>
 </blockquote>
 <ol start="4">
-<li>測試：<strong>不能用手動執行測</strong>，手動執行失敗不會觸發錯誤流程。改用下面的小練習①：它是每分鐘的排程，<strong>Publish</strong> 後屬於正式觸發。
-你應該看到：手機收到「⚠️ 流程失敗：…／節點：…／訊息：…／時間：…」四行；Executions 裡錯誤流程有自己的一筆紀錄。Telegram 實際畫面（待查證）。</li>
+<li>測試：<strong>不能用手動執行測</strong>，手動執行失敗不會觸發錯誤流程。改用下面的小練習①：它是每分鐘的排程，<strong>Publish</strong> 後屬於正式觸發。<br><span class="see">你應該看到</span>手機收到「⚠️ 流程失敗：…／節點：…／訊息：…／時間：…」四行；Executions 裡錯誤流程有自己的一筆紀錄。Telegram 實際畫面（待查證）。</li>
 </ol>
-<details class="wf"><summary>錯誤流程完成版（m6/main-errwf-done.json）</summary><a href="files/m6/main-errwf-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 439 76" width="439" height="76" role="img" aria-label="流程圖：錯誤觸發、整理錯誤、傳到Telegram"><defs><marker id="ah34" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M115 38 C132 38 132 38 145 38" marker-end="url(#ah34)"/><path class="e" d="M280 38 C297 38 297 38 310 38" marker-end="url(#ah34)"/><g class="n trigger"><rect x="10" y="10" width="105" height="56" rx="12"/><text class="nm" x="62.5" y="34">錯誤觸發</text><text class="ty" x="62.5" y="52">Error Trigger</text></g><g class="n data"><rect x="149" y="10" width="131" height="56" rx="12"/><text class="nm" x="214.5" y="34">整理錯誤</text><text class="ty" x="214.5" y="52">Edit Fields (Set)</text></g><g class="n send"><rect x="314" y="10" width="115" height="56" rx="12"/><text class="nm" x="371.5" y="34">傳到Telegram</text><text class="ty" x="371.5" y="52">Telegram</text></g></svg></div><figcaption>錯誤流程完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>錯誤流程完成版（m6/main-errwf-done.json）</summary><a href="files/m6/main-errwf-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M6 錯誤流程&quot;,
   &quot;nodes&quot;: [
     {
@@ -373,22 +366,19 @@
 </tr>
 </tbody></table>
 <ol>
-<li><p>匯入 <code>ex1-done.json</code>，打開 <strong>Workflow Settings</strong>，<strong>Error Workflow</strong> 選「M6 錯誤流程」。
-你應該看到：3 個節點依序連線；Error Workflow 顯示「M6 錯誤流程」。</p>
+<li><p>匯入 <code>ex1-done.json</code>，打開 <strong>Workflow Settings</strong>，<strong>Error Workflow</strong> 選「M6 錯誤流程」。<br><span class="see">你應該看到</span>3 個節點依序連線；Error Workflow 顯示「M6 錯誤流程」。</p>
 </li>
-<li><p>按 <strong>Publish</strong>，等 1–2 分鐘。模擬來源也要是已 <strong>Publish</strong> 的狀態。
-你應該看到：Executions 出現失敗紀錄，「抓澆水資料」是紅色的，訊息「Service unavailable - try again later…」；手機收到錯誤通知。</p>
+<li><p>按 <strong>Publish</strong>，等 1–2 分鐘。模擬來源也要是已 <strong>Publish</strong> 的狀態。<br><span class="see">你應該看到</span>Executions 出現失敗紀錄，「抓澆水資料」是紅色的，訊息「Service unavailable - try again later…」；手機收到錯誤通知。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？訊息是「The connection was aborted, perhaps the server is offline」，多半是模擬來源沒 <strong>Publish</strong>，回去發布再等一分鐘。</p>
 </blockquote>
 <ol start="3">
-<li><strong>測完一定要 Unpublish</strong>，不然每分鐘會發一則通知到手機。
-你應該看到：流程列表上它不再顯示已發布；之後 Executions 不再新增紀錄。</li>
+<li><strong>測完一定要 Unpublish</strong>，不然每分鐘會發一則通知到手機。<br><span class="see">你應該看到</span>流程列表上它不再顯示已發布；之後 Executions 不再新增紀錄。</li>
 </ol>
 <p>變形題：只把網址裡的 <code>status=503</code> 改成 <code>status=401</code>（其他參數保留，完整網址是 <code>http://localhost:5678/webhook/mock?status=401&amp;t=plant</code>），比較重試的差別。401 是鑰匙錯，重試 3 次都一樣失敗；這種節點應該關掉 <strong>Retry On Fail</strong>，直接通知。（不附素材，自己改網址。）</p>
-<details class="wf"><summary>完成版（m6/ex1-done.json）</summary><a href="files/m6/ex1-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 443 76" width="443" height="76" role="img" aria-label="流程圖：排程、抓澆水資料、提醒內容"><defs><marker id="ah35" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M135 38 C152 38 152 38 165 38" marker-end="url(#ah35)"/><path class="e" d="M268 38 C285 38 285 38 298 38" marker-end="url(#ah35)"/><g class="n trigger"><rect x="10" y="10" width="125" height="56" rx="12"/><text class="nm" x="72.5" y="34">排程</text><text class="ty" x="72.5" y="52">Schedule Trigger</text></g><g class="n data"><rect x="169" y="10" width="99" height="56" rx="12"/><text class="nm" x="218.5" y="34">抓澆水資料</text><text class="ty" x="218.5" y="52">HTTP Request</text></g><g class="n data"><rect x="302" y="10" width="131" height="56" rx="12"/><text class="nm" x="367.5" y="34">提醒內容</text><text class="ty" x="367.5" y="52">Edit Fields (Set)</text></g></svg></div><figcaption>完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>完成版（m6/ex1-done.json）</summary><a href="files/m6/ex1-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M6 小練習① 植物提醒來源故障&quot;,
   &quot;nodes&quot;: [
     {
@@ -517,21 +507,18 @@
 </tr>
 </tbody></table>
 <ol>
-<li><p>匯入正常版 <code>ex2-done.json</code>，執行。
-你應該看到：「有金額嗎」的 true 分支 1 筆，「記帳」輸出 <code>午餐 120 元</code>。</p>
+<li><p>匯入正常版 <code>ex2-done.json</code>，執行。<br><span class="see">你應該看到</span>「有金額嗎」的 true 分支 1 筆，「記帳」輸出 <code>午餐 120 元</code>。</p>
 </li>
-<li><p>匯入缺金額版 <code>ex2-missing-done.json</code>（「一筆支出」沒有 <code>amount</code>），執行。
-你應該看到：「有金額嗎」的 false 分支 1 筆，「停下報錯」變紅，訊息「支出缺金額：午餐」，整次執行算失敗，「記帳」沒有跑。</p>
+<li><p>匯入缺金額版 <code>ex2-missing-done.json</code>（「一筆支出」沒有 <code>amount</code>），執行。<br><span class="see">你應該看到</span>「有金額嗎」的 false 分支 1 筆，「停下報錯」變紅，訊息「支出缺金額：午餐」，整次執行算失敗，「記帳」沒有跑。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？缺金額版記成「午餐 undefined 元」或 0 元：檢查「有金額嗎」的 true、false 是不是接反，缺金額那一筆應走 false 分支。</p>
 </blockquote>
 <ol start="3">
-<li>想一想：如果這條是排程正式觸發，這個失敗會觸發錯誤流程；手動按的不會。
-你應該看到：手動執行時只有這次執行是紅的，手機沒有通知。</li>
+<li>想一想：如果這條是排程正式觸發，這個失敗會觸發錯誤流程；手動按的不會。<br><span class="see">你應該看到</span>手動執行時只有這次執行是紅的，手機沒有通知。</li>
 </ol>
-<details class="wf"><summary>正常版（m6/ex2-done.json）</summary><a href="files/m6/ex2-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 592 162" width="592" height="162" role="img" aria-label="流程圖：手動、一筆支出、有金額嗎、記帳、停下報錯"><defs><marker id="ah36" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M122 38 C139 38 139 38 152 38" marker-end="url(#ah36)"/><path class="e" d="M287 38 C304 38 304 38 317 38" marker-end="url(#ah36)"/><path class="e" d="M417 28.666666666666668 C434 28.666666666666668 434 38 447 38" marker-end="url(#ah36)"/><text class="el" x="421" y="24.666666666666668">true</text><path class="e" d="M417 47.333333333333336 C438.75 47.333333333333336 438.75 124 456.5 124" marker-end="url(#ah36)"/><text class="el" x="421" y="60.333333333333336">false</text><g class="n trigger"><rect x="10" y="10" width="112" height="56" rx="12"/><text class="nm" x="66" y="34">手動</text><text class="ty" x="66" y="52">Manual Trigger</text></g><g class="n data"><rect x="156" y="10" width="131" height="56" rx="12"/><text class="nm" x="221.5" y="34">一筆支出</text><text class="ty" x="221.5" y="52">Edit Fields (Set)</text></g><g class="n logic"><rect x="321" y="10" width="96" height="56" rx="12"/><text class="nm" x="369" y="34">有金額嗎</text><text class="ty" x="369" y="52">If</text></g><g class="n data"><rect x="451" y="10" width="131" height="56" rx="12"/><text class="nm" x="516.5" y="34">記帳</text><text class="ty" x="516.5" y="52">Edit Fields (Set)</text></g><g class="n logic"><rect x="460.5" y="96" width="112" height="56" rx="12"/><text class="nm" x="516.5" y="120">停下報錯</text><text class="ty" x="516.5" y="138">Stop And Error</text></g></svg></div><figcaption>正常版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>正常版（m6/ex2-done.json）</summary><a href="files/m6/ex2-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M6 小練習② 支出缺金額（正常）&quot;,
   &quot;nodes&quot;: [
     {
@@ -688,7 +675,7 @@
     &quot;executionOrder&quot;: &quot;v1&quot;
   }
 }</code></pre></div>
-</details><details class="wf"><summary>缺金額版（m6/ex2-missing-done.json）</summary><a href="files/m6/ex2-missing-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+</details><figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 592 162" width="592" height="162" role="img" aria-label="流程圖：手動、一筆支出、有金額嗎、記帳、停下報錯"><defs><marker id="ah37" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M122 38 C139 38 139 38 152 38" marker-end="url(#ah37)"/><path class="e" d="M287 38 C304 38 304 38 317 38" marker-end="url(#ah37)"/><path class="e" d="M417 28.666666666666668 C434 28.666666666666668 434 38 447 38" marker-end="url(#ah37)"/><text class="el" x="421" y="24.666666666666668">true</text><path class="e" d="M417 47.333333333333336 C438.75 47.333333333333336 438.75 124 456.5 124" marker-end="url(#ah37)"/><text class="el" x="421" y="60.333333333333336">false</text><g class="n trigger"><rect x="10" y="10" width="112" height="56" rx="12"/><text class="nm" x="66" y="34">手動</text><text class="ty" x="66" y="52">Manual Trigger</text></g><g class="n data"><rect x="156" y="10" width="131" height="56" rx="12"/><text class="nm" x="221.5" y="34">一筆支出</text><text class="ty" x="221.5" y="52">Edit Fields (Set)</text></g><g class="n logic"><rect x="321" y="10" width="96" height="56" rx="12"/><text class="nm" x="369" y="34">有金額嗎</text><text class="ty" x="369" y="52">If</text></g><g class="n data"><rect x="451" y="10" width="131" height="56" rx="12"/><text class="nm" x="516.5" y="34">記帳</text><text class="ty" x="516.5" y="52">Edit Fields (Set)</text></g><g class="n logic"><rect x="460.5" y="96" width="112" height="56" rx="12"/><text class="nm" x="516.5" y="120">停下報錯</text><text class="ty" x="516.5" y="138">Stop And Error</text></g></svg></div><figcaption>缺金額版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>缺金額版（m6/ex2-missing-done.json）</summary><a href="files/m6/ex2-missing-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M6 小練習② 支出缺金額（缺金額）&quot;,
   &quot;nodes&quot;: [
     {

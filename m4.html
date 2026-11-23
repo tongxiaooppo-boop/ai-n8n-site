@@ -21,7 +21,7 @@
 <h3 id="sec-4">主線：四條收集流程</h3>
 <p>依序建立四條收集流程，先手動核對資料，再讓排程自行執行。</p>
 <p>準備：匯入模擬來源並 <strong>Publish</strong>。這條流程維持原樣，下面只使用它提供的網址。</p>
-<details class="wf"><summary>模擬來源（common/mock-source.json）</summary><a href="files/common/mock-source.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 417 76" width="417" height="76" role="img" aria-label="流程圖：收到請求、等一下、回應"><defs><marker id="ah16" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M106 38 C123 38 123 38 136 38" marker-end="url(#ah16)"/><path class="e" d="M236 38 C253 38 253 38 266 38" marker-end="url(#ah16)"/><g class="n trigger"><rect x="10" y="10" width="96" height="56" rx="12"/><text class="nm" x="58" y="34">收到請求</text><text class="ty" x="58" y="52">Webhook</text></g><g class="n logic"><rect x="140" y="10" width="96" height="56" rx="12"/><text class="nm" x="188" y="34">等一下</text><text class="ty" x="188" y="52">Wait</text></g><g class="n send"><rect x="270" y="10" width="137" height="56" rx="12"/><text class="nm" x="338.5" y="34">回應</text><text class="ty" x="338.5" y="52">Respond to Webhook</text></g></svg></div><figcaption>模擬來源的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>模擬來源（common/mock-source.json）</summary><a href="files/common/mock-source.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
  &quot;name&quot;: &quot;模擬來源（教材用，M4／M6）&quot;,
  &quot;nodes&quot;: [
   {
@@ -132,19 +132,16 @@
 </tbody></table>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL</code></pre></div>
 <ol>
-<li><p>建立前兩個節點，設定網址與 <strong>GET</strong>，手動執行檢查來源。
-你應該看到：「抓股價」有 1000 筆以上，含 <code>Date</code>、<code>Code</code>、<code>Name</code>、<code>ClosingPrice</code>、<code>Change</code>；數字原本是字串。</p>
+<li><p>建立前兩個節點，設定網址與 <strong>GET</strong>，手動執行檢查來源。<br><span class="see">你應該看到</span>「抓股價」有 1000 筆以上，含 <code>Date</code>、<code>Code</code>、<code>Name</code>、<code>ClosingPrice</code>、<code>Change</code>；數字原本是字串。</p>
 </li>
-<li><p>接上「挑自選股」，用 <strong>String</strong> 的 <strong>is equal to</strong> 比較 <code>{{ $json.Code }}</code> 與 <code>2330</code>、<code>2317</code>，選 <strong>OR</strong>。
-你應該看到：留下 2 筆，代號是 2330、2317。</p>
+<li><p>接上「挑自選股」，用 <strong>String</strong> 的 <strong>is equal to</strong> 比較 <code>{{ $json.Code }}</code> 與 <code>2330</code>、<code>2317</code>，選 <strong>OR</strong>。<br><span class="see">你應該看到</span>留下 2 筆，代號是 2330、2317。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？一筆都沒留下時先確認欄名是大寫 <code>Code</code>，比較值是字串，兩條條件用 <strong>OR</strong>。</p>
 </blockquote>
 <ol start="3">
-<li>接上「整理」，依下表新增欄位，選型別並貼入 <strong>Expression</strong>，執行整條流程。
-你應該看到：整理後 2 筆，<code>dataDate</code> 像 <code>2026-11-17</code>，<code>code</code>、<code>name</code> 是字串，有資料時 <code>close</code>、<code>change</code> 是數字。</li>
+<li>接上「整理」，依下表新增欄位，選型別並貼入 <strong>Expression</strong>，執行整條流程。<br><span class="see">你應該看到</span>整理後 2 筆，<code>dataDate</code> 像 <code>2026-11-17</code>，<code>code</code>、<code>name</code> 是字串，有資料時 <code>close</code>、<code>change</code> 是數字。</li>
 </ol>
 <table>
 <thead>
@@ -186,7 +183,7 @@
 </tr>
 </tbody></table>
 <p>沿用 M2 的整理方式：收盤空字串時，<code>close</code>、<code>change</code> 都是 <code>null</code>，<code>valid=false</code>，不能相信來源此時填的漲跌零值。早上 7 點取得的是最近一個交易日資料；一般週一早上看到上週五的資料，遇休市要再往前看。早報要寫資料日期，不寫「昨天收盤」。</p>
-<details class="wf"><summary>完成版（m4/main-stock-done.json）</summary><a href="files/m4/main-stock-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 573 76" width="573" height="76" role="img" aria-label="流程圖：排程、抓股價、挑自選股、整理"><defs><marker id="ah17" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M135 38 C152 38 152 38 165 38" marker-end="url(#ah17)"/><path class="e" d="M268 38 C285 38 285 38 298 38" marker-end="url(#ah17)"/><path class="e" d="M398 38 C415 38 415 38 428 38" marker-end="url(#ah17)"/><g class="n trigger"><rect x="10" y="10" width="125" height="56" rx="12"/><text class="nm" x="72.5" y="34">排程</text><text class="ty" x="72.5" y="52">Schedule Trigger</text></g><g class="n data"><rect x="169" y="10" width="99" height="56" rx="12"/><text class="nm" x="218.5" y="34">抓股價</text><text class="ty" x="218.5" y="52">HTTP Request</text></g><g class="n logic"><rect x="302" y="10" width="96" height="56" rx="12"/><text class="nm" x="350" y="34">挑自選股</text><text class="ty" x="350" y="52">Filter</text></g><g class="n data"><rect x="432" y="10" width="131" height="56" rx="12"/><text class="nm" x="497.5" y="34">整理</text><text class="ty" x="497.5" y="52">Edit Fields (Set)</text></g></svg></div><figcaption>完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>完成版（m4/main-stock-done.json）</summary><a href="files/m4/main-stock-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M4 主線 股&quot;,
   &quot;nodes&quot;: [
     {
@@ -388,15 +385,13 @@
 </tbody></table>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">https://cpx.cbc.gov.tw/api/OpenData/FTDOpenData_Day</code></pre></div>
 <ol>
-<li>建立「排程」與「抓匯率」，設定網址後手動執行，再接上「最新一筆」。<strong>Keep</strong> 的位置見版本附頁。
-你應該看到：來源有 1000 筆以上，為 2008 年起由舊到新的歷史資料；「最新一筆」留下 1 筆。</li>
+<li>建立「排程」與「抓匯率」，設定網址後手動執行，再接上「最新一筆」。<strong>Keep</strong> 的位置見版本附頁。<br><span class="see">你應該看到</span>來源有 1000 筆以上，為 2008 年起由舊到新的歷史資料；「最新一筆」留下 1 筆。</li>
 </ol>
 <blockquote>
 <p>卡住了？日期還在 2008 年時先把 <strong>Keep</strong> 從 <strong>First Items</strong> 改成 <strong>Last Items</strong>。</p>
 </blockquote>
 <ol start="2">
-<li>接上「整理」，依下表設定 <strong>Expression</strong> 並執行，查看日期與數字型別。
-你應該看到：1 筆，<code>dataDate</code> 像 <code>2026-11-17</code>、<code>usd</code> 是數字；實際日期與匯率依來源更新。</li>
+<li>接上「整理」，依下表設定 <strong>Expression</strong> 並執行，查看日期與數字型別。<br><span class="see">你應該看到</span>1 筆，<code>dataDate</code> 像 <code>2026-11-17</code>、<code>usd</code> 是數字；實際日期與匯率依來源更新。</li>
 </ol>
 <table>
 <thead>
@@ -419,15 +414,13 @@
 </tbody></table>
 <p>先檢查欄位存在才整理，缺欄位給 <code>null</code>，不讓它變成 0。央行匯率是參考資料，不是銀行換匯的成交價。</p>
 <ol start="3">
-<li><p>暫時把「抓匯率」網址改成 <code>http://localhost:5678/webhook/mock?status=200</code>，重跑，再恢復央行網址。
-你應該看到：來源成功回應，但「抓匯率」只有一個 <code>data</code> 欄位（整段回應被當成文字），沒有 <code>日期</code>、<code>NTD_USD</code>；整理後 <code>dataDate=null</code>、<code>usd=null</code>。這是缺資料，沒有報錯。</p>
+<li><p>暫時把「抓匯率」網址改成 <code>http://localhost:5678/webhook/mock?status=200</code>，重跑，再恢復央行網址。<br><span class="see">你應該看到</span>來源成功回應，但「抓匯率」只有一個 <code>data</code> 欄位（整段回應被當成文字），沒有 <code>日期</code>、<code>NTD_USD</code>；整理後 <code>dataDate=null</code>、<code>usd=null</code>。這是缺資料，沒有報錯。</p>
 </li>
-<li><p>暫時改用 <code>http://localhost:5678/webhook/mock?status=503</code> 並重跑，記下失敗節點後恢復央行網址。
-你應該看到：「抓匯率」紅色，後面的「最新一筆」與「整理」沒跑。</p>
+<li><p>暫時改用 <code>http://localhost:5678/webhook/mock?status=503</code> 並重跑，記下失敗節點後恢復央行網址。<br><span class="see">你應該看到</span>「抓匯率」紅色，後面的「最新一筆」與「整理」沒跑。</p>
 </li>
 </ol>
 <p>錯誤訊息為 <code>Service unavailable - try again later or consider setting this node to retry automatically (in the node settings)</code>。錯誤不會被當成資料往下傳，重試留到 M6。</p>
-<details class="wf"><summary>完成版（m4/main-fx-done.json）</summary><a href="files/m4/main-fx-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 573 76" width="573" height="76" role="img" aria-label="流程圖：排程、抓匯率、最新一筆、整理"><defs><marker id="ah18" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M135 38 C152 38 152 38 165 38" marker-end="url(#ah18)"/><path class="e" d="M268 38 C285 38 285 38 298 38" marker-end="url(#ah18)"/><path class="e" d="M398 38 C415 38 415 38 428 38" marker-end="url(#ah18)"/><g class="n trigger"><rect x="10" y="10" width="125" height="56" rx="12"/><text class="nm" x="72.5" y="34">排程</text><text class="ty" x="72.5" y="52">Schedule Trigger</text></g><g class="n data"><rect x="169" y="10" width="99" height="56" rx="12"/><text class="nm" x="218.5" y="34">抓匯率</text><text class="ty" x="218.5" y="52">HTTP Request</text></g><g class="n logic"><rect x="302" y="10" width="96" height="56" rx="12"/><text class="nm" x="350" y="34">最新一筆</text><text class="ty" x="350" y="52">Limit</text></g><g class="n data"><rect x="432" y="10" width="131" height="56" rx="12"/><text class="nm" x="497.5" y="34">整理</text><text class="ty" x="497.5" y="52">Edit Fields (Set)</text></g></svg></div><figcaption>完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>完成版（m4/main-fx-done.json）</summary><a href="files/m4/main-fx-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M4 主線 匯&quot;,
   &quot;nodes&quot;: [
     {
@@ -572,8 +565,7 @@
 </tbody></table>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">https://www.cwa.gov.tw/rss/Data/cwa_warning.xml</code></pre></div>
 <ol>
-<li>建立前三個節點，在「抓警特報」的節點 <strong>Settings</strong> 開啟 <strong>Always Output Data</strong>，依下表設定「整理」。位置見版本附頁。
-你應該看到：「整理」至少 1 筆，<code>status</code> 是 <code>warning</code> 或 <code>none</code>；有警特報時保留來源標題。</li>
+<li>建立前三個節點，在「抓警特報」的節點 <strong>Settings</strong> 開啟 <strong>Always Output Data</strong>，依下表設定「整理」。位置見版本附頁。<br><span class="see">你應該看到</span>「整理」至少 1 筆，<code>status</code> 是 <code>warning</code> 或 <code>none</code>；有警特報時保留來源標題。</li>
 </ol>
 <table>
 <thead>
@@ -595,17 +587,15 @@
 </tr>
 </tbody></table>
 <ol start="2">
-<li>暫時把來源改成 <code>http://localhost:5678/webhook/mock?kind=rss_empty</code>，重跑，再關閉 <strong>Always Output Data</strong> 重跑比較。
-你應該看到：開啟時空資料 1 筆可整理成 <code>status=&quot;none&quot;</code>；關閉時輸出 0 筆，後面不跑也不報錯。</li>
+<li>暫時把來源改成 <code>http://localhost:5678/webhook/mock?kind=rss_empty</code>，重跑，再關閉 <strong>Always Output Data</strong> 重跑比較。<br><span class="see">你應該看到</span>開啟時空資料 1 筆可整理成 <code>status=&quot;none&quot;</code>；關閉時輸出 0 筆，後面不跑也不報錯。</li>
 </ol>
 <blockquote>
 <p>卡住了？空來源後「整理」沒跑時先到節點 <strong>Settings</strong> 開啟 <strong>Always Output Data</strong>；它不在流程的時區設定裡。</p>
 </blockquote>
 <ol start="3">
-<li>重新開啟 <strong>Always Output Data</strong>，把網址改回氣象署來源後重跑。
-你應該看到：有警報就有 <code>warning</code>，無警報就有 <code>none</code>，兩種都正常。</li>
+<li>重新開啟 <strong>Always Output Data</strong>，把網址改回氣象署來源後重跑。<br><span class="see">你應該看到</span>有警報就有 <code>warning</code>，無警報就有 <code>none</code>，兩種都正常。</li>
 </ol>
-<details class="wf"><summary>完成版（m4/main-warn-done.json）</summary><a href="files/m4/main-warn-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 440 76" width="440" height="76" role="img" aria-label="流程圖：排程、抓警特報、整理"><defs><marker id="ah19" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M135 38 C152 38 152 38 165 38" marker-end="url(#ah19)"/><path class="e" d="M265 38 C282 38 282 38 295 38" marker-end="url(#ah19)"/><g class="n trigger"><rect x="10" y="10" width="125" height="56" rx="12"/><text class="nm" x="72.5" y="34">排程</text><text class="ty" x="72.5" y="52">Schedule Trigger</text></g><g class="n data"><rect x="169" y="10" width="96" height="56" rx="12"/><text class="nm" x="217" y="34">抓警特報</text><text class="ty" x="217" y="52">RSS Read</text></g><g class="n data"><rect x="299" y="10" width="131" height="56" rx="12"/><text class="nm" x="364.5" y="34">整理</text><text class="ty" x="364.5" y="52">Edit Fields (Set)</text></g></svg></div><figcaption>完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>完成版（m4/main-warn-done.json）</summary><a href="files/m4/main-warn-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M4 主線 警&quot;,
   &quot;nodes&quot;: [
     {
@@ -737,21 +727,18 @@
 </tbody></table>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-text">https://www.ey.gov.tw/RSS_Content.aspx?ModuleType=3</code></pre></div>
 <ol>
-<li><p>建立前四個節點並連線，設定網址、前 5 則與跨次去重操作，再手動執行。位置見版本附頁。
-你應該看到：「取前5則」5 筆；全新流程手動測試「新的才留」也是 5 筆。</p>
+<li><p>建立前四個節點並連線，設定網址、前 5 則與跨次去重操作，再手動執行。位置見版本附頁。<br><span class="see">你應該看到</span>「取前5則」5 筆；全新流程手動測試「新的才留」也是 5 筆。</p>
 </li>
-<li><p>接上「整理」，新增 <code>title</code>＝<code>{{ $json.title }}</code>、<code>link</code>＝<code>{{ $json.link }}</code>、<code>pubDate</code>＝<code>{{ $json.isoDate }}</code>，全部選 <strong>String</strong> 與 <strong>Expression</strong>。
-你應該看到：5 筆，每筆含標題、行政院新聞連結與發布時間；內容依當時來源變動。</p>
+<li><p>接上「整理」，新增 <code>title</code>＝<code>{{ $json.title }}</code>、<code>link</code>＝<code>{{ $json.link }}</code>、<code>pubDate</code>＝<code>{{ $json.isoDate }}</code>，全部選 <strong>String</strong> 與 <strong>Expression</strong>。<br><span class="see">你應該看到</span>5 筆，每筆含標題、行政院新聞連結與發布時間；內容依當時來源變動。</p>
 </li>
-<li><p>暫時把排程改成每分鐘並 <strong>Publish</strong>，讓它正式跑兩次，從 <strong>Executions</strong> 比對「新的才留」；測完恢復每天 7 點並再次 <strong>Publish</strong>。
-你應該看到：第一輪留下未處理過的連結，第二輪是 0 筆或只剩新出現的；0 筆時後面的整理不跑。</p>
+<li><p>暫時把排程改成每分鐘並 <strong>Publish</strong>，讓它正式跑兩次，從 <strong>Executions</strong> 比對「新的才留」；測完恢復每天 7 點並再次 <strong>Publish</strong>。<br><span class="see">你應該看到</span>第一輪留下未處理過的連結，第二輪是 0 筆或只剩新出現的；0 筆時後面的整理不跑。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？手動按幾次都是 5 筆時先確認執行來源。手動執行不會記錄去重歷史，要用 Publish 後的正式排程測。</p>
 </blockquote>
 <p>這個操作記住以前處理過的連結；M3 的本次輸入去重只比眼前這一批，不能代替跨次記憶。</p>
-<details class="wf"><summary>完成版（m4/main-news-done.json）</summary><a href="files/m4/main-news-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 735 76" width="735" height="76" role="img" aria-label="流程圖：排程、抓新聞、取前5則、新的才留、整理"><defs><marker id="ah20" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M135 38 C152 38 152 38 165 38" marker-end="url(#ah20)"/><path class="e" d="M265 38 C282 38 282 38 295 38" marker-end="url(#ah20)"/><path class="e" d="M395 38 C412 38 412 38 425 38" marker-end="url(#ah20)"/><path class="e" d="M560 38 C577 38 577 38 590 38" marker-end="url(#ah20)"/><g class="n trigger"><rect x="10" y="10" width="125" height="56" rx="12"/><text class="nm" x="72.5" y="34">排程</text><text class="ty" x="72.5" y="52">Schedule Trigger</text></g><g class="n data"><rect x="169" y="10" width="96" height="56" rx="12"/><text class="nm" x="217" y="34">抓新聞</text><text class="ty" x="217" y="52">RSS Read</text></g><g class="n logic"><rect x="299" y="10" width="96" height="56" rx="12"/><text class="nm" x="347" y="34">取前5則</text><text class="ty" x="347" y="52">Limit</text></g><g class="n logic"><rect x="429" y="10" width="131" height="56" rx="12"/><text class="nm" x="494.5" y="34">新的才留</text><text class="ty" x="494.5" y="52">Remove Duplicates</text></g><g class="n data"><rect x="594" y="10" width="131" height="56" rx="12"/><text class="nm" x="659.5" y="34">整理</text><text class="ty" x="659.5" y="52">Edit Fields (Set)</text></g></svg></div><figcaption>完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>完成版（m4/main-news-done.json）</summary><a href="files/m4/main-news-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M4 主線 聞&quot;,
   &quot;nodes&quot;: [
     {
@@ -930,22 +917,19 @@
 </tr>
 </tbody></table>
 <ol>
-<li><p>建立前兩個節點，網址填 <code>https://www.cwa.gov.tw/rss/Data/cwa_warning.xml</code>，確認 <strong>Always Output Data</strong> 關閉後執行。
-你應該看到：一則警特報是一個 Item；目前沒有警特報時為 0 筆，後面不跑也不報錯。</p>
+<li><p>建立前兩個節點，網址填 <code>https://www.cwa.gov.tw/rss/Data/cwa_warning.xml</code>，確認 <strong>Always Output Data</strong> 關閉後執行。<br><span class="see">你應該看到</span>一則警特報是一個 Item；目前沒有警特報時為 0 筆，後面不跑也不報錯。</p>
 </li>
-<li><p>接上「挑關鍵字」，新增三條 <strong>String</strong> 的 <strong>contains</strong> 條件，左值都是 <code>{{ $json.title }}</code>，右值依序為 <code>颱風</code>、<code>豪雨</code>、<code>強風</code>，組合選 <strong>OR</strong>。
-你應該看到：只有標題含任一關鍵字的資料通過，沒有符合資料時為 0 筆。</p>
+<li><p>接上「挑關鍵字」，新增三條 <strong>String</strong> 的 <strong>contains</strong> 條件，左值都是 <code>{{ $json.title }}</code>，右值依序為 <code>颱風</code>、<code>豪雨</code>、<code>強風</code>，組合選 <strong>OR</strong>。<br><span class="see">你應該看到</span>只有標題含任一關鍵字的資料通過，沒有符合資料時為 0 筆。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？有符合標題卻沒通過時先看是否誤選 <strong>AND</strong>，改用 <strong>OR</strong> 再比對同一次輸入。</p>
 </blockquote>
 <ol start="3">
-<li>接上「提醒草稿」，<code>text</code> 填 <code>{{ &#39;出門注意：&#39; + $json.title }}</code>、<code>link</code> 填 <code>{{ $json.link }}</code>，切換 <strong>Expression</strong> 後重跑。
-你應該看到：有符合警報才有草稿，<code>text</code> 以「出門注意：」開頭並附來源連結；沒有時不產生草稿。</li>
+<li>接上「提醒草稿」，<code>text</code> 填 <code>{{ &#39;出門注意：&#39; + $json.title }}</code>、<code>link</code> 填 <code>{{ $json.link }}</code>，切換 <strong>Expression</strong> 後重跑。<br><span class="see">你應該看到</span>有符合警報才有草稿，<code>text</code> 以「出門注意：」開頭並附來源連結；沒有時不產生草稿。</li>
 </ol>
 <p>可暫用 <code>http://localhost:5678/webhook/mock?kind=rss_empty</code> 驗證 0 則路徑，測完改回。主線早報一定要有一行狀態，所以開 <strong>Always Output Data</strong>；這個練習沒警報就不提醒，所以不開。本課只產生草稿。</p>
-<details class="wf"><summary>完成版（m4/ex1-done.json）</summary><a href="files/m4/ex1-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 570 76" width="570" height="76" role="img" aria-label="流程圖：排程、抓警特報、挑關鍵字、提醒草稿"><defs><marker id="ah21" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M135 38 C152 38 152 38 165 38" marker-end="url(#ah21)"/><path class="e" d="M265 38 C282 38 282 38 295 38" marker-end="url(#ah21)"/><path class="e" d="M395 38 C412 38 412 38 425 38" marker-end="url(#ah21)"/><g class="n trigger"><rect x="10" y="10" width="125" height="56" rx="12"/><text class="nm" x="72.5" y="34">排程</text><text class="ty" x="72.5" y="52">Schedule Trigger</text></g><g class="n data"><rect x="169" y="10" width="96" height="56" rx="12"/><text class="nm" x="217" y="34">抓警特報</text><text class="ty" x="217" y="52">RSS Read</text></g><g class="n logic"><rect x="299" y="10" width="96" height="56" rx="12"/><text class="nm" x="347" y="34">挑關鍵字</text><text class="ty" x="347" y="52">Filter</text></g><g class="n data"><rect x="429" y="10" width="131" height="56" rx="12"/><text class="nm" x="494.5" y="34">提醒草稿</text><text class="ty" x="494.5" y="52">Edit Fields (Set)</text></g></svg></div><figcaption>完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>完成版（m4/ex1-done.json）</summary><a href="files/m4/ex1-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M4 小練習 出門看警報&quot;,
   &quot;nodes&quot;: [
     {
@@ -1131,13 +1115,11 @@
 </tr>
 </tbody></table>
 <ol>
-<li>建立前三個節點，將「排程」設為 <strong>Custom (Cron)</strong> 並填入表中內容，手動檢查 RSS 與第一則資料。位置見版本附頁。
-你應該看到：「最新一期」1 筆，含來源的 <code>title</code>、<code>link</code>、<code>isoDate</code>。</li>
+<li>建立前三個節點，將「排程」設為 <strong>Custom (Cron)</strong> 並填入表中內容，手動檢查 RSS 與第一則資料。位置見版本附頁。<br><span class="see">你應該看到</span>「最新一期」1 筆，含來源的 <code>title</code>、<code>link</code>、<code>isoDate</code>。</li>
 </ol>
 <p>Cron 的五格依序是「分 時 日 月 星期」；這行代表單數月 25 日 18:00。已實測匯入與 <strong>Publish</strong>，實際到點觸發（待查證）。</p>
 <ol start="2">
-<li>接上「對獎提醒」，依下表新增欄位，選型別並切換 <strong>Expression</strong>。
-你應該看到：<code>period</code> 是來源期別字串、<code>fresh</code> 是布林值，<code>text</code> 有開獎提醒或待更新文字。</li>
+<li>接上「對獎提醒」，依下表新增欄位，選型別並切換 <strong>Expression</strong>。<br><span class="see">你應該看到</span><code>period</code> 是來源期別字串、<code>fresh</code> 是布林值，<code>text</code> 有開獎提醒或待更新文字。</li>
 </ol>
 <table>
 <thead>
@@ -1168,10 +1150,9 @@
 <p>卡住了？看起來仍是上一期時先查看來源標題與 <code>isoDate</code>，不要自己把期別換成想像的新一期。</p>
 </blockquote>
 <ol start="3">
-<li>執行整條流程，核對三個欄位與來源，再確認時區後 <strong>Publish</strong>。
-你應該看到：1 筆，期別是來源格式（例如 <code>115年 07~08月</code>），<code>fresh</code> 沒有引號，提醒保留來源期別。</li>
+<li>執行整條流程，核對三個欄位與來源，再確認時區後 <strong>Publish</strong>。<br><span class="see">你應該看到</span>1 筆，期別是來源格式（例如 <code>115年 07~08月</code>），<code>fresh</code> 沒有引號，提醒保留來源期別。</li>
 </ol>
-<details class="wf"><summary>完成版（m4/ex2-done.json）</summary><a href="files/m4/ex2-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 570 76" width="570" height="76" role="img" aria-label="流程圖：排程、抓發票、最新一期、對獎提醒"><defs><marker id="ah22" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M135 38 C152 38 152 38 165 38" marker-end="url(#ah22)"/><path class="e" d="M265 38 C282 38 282 38 295 38" marker-end="url(#ah22)"/><path class="e" d="M395 38 C412 38 412 38 425 38" marker-end="url(#ah22)"/><g class="n trigger"><rect x="10" y="10" width="125" height="56" rx="12"/><text class="nm" x="72.5" y="34">排程</text><text class="ty" x="72.5" y="52">Schedule Trigger</text></g><g class="n data"><rect x="169" y="10" width="96" height="56" rx="12"/><text class="nm" x="217" y="34">抓發票</text><text class="ty" x="217" y="52">RSS Read</text></g><g class="n logic"><rect x="299" y="10" width="96" height="56" rx="12"/><text class="nm" x="347" y="34">最新一期</text><text class="ty" x="347" y="52">Limit</text></g><g class="n data"><rect x="429" y="10" width="131" height="56" rx="12"/><text class="nm" x="494.5" y="34">對獎提醒</text><text class="ty" x="494.5" y="52">Edit Fields (Set)</text></g></svg></div><figcaption>完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>完成版（m4/ex2-done.json）</summary><a href="files/m4/ex2-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M4 小練習 發票開獎提醒&quot;,
   &quot;nodes&quot;: [
     {

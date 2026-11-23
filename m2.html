@@ -52,7 +52,7 @@
 <td>依下方六個欄位設定，值用 <strong>Expression</strong></td>
 </tr>
 </tbody></table>
-<details class="wf"><summary>起始版（m2/main-start.json）</summary><a href="files/m2/main-start.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 297 76" width="297" height="76" role="img" aria-label="流程圖：手動、測資陣列"><defs><marker id="ah8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M122 38 C139 38 139 38 152 38" marker-end="url(#ah8)"/><g class="n trigger"><rect x="10" y="10" width="112" height="56" rx="12"/><text class="nm" x="66" y="34">手動</text><text class="ty" x="66" y="52">Manual Trigger</text></g><g class="n data"><rect x="156" y="10" width="131" height="56" rx="12"/><text class="nm" x="221.5" y="34">測資陣列</text><text class="ty" x="221.5" y="52">Edit Fields (Set)</text></g></svg></div><figcaption>起始版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>起始版（m2/main-start.json）</summary><a href="files/m2/main-start.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M2 主線 起始版&quot;,
   &quot;nodes&quot;: [
     {
@@ -99,19 +99,16 @@
 }
 </code></pre></div>
 </details><ol>
-<li><p>匯入起始版，打開「測資陣列」並執行。核對每筆含 <code>Date</code>、<code>Code</code>、<code>Name</code>、<code>ClosingPrice</code>、<code>Change</code>。
-你應該看到：輸出 1 個 Item，<code>data</code> 內有 2330、2317、9999、1101 四筆資料。</p>
+<li><p>匯入起始版，打開「測資陣列」並執行。核對每筆含 <code>Date</code>、<code>Code</code>、<code>Name</code>、<code>ClosingPrice</code>、<code>Change</code>。<br><span class="see">你應該看到</span>輸出 1 個 Item，<code>data</code> 內有 2330、2317、9999、1101 四筆資料。</p>
 </li>
-<li><p>接上 <strong>Split Out</strong>，命名「拆成多筆」，將 <strong>Fields To Split Out</strong> 設為 <code>data</code>，再執行整條流程。位置見版本附頁。
-你應該看到：「拆成多筆」輸出 4 個 Items，第一筆 <code>Code</code> 為字串 <code>2330</code>。</p>
+<li><p>接上 <strong>Split Out</strong>，命名「拆成多筆」，將 <strong>Fields To Split Out</strong> 設為 <code>data</code>，再執行整條流程。位置見版本附頁。<br><span class="see">你應該看到</span>「拆成多筆」輸出 4 個 Items，第一筆 <code>Code</code> 為字串 <code>2330</code>。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？仍只有 1 筆且裡面有陣列時先確認拆分欄位填的是 <code>data</code>，再查看新執行結果。</p>
 </blockquote>
 <ol start="3">
-<li>接上 <strong>Filter</strong>，命名「挑自選股」，用兩個 <strong>String</strong> 的 <strong>is equal to</strong> 條件比較 <code>{{ $json.Code }}</code> 與 <code>2330</code>、<code>2317</code>，組合選 <strong>OR</strong>。
-你應該看到：「挑自選股」輸出 2 筆，代號依序為 2330、2317。</li>
+<li>接上 <strong>Filter</strong>，命名「挑自選股」，用兩個 <strong>String</strong> 的 <strong>is equal to</strong> 條件比較 <code>{{ $json.Code }}</code> 與 <code>2330</code>、<code>2317</code>，組合選 <strong>OR</strong>。<br><span class="see">你應該看到</span>「挑自選股」輸出 2 筆，代號依序為 2330、2317。</li>
 </ol>
 <blockquote>
 <p>卡住了？沒有資料通過時先確認比較值採用字串型別，兩個條件使用 <strong>OR</strong>。</p>
@@ -158,14 +155,13 @@
 </tr>
 </tbody></table>
 <p><code>slice</code> 取出日期的一段，前三碼 <code>115</code> 加 1911 變成西元年 2026。<code>條件 ? A : B</code> 的意思是「條件成立就用 A，不成立就用 B」：收盤價是空字串就給 <code>null</code>，不是空字串才用 <code>Number(...)</code> 轉成數字。收盤價空白時，來源的 <code>Change</code> 可能填 <code>0.0000</code>，此時 <code>close</code> 與 <code>change</code> 都設為 <code>null</code>，<code>valid</code> 為 false。</p>
-<p>你應該看到：第一筆預覽日期為 <code>2026-11-17</code>，代號仍是 <code>2330</code>。</p>
+<p><span class="see">你應該看到</span>第一筆預覽日期為 <code>2026-11-17</code>，代號仍是 <code>2330</code>。</p>
 </li>
-<li><p>執行整條流程，逐筆查看「整理」的 <strong>JSON</strong> 輸出與型別。
-你應該看到：2 筆，第一筆為 <code>dataDate=&quot;2026-11-17&quot;</code>、<code>code=&quot;2330&quot;</code>、<code>name=&quot;假想甲&quot;</code>、<code>close=2170</code>、<code>change=-45</code>、<code>valid=true</code>。</p>
+<li><p>執行整條流程，逐筆查看「整理」的 <strong>JSON</strong> 輸出與型別。<br><span class="see">你應該看到</span>2 筆，第一筆為 <code>dataDate=&quot;2026-11-17&quot;</code>、<code>code=&quot;2330&quot;</code>、<code>name=&quot;假想甲&quot;</code>、<code>close=2170</code>、<code>change=-45</code>、<code>valid=true</code>。</p>
 </li>
 </ol>
 <p>第二筆應為假想乙，<code>code=&quot;2317&quot;</code>、<code>close=219</code>、<code>change=0.5</code>。JSON 中字串有引號，數字與布林值可直接辨認。缺資料驗收時，把測資檔的全部內容貼進「測資陣列」後重跑。</p>
-<details class="wf"><summary>完成版（m2/main-done.json）</summary><a href="files/m2/main-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 722 76" width="722" height="76" role="img" aria-label="流程圖：手動、測資陣列、拆成多筆、挑自選股、整理"><defs><marker id="ah9" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M122 38 C139 38 139 38 152 38" marker-end="url(#ah9)"/><path class="e" d="M287 38 C304 38 304 38 317 38" marker-end="url(#ah9)"/><path class="e" d="M417 38 C434 38 434 38 447 38" marker-end="url(#ah9)"/><path class="e" d="M547 38 C564 38 564 38 577 38" marker-end="url(#ah9)"/><g class="n trigger"><rect x="10" y="10" width="112" height="56" rx="12"/><text class="nm" x="66" y="34">手動</text><text class="ty" x="66" y="52">Manual Trigger</text></g><g class="n data"><rect x="156" y="10" width="131" height="56" rx="12"/><text class="nm" x="221.5" y="34">測資陣列</text><text class="ty" x="221.5" y="52">Edit Fields (Set)</text></g><g class="n data"><rect x="321" y="10" width="96" height="56" rx="12"/><text class="nm" x="369" y="34">拆成多筆</text><text class="ty" x="369" y="52">Split Out</text></g><g class="n logic"><rect x="451" y="10" width="96" height="56" rx="12"/><text class="nm" x="499" y="34">挑自選股</text><text class="ty" x="499" y="52">Filter</text></g><g class="n data"><rect x="581" y="10" width="131" height="56" rx="12"/><text class="nm" x="646.5" y="34">整理</text><text class="ty" x="646.5" y="52">Edit Fields (Set)</text></g></svg></div><figcaption>完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>完成版（m2/main-done.json）</summary><a href="files/m2/main-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M2 主線 挑出自選股&quot;,
   &quot;nodes&quot;: [
     {
@@ -378,8 +374,7 @@
 </tr>
 </tbody></table>
 <ol>
-<li><p>建立新流程，依表加入三個節點並連線，填好「央行格式」後執行。
-你應該看到：來源 1 筆，日期與匯率為字串，預算為數字 30000。</p>
+<li><p>建立新流程，依表加入三個節點並連線，填好「央行格式」後執行。<br><span class="see">你應該看到</span>來源 1 筆，日期與匯率為字串，預算為數字 30000。</p>
 </li>
 <li><p>在「換算」新增下表三個欄位，各自選型別並將值切換 <strong>Expression</strong>。</p>
 <table>
@@ -407,17 +402,16 @@
 </tr>
 </tbody></table>
 <p>中文欄位名稱在本課使用方括號寫成 <code>$json[&#39;日期&#39;]</code>。匯率先轉數字，預算除以匯率後乘 100、四捨五入、再除以 100，保留到小數 2 位。</p>
-<p>你應該看到：日期預覽為 <code>2026-11-17</code>，美元預算為 913.24。</p>
+<p><span class="see">你應該看到</span>日期預覽為 <code>2026-11-17</code>，美元預算為 913.24。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？日期取不到時先核對來源欄名「日期」與方括號裡的引號，預算算錯時先檢查 <code>NTD_USD</code>。</p>
 </blockquote>
 <ol start="3">
-<li>執行整條流程，打開「換算」查看 <strong>JSON</strong> 輸出。
-你應該看到：1 筆，<code>date=&quot;2026-11-17&quot;</code>、<code>rate=32.85</code>、<code>usdBudget=913.24</code>。</li>
+<li>執行整條流程，打開「換算」查看 <strong>JSON</strong> 輸出。<br><span class="see">你應該看到</span>1 筆，<code>date=&quot;2026-11-17&quot;</code>、<code>rate=32.85</code>、<code>usdBudget=913.24</code>。</li>
 </ol>
-<details class="wf"><summary>完成版（m2/ex1-done.json）</summary><a href="files/m2/ex1-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 462 76" width="462" height="76" role="img" aria-label="流程圖：手動、央行格式、換算"><defs><marker id="ah10" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M122 38 C139 38 139 38 152 38" marker-end="url(#ah10)"/><path class="e" d="M287 38 C304 38 304 38 317 38" marker-end="url(#ah10)"/><g class="n trigger"><rect x="10" y="10" width="112" height="56" rx="12"/><text class="nm" x="66" y="34">手動</text><text class="ty" x="66" y="52">Manual Trigger</text></g><g class="n data"><rect x="156" y="10" width="131" height="56" rx="12"/><text class="nm" x="221.5" y="34">央行格式</text><text class="ty" x="221.5" y="52">Edit Fields (Set)</text></g><g class="n data"><rect x="321" y="10" width="131" height="56" rx="12"/><text class="nm" x="386.5" y="34">換算</text><text class="ty" x="386.5" y="52">Edit Fields (Set)</text></g></svg></div><figcaption>完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>完成版（m2/ex1-done.json）</summary><a href="files/m2/ex1-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M2 小練習① 旅費換算&quot;,
   &quot;nodes&quot;: [
     {
@@ -567,8 +561,7 @@
 </tr>
 </tbody></table>
 <ol>
-<li>建立前兩個節點，在「支出陣列」的 <strong>JSON Output</strong> 填入下方內容，執行一次。
-你應該看到：1 個 Item 的 <code>rows</code> 內有三筆支出。</li>
+<li>建立前兩個節點，在「支出陣列」的 <strong>JSON Output</strong> 填入下方內容，執行一次。<br><span class="see">你應該看到</span>1 個 Item 的 <code>rows</code> 內有三筆支出。</li>
 </ol>
 <div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{&quot;rows&quot;:[{&quot;date&quot;:&quot;2026/11/15&quot;,&quot;item&quot;:&quot;衛生紙&quot;,&quot;amount&quot;:&quot;189&quot;},{&quot;date&quot;:&quot;2026/11/16&quot;,&quot;item&quot;:&quot;洗衣精&quot;,&quot;amount&quot;:&quot;&quot;},{&quot;date&quot;:&quot;2026/11/17&quot;,&quot;item&quot;:&quot;牛奶&quot;,&quot;amount&quot;:&quot;95&quot;}]}</code></pre></div>
 <ol start="2">
@@ -602,17 +595,16 @@
 <td><code>{{ $json.amount !== &#39;&#39; }}</code></td>
 </tr>
 </tbody></table>
-<p>你應該看到：「整理」有 3 筆，第一筆為 <code>date=&quot;2026-11-15&quot;</code>、<code>item=&quot;衛生紙&quot;</code>、<code>amount=189</code>、<code>ok=true</code>。</p>
+<p><span class="see">你應該看到</span>「整理」有 3 筆，第一筆為 <code>date=&quot;2026-11-15&quot;</code>、<code>item=&quot;衛生紙&quot;</code>、<code>amount=189</code>、<code>ok=true</code>。</p>
 </li>
 </ol>
 <blockquote>
 <p>卡住了？洗衣精金額變 0 時先檢查 <code>amount</code> 是否先判斷空字串，再做 <code>Number(...)</code> 轉換。</p>
 </blockquote>
 <ol start="3">
-<li>接上「有金額嗎」，設定 <code>ok</code> 為真的條件，再執行整條流程，分別查看 true 與 false 分支。
-你應該看到：true 2 筆，false 1 筆，false 的洗衣精 <code>amount=null</code>、<code>ok=false</code>。</li>
+<li>接上「有金額嗎」，設定 <code>ok</code> 為真的條件，再執行整條流程，分別查看 true 與 false 分支。<br><span class="see">你應該看到</span>true 2 筆，false 1 筆，false 的洗衣精 <code>amount=null</code>、<code>ok=false</code>。</li>
 </ol>
-<details class="wf"><summary>完成版（m2/ex2-done.json）</summary><a href="files/m2/ex2-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
+<figure class="flow"><div class="flow-scroll"><svg class="flow-svg" viewBox="0 0 722 76" width="722" height="76" role="img" aria-label="流程圖：手動、支出陣列、拆成多筆、整理、有金額嗎"><defs><marker id="ah11" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="e" d="M122 38 C139 38 139 38 152 38" marker-end="url(#ah11)"/><path class="e" d="M287 38 C304 38 304 38 317 38" marker-end="url(#ah11)"/><path class="e" d="M417 38 C434 38 434 38 447 38" marker-end="url(#ah11)"/><path class="e" d="M582 38 C599 38 599 38 612 38" marker-end="url(#ah11)"/><g class="n trigger"><rect x="10" y="10" width="112" height="56" rx="12"/><text class="nm" x="66" y="34">手動</text><text class="ty" x="66" y="52">Manual Trigger</text></g><g class="n data"><rect x="156" y="10" width="131" height="56" rx="12"/><text class="nm" x="221.5" y="34">支出陣列</text><text class="ty" x="221.5" y="52">Edit Fields (Set)</text></g><g class="n data"><rect x="321" y="10" width="96" height="56" rx="12"/><text class="nm" x="369" y="34">拆成多筆</text><text class="ty" x="369" y="52">Split Out</text></g><g class="n data"><rect x="451" y="10" width="131" height="56" rx="12"/><text class="nm" x="516.5" y="34">整理</text><text class="ty" x="516.5" y="52">Edit Fields (Set)</text></g><g class="n logic"><rect x="616" y="10" width="96" height="56" rx="12"/><text class="nm" x="664" y="34">有金額嗎</text><text class="ty" x="664" y="52">If</text></g></svg></div><figcaption>完成版的流程圖（照素材自動畫出）</figcaption></figure><details class="wf"><summary>完成版（m2/ex2-done.json）</summary><a href="files/m2/ex2-done.json" download>下載 .json（用 n8n 的 Import from File 匯入）</a><div class="code"><button class="copy" type="button">複製</button><pre><code class="language-json">{
   &quot;name&quot;: &quot;M2 小練習② 家用支出整理&quot;,
   &quot;nodes&quot;: [
     {
