@@ -52,7 +52,7 @@ main{min-width:0}.art{max-width:calc(68ch + 56px);margin:0 auto;padding:28px 28p
 .course>span:first-of-type{margin-top:12px;font-weight:700;color:var(--s-accent)}
 .course .thumb{margin:0;width:100%;height:auto;aspect-ratio:1200/630;object-fit:cover;border-bottom:1px solid var(--s-line)}
 .course:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgb(0 0 0 / .08)}
-.banner{display:block;width:100%;height:auto;aspect-ratio:1200/400;object-fit:cover;border-radius:14px;margin:4px 0 22px;background:var(--s-card)}
+.banner{display:block;width:100%;height:auto;aspect-ratio:1200/520;object-fit:cover;border-radius:14px;margin:4px 0 22px;background:var(--s-card)}
 .art h3{padding-left:12px;border-left:4px solid var(--s-accent)}
 .see{display:inline-block;font-size:.78rem;font-weight:700;color:var(--s-accent-ink);background:var(--s-ok);border-radius:999px;padding:0 9px;margin-right:6px;line-height:1.7}
 blockquote{background:var(--s-panel);border-radius:0 10px 10px 0;padding:8px 16px}
